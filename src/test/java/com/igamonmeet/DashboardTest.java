@@ -53,15 +53,23 @@ class DashboardTest {
         mvc.perform(post("/api/meetings/" + oct + "/comments").with(csrf()).with(user("chair").roles("END_USER")).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"sectionKey\":\"kpis\",\"body\":\"Why the jump?\"}")).andExpect(status().isCreated());
 
-        mvc.perform(get("/api/meetings/" + oct + "/dashboard").with(user("r").roles("END_USER")))
+        JsonNode dash = json.readTree(mvc.perform(get("/api/meetings/" + oct + "/dashboard").with(user("r").roles("END_USER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.kpis[?(@.kpi.key=='sla')].trend.labels[-2]").value("Sep 42"))
                 .andExpect(jsonPath("$.kpis[?(@.kpi.key=='sla')].trend.values[-2]").value(94.1))
                 .andExpect(jsonPath("$.kpis[?(@.kpi.key=='sla')].trend.values[-1]").value(96.4))
                 .andExpect(jsonPath("$.health[?(@.sectionKey=='roadmap')].counts['On track']").value(2))
                 .andExpect(jsonPath("$.health[?(@.sectionKey=='roadmap')].total").value(3))
-                .andExpect(jsonPath("$.overdueActions").value(1))
+                .andExpect(jsonPath("$.actions[?(@.title=='Late item')].overdue").value(true))
                 .andExpect(jsonPath("$.openComments").value(1))
-                .andExpect(jsonPath("$.comments[0].body").value("Why the jump?"));
+                .andExpect(jsonPath("$.comments[0].body").value("Why the jump?"))
+                .andReturn().getResponse().getContentAsString());
+        // Earlier tests' open items carry forward, so compare against the list rather than a fixed number.
+        int overdue = 0;
+        for (JsonNode a : dash.get("actions")) {
+            if (a.get("overdue").asBoolean()) overdue++;
+        }
+        org.assertj.core.api.Assertions.assertThat(dash.get("overdueActions").asInt()).isEqualTo(overdue).isPositive();
+        org.assertj.core.api.Assertions.assertThat(dash.get("openActions").asInt()).isEqualTo(dash.get("actions").size());
     }
 }

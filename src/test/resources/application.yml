@@ -10,3 +10,6 @@ spring:
       ddl-auto: none # schema owned by Flyway; columns covered by integration tests
   flyway:
     enabled: true
+    placeholders:
+      # H2 has no NVARCHAR(MAX); production uses NVARCHAR(MAX).
+      longText: CLOB

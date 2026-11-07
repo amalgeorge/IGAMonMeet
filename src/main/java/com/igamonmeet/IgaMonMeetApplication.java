@@ -6,9 +6,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /** Deployed as a WAR to an external Tomcat 9; also runnable with {@code mvn spring-boot:run}. */
 @SpringBootApplication
+@EnableScheduling
 public class IgaMonMeetApplication extends SpringBootServletInitializer {
 
     public static void main(String[] args) {

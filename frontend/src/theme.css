@@ -69,3 +69,8 @@ h2 { font-size: 18px; margin: 24px 0 8px; }
 td input[type=checkbox], .check input { height: 18px; width: 18px; accent-color: var(--red); }
 .check { display: flex; gap: 8px; align-items: center; min-height: 40px; font-weight: 600; font-size: 13px; }
 .grow { flex: 1 1 320px; }
+
+.chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #eeeeef; color: #444; }
+.chip.preparing { background: #e6eef6; color: #1d4466; }
+.chip.held { background: #e3f3e9; color: #17643a; }
+.card-inline { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 0 0 1px rgba(0,0,0,.06); }

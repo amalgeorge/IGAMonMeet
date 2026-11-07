@@ -7,12 +7,14 @@ import Recover from './Recover.jsx';
 import { AdminQueue, AdminUsers } from './AdminUsers.jsx';
 import AdminSettings from './AdminSettings.jsx';
 import AdminTemplate from './AdminTemplate.jsx';
+import Meetings, { MeetingOverview } from './Meetings.jsx';
 
-const ADMIN_VIEWS = { queue: 'Admin queue', users: 'Users', template: 'Template', audit: 'Audit log', settings: 'Settings' };
+const ADMIN_VIEWS = { meetings: 'Meetings', queue: 'Admin queue', users: 'Users', template: 'Template', audit: 'Audit log', settings: 'Settings' };
 
 export default function App() {
   const [me, setMe] = useState(undefined);
-  const [view, setView] = useState('queue');
+  const [view, setView] = useState('meetings');
+  const [openId, setOpenId] = useState(null);
   const [queueCount, setQueueCount] = useState(0);
   const [features, setFeatures] = useState({});
   const loadFeatures = () => api('/api/settings/features').then(setFeatures).catch(() => {});
@@ -36,15 +38,16 @@ export default function App() {
     <main className="shell">
       <header className="row">
         <nav className="nav" aria-label="Main">
-          {me.role === 'ADMIN' && Object.entries(ADMIN_VIEWS).map(([k, label]) => (
-            <button key={k} className={view === k ? 'on' : ''} aria-current={view === k ? 'page' : undefined} onClick={() => setView(k)}>
+          {(me.role === 'ADMIN' ? Object.entries(ADMIN_VIEWS) : [['meetings', 'Meetings']]).map(([k, label]) => (
+            <button key={k} className={view === k ? 'on' : ''} aria-current={view === k ? 'page' : undefined} onClick={() => { setView(k); setOpenId(null); }}>
               {label}{k === 'queue' && features.QUEUE_BADGE !== false && queueCount > 0 && <span className="badge" aria-label={`${queueCount} waiting`}>{queueCount}</span>}
             </button>
           ))}
         </nav>
         <span>{me.fullName} <button className="btn" onClick={signOut}>Sign out</button></span>
       </header>
-      {me.role !== 'ADMIN' && <h1>Welcome, {me.fullName}</h1>}
+      {view === 'meetings' && !openId && <Meetings isAdmin={me.role === 'ADMIN'} onOpen={setOpenId} />}
+      {view === 'meetings' && openId && <MeetingOverview id={openId} onBack={() => setOpenId(null)} />}
       {me.role === 'ADMIN' && view === 'queue' && <AdminQueue onChange={setQueueCount} />}
       {me.role === 'ADMIN' && view === 'users' && <AdminUsers />}
       {me.role === 'ADMIN' && view === 'template' && <AdminTemplate />}

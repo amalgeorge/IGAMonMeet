@@ -12,6 +12,8 @@ spring:
   flyway:
     # {vendor} adds database-specific scripts, e.g. db/vendor/sqlserver.
     locations: classpath:db/migration,classpath:db/vendor/{vendor}
+    placeholders:
+      longText: NVARCHAR(MAX)
   servlet:
     multipart:
       max-file-size: 50MB

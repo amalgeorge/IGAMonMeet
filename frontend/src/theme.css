@@ -52,3 +52,12 @@ a.btn { display: inline-flex; align-items: center; text-decoration: none; color:
 .notice code { font-size: 16px; font-weight: 700; letter-spacing: .05em; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 h2 { font-size: 18px; margin: 24px 0 8px; }
+
+.toggles { list-style: none; padding: 0; margin: 0; background: #fff; border-radius: 12px; box-shadow: 0 0 0 1px rgba(0,0,0,.06); }
+.toggles li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px; border-bottom: 1px solid #eeeeef; }
+.toggles li:last-child { border-bottom: 0; }
+.switch { position: relative; width: 48px; height: 28px; flex: 0 0 48px; border: 0; border-radius: 999px; background: #8c8c8f; cursor: pointer; transition-property: background-color; transition-duration: 150ms; }
+.switch span { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition-property: translate; transition-duration: 150ms; }
+.switch.on { background: var(--red); }
+.switch.on span { translate: 20px 0; }
+@media (prefers-reduced-motion: reduce) { .switch span { transition: none; } }

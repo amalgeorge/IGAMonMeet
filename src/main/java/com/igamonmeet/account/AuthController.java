@@ -60,8 +60,7 @@ public class AuthController {
     @PostMapping("/api/auth/register")
     @ResponseStatus(HttpStatus.CREATED)
     public Map<String, String> register(@Valid @RequestBody RegisterRequest r) {
-        accounts.register(r.username(), r.fullName(), r.email(), r.password(), r.confirmPassword());
-        return Map.of("status", UserStatus.PENDING.name());
+        return Map.of("status", accounts.register(r.username(), r.fullName(), r.email(), r.password(), r.confirmPassword()).getStatus().name());
     }
 
     /** Always 202, whether or not the username exists, so it cannot be used to find accounts. */

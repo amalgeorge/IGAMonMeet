@@ -8,7 +8,7 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 02 | Local accounts: register, approve, sign in | 01 | Done |
 | 03 | Audit log | 02 | Done |
 | 04 | Admin: user management, Admin queue, password reset | 03 | Done |
-| 05 | First Admin setup and DBA recovery procedure | 04 | |
+| 05 | First Admin setup and DBA recovery procedure | 04 | Done |
 | 06 | Feature toggles | 04 | |
 | 07 | Template: Sections and KPIs | 02 | |
 | 08 | Meetings: create, list, soft delete | 07 | |

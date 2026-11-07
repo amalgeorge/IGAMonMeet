@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { api } from './api.js';
 
@@ -8,6 +8,8 @@ export default function Auth({ onSignedIn }) {
   const [mode, setMode] = useState('signin');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [features, setFeatures] = useState({ selfRegistration: true, forgotPassword: true });
+  useEffect(() => { api('/api/auth/features').then(setFeatures).catch(() => {}); }, []);
 
   async function submit(e, action) {
     e.preventDefault();
@@ -38,7 +40,7 @@ export default function Auth({ onSignedIn }) {
       </section>
       <section className="auth-side">
         <div className="card">
-          {(mode === 'signin' || mode === 'register') && (
+          {features.selfRegistration && (mode === 'signin' || mode === 'register') && (
             <div className="tabs" role="group" aria-label="Account">
               <button type="button" className={mode === 'signin' ? 'on' : ''} aria-pressed={mode === 'signin'} onClick={() => { setMode('signin'); setError(''); }}>Sign in</button>
               <button type="button" className={mode === 'register' ? 'on' : ''} aria-pressed={mode === 'register'} onClick={() => { setMode('register'); setError(''); }}>Register</button>
@@ -50,7 +52,7 @@ export default function Auth({ onSignedIn }) {
               <motion.form key="signin" {...fade} onSubmit={(e) => submit(e, signIn)}>
                 <Field label="Username" name="username" autoComplete="username" />
                 <Field label="Password" name="password" type="password" autoComplete="current-password" />
-                <button type="button" className="link" onClick={() => { setMode('forgot'); setError(''); }}>Forgot password?</button>
+                {features.forgotPassword && <button type="button" className="link" onClick={() => { setMode('forgot'); setError(''); }}>Forgot password?</button>}
                 <button className="btn pri" disabled={busy}>Sign in</button>
               </motion.form>
             )}

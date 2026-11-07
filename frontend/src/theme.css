@@ -10,3 +10,22 @@ body { margin: 0; font-family: Inter, system-ui, sans-serif; color: var(--ink); 
 .shell { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
 h1 { color: var(--red); }
 @media (prefers-reduced-motion: reduce) { * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
+
+.auth { min-height: 100vh; display: flex; flex-wrap: wrap; }
+.auth-hero { flex: 1 1 520px; background: var(--red); color: #fff; padding: 56px; display: flex; flex-direction: column; gap: 48px; border-top: 6px solid var(--red-bright); }
+.auth-hero h1 { color: #fff; font-size: 44px; margin: 0 0 16px; }
+.brand { font-weight: 700; }
+.auth-side { flex: 1 1 480px; display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
+.card { width: 100%; max-width: 440px; background: #fff; border-radius: 16px; padding: 40px; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06); border: 1px solid transparent; }
+.card form { display: flex; flex-direction: column; gap: 14px; }
+.tabs { display: flex; padding: 4px; background: #eeeeef; border-radius: 10px; gap: 2px; margin-bottom: 24px; }
+.tabs button { flex: 1; height: 40px; border: 0; border-radius: 7px; background: transparent; font: 600 14px inherit; color: #444; cursor: pointer; }
+.tabs button.on { background: #fff; color: var(--red); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
+.field input { height: 44px; border: 1px solid #8c8c8f; border-radius: 8px; padding: 0 12px; font: 400 15px inherit; }
+.field small, .hint { font-weight: 400; color: var(--muted); font-size: 12px; }
+.btn { height: 44px; padding: 0 20px; border-radius: 10px; border: 1px solid #d0d0d3; background: #fff; font: 600 15px inherit; cursor: pointer; transition-property: background-color, scale; transition-duration: 150ms; }
+.btn.pri { background: var(--red); border-color: var(--red); color: #fff; }
+@media (hover: hover) { .btn.pri:hover { background: #a50d26; } }
+@media (prefers-reduced-motion: no-preference) { .btn:not(:disabled):active { scale: 0.96; } }
+.error { background: #fdecee; color: #9e0b23; padding: 10px 12px; border-radius: 8px; font-size: 13px; }

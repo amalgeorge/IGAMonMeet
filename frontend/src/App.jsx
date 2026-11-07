@@ -1,23 +1,21 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
+import { api } from './api.js';
+import Auth from './Auth.jsx';
 
-// Placeholder shell. Screens follow the design canvas "IAM Monthly Meeting Hub".
 export default function App() {
-  const [health, setHealth] = useState('checking');
+  const [me, setMe] = useState(undefined);
 
-  useEffect(() => {
-    fetch('/api/health')
-      .then((r) => r.json())
-      .then((d) => setHealth(d.status))
-      .catch(() => setHealth('unreachable'));
-  }, []);
+  const loadMe = () => api('/api/auth/me').then(setMe).catch(() => setMe(null));
+  useEffect(() => { loadMe(); }, []);
 
+  if (me === undefined) return null;
+  if (!me) return <Auth onSignedIn={loadMe} />;
+
+  // Meetings screens arrive with ticket 08.
   return (
     <main className="shell">
-      <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-        IAM Monthly Meeting
-      </motion.h1>
-      <p>API: {health}</p>
+      <h1>Welcome, {me.fullName}</h1>
+      <button className="btn" onClick={() => api('/api/auth/logout', { method: 'POST' }).then(() => setMe(null))}>Sign out</button>
     </main>
   );
 }

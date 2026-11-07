@@ -18,6 +18,8 @@ import com.igamonmeet.pptximport.SlideMatcher.Suggestion;
 import com.igamonmeet.pptximport.SlideMatcher.Target;
 import com.igamonmeet.template.SectionKind;
 import com.igamonmeet.template.TeamTag;
+import com.igamonmeet.version.MeetingVersion;
+import com.igamonmeet.version.VersionService;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,10 +61,12 @@ public class ImportService {
     private final MeetingTime time;
     private final AuditLog audit;
     private final ObjectMapper json;
+    private final VersionService versions;
 
     public ImportService(PptxReader reader, SlideMatcher matcher, ContentExtractor extractor, ImportRecordRepository records,
                          MeetingService meetings, MeetingDetails details, SectionEditor editor, ActionsAndComments actions,
-                         MeetingTime time, AuditLog audit, ObjectMapper json) {
+                         MeetingTime time, AuditLog audit, ObjectMapper json, VersionService versions) {
+        this.versions = versions;
         this.reader = reader;
         this.matcher = matcher;
         this.extractor = extractor;
@@ -155,6 +159,7 @@ public class ImportService {
         int charts = bySection.values().stream().flatMap(List::stream).mapToInt(RawSlide::charts).sum();
         Result result = new Result(applied, kept, skipped, added, pictures, charts);
         rec.applied(user, time.now(), "applied=" + applied + " kept=" + kept + " skipped=" + skipped.size() + " actions=" + added);
+        versions.snapshot(meetingId, MeetingVersion.IMPORT, "Imported " + rec.getFileName(), user);
         audit.record("IMPORT_APPLIED", "Meeting", meetingId, rec.getFileName() + " (" + mode + "): " + applied.size() + " replaced, "
                 + kept.size() + " kept with note, " + skipped.size() + " skipped");
         return result;

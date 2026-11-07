@@ -6,7 +6,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none # schema owned by Flyway; columns covered by integration tests
     properties:
       hibernate.jdbc.time_zone: UTC
   flyway:

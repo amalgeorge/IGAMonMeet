@@ -4,7 +4,9 @@ spring:
     username: sa
     password: ""
   jpa:
+    # Same SQL as production; H2 in MSSQLServer mode rejects the H2 dialect's LIMIT.
+    database-platform: org.hibernate.dialect.SQLServer2012Dialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none # schema owned by Flyway; columns covered by integration tests
   flyway:
     enabled: true

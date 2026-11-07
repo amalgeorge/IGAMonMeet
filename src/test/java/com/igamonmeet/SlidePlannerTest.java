@@ -132,7 +132,7 @@ class SlidePlannerTest {
         assertThat(of(p, "kpis").get(0).data().get("body")).isEqualTo("Note");
         assertThat(of(p, "kpis").get(1).data().get("body")).isEqualTo("");
         assertThat(of(p, "trend")).hasSize(1);
-        assertThat((List<?>) of(p, "trend").get(0).data().get("labels")).containsExactly("Jun", "Jul", "Aug", "Sep", "Oct", "Nov");
+        assertThat(of(p, "trend").get(0).data().get("labels")).isEqualTo(List.of("Jun", "Jul", "Aug", "Sep", "Oct", "Nov"));
     }
 
     @Test

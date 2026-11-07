@@ -6,6 +6,7 @@ Prepare, present and keep the IAM Engineering and IAM Operations monthly meeting
 - Specification: [docs/spec.md](docs/spec.md)
 - Decisions: [docs/adr](docs/adr)
 - Tickets: [.scratch/v1](.scratch/v1/README.md)
+- Deployment: [docs/deploy.md](docs/deploy.md)
 
 ## Stack
 

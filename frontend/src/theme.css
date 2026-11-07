@@ -100,3 +100,11 @@ td input { width: 100%; }
 .chip.st-ON_TARGET { background: #e3f3e9; color: #17643a; }
 .chip.st-BELOW_TARGET { background: #fff3dc; color: #7a4500; }
 .chip.st-OFF_TARGET { background: #fdecee; color: #9e0b23; }
+
+tr.closed td { color: var(--muted); text-decoration: line-through; }
+tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
+.overdue { color: #9e0b23; font-weight: 600; }
+.comments { margin-top: 8px; border-top: 1px solid #eeeeef; padding-top: 8px; }
+.thread { background: var(--surface); border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+.thread.resolved { opacity: .7; }
+.reply { margin-left: 16px; padding-left: 10px; border-left: 2px solid #e3e3e3; }

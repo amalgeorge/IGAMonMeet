@@ -56,6 +56,15 @@ public class ActionItem {
         this.createdAt = createdAt;
     }
 
+    public void update(String title, String owner, TeamTag teamTag, LocalDate dueDate, String status) {
+        this.title = title;
+        this.owner = owner;
+        this.teamTag = teamTag;
+        this.dueDate = dueDate;
+        this.status = status;
+    }
+
+    public long getVersion() { return version; }
     public Long getId() { return id; }
     public Long getMeetingId() { return meetingId; }
     public String getTitle() { return title; }

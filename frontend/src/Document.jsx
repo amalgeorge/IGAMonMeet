@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { api } from './api.js';
+import { ActionItems, Comments } from './Collab.jsx';
 
 const TEAM = { ENGINEERING: 'Engineering', OPERATIONS: 'Operations', SHARED: 'Shared' };
 const LABEL = { PREPARING: 'Preparing', HELD: 'Held' };
@@ -13,7 +14,10 @@ export default function MeetingDocument({ id, me, onBack }) {
   const [doc, setDoc] = useState(null);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState('');
+  const [threads, setThreads] = useState([]);
   const load = () => api(`/api/meetings/${id}`).then(setDoc);
+  const loadThreads = () => api(`/api/meetings/${id}/comments`).then(setThreads);
+  useEffect(() => { loadThreads(); }, [id]);
   useEffect(() => { load(); }, [id]);
 
   const startEdit = (s) => {
@@ -60,8 +64,11 @@ export default function MeetingDocument({ id, me, onBack }) {
                     : <button className="btn" disabled={editing !== null || (s.lockedBy && s.lockedBy !== me.username)} onClick={() => startEdit(s)}>Edit</button>)}
                 </span>
               </div>
-              {editing === s.id ? <SectionEditor meetingId={id} section={s} /> : <SectionView section={s} actions={doc.actionItems} />}
+              {s.kind === 'ACTION_ITEMS'
+                ? <ActionItems meetingId={id} items={doc.actionItems} canEdit={doc.canEdit} onChange={load} />
+                : editing === s.id ? <SectionEditor meetingId={id} section={s} /> : <SectionView section={s} />}
               {s.updatedBy && <p className="hint">Last saved by {s.updatedBy}, {timeFmt.format(new Date(s.updatedAt))}</p>}
+              <Comments meetingId={id} sectionKey={s.key} threads={threads} onChange={loadThreads} />
             </article>
           ))}
         </div>
@@ -225,12 +232,7 @@ function TableEditor({ columns, rows, onChange }) {
   );
 }
 
-function SectionView({ section, actions }) {
-  if (section.kind === 'ACTION_ITEMS') {
-    return actions.length === 0 ? <p className="hint">No action items yet.</p> : (
-      <ul>{actions.map((a) => <li key={a.id}>{a.title} · {a.owner}{a.dueDate ? ` · due ${a.dueDate}` : ''}{a.status === 'CLOSED' ? ' · closed' : ''}</li>)}</ul>
-    );
-  }
+function SectionView({ section }) {
   const c = section.contentJson ? JSON.parse(section.contentJson) : null;
   if (!c) return <p className="hint">Not filled in yet.</p>;
   switch (section.kind) {

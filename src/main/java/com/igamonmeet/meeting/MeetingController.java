@@ -54,7 +54,8 @@ public class MeetingController {
     public record SaveRequest(long version, @NotNull JsonNode content) {
     }
 
-    public record ActionView(long id, String title, String owner, TeamTag teamTag, LocalDate dueDate, String status, Long originMeetingId) {
+    public record ActionView(long id, String title, String owner, TeamTag teamTag, LocalDate dueDate, String status, Long originMeetingId,
+                             boolean overdue, long version) {
     }
 
     public record Detail(Row meeting, boolean canEdit, int requiredSections, int requiredFilled,
@@ -69,9 +70,12 @@ public class MeetingController {
     private final SectionLockRepository locks;
     private final ObjectMapper json;
     private final TemplateService templates;
+    private final ActionsAndComments actionsAndComments;
 
     public MeetingController(MeetingService service, MeetingRepository meetings, ActionItemRepository actions, MeetingTime time,
-                             SectionEditor editor, SectionLockRepository locks, ObjectMapper json, TemplateService templates) {
+                             SectionEditor editor, SectionLockRepository locks, ObjectMapper json, TemplateService templates,
+                             ActionsAndComments actionsAndComments) {
+        this.actionsAndComments = actionsAndComments;
         this.templates = templates;
         this.editor = editor;
         this.locks = locks;
@@ -119,8 +123,9 @@ public class MeetingController {
                     locks.findById(s.getId()).filter(l -> l.isLiveAt(now)).map(SectionLock::getUsername).orElse(null),
                     SectionContent.filled(s.getKind(), s.getContentJson(), openItems, requiredKpis, json), kpis);
         }).collect(Collectors.toList());
-        List<ActionView> items = actions.findByMeetingIdOrderBySortOrder(id).stream()
-                .map(a -> new ActionView(a.getId(), a.getTitle(), a.getOwner(), a.getTeamTag(), a.getDueDate(), a.getStatus(), a.getOriginMeetingId()))
+        List<ActionView> items = actionsAndComments.ordered(id).stream()
+                .map(a -> new ActionView(a.getId(), a.getTitle(), a.getOwner(), a.getTeamTag(), a.getDueDate(), a.getStatus(), a.getOriginMeetingId(),
+                        actionsAndComments.overdue(a), a.getVersion()))
                 .collect(Collectors.toList());
         int required = (int) sections.stream().filter(SectionView::required).count();
         int filled = (int) sections.stream().filter(v -> v.required() && v.filled()).count();
@@ -153,7 +158,7 @@ public class MeetingController {
         }
     }
 
-    private static boolean isAdmin(Authentication auth) {
+    static boolean isAdmin(Authentication auth) {
         return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 

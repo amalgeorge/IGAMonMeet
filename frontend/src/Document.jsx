@@ -123,11 +123,75 @@ function KindEditor({ section, value, onChange }) {
     );
     case 'TABLE': return <TableEditor columns={section.columns} rows={value.rows || []} onChange={(rows) => set({ rows })} />;
     case 'KPI': return (
-      <label className="field"><span>Commentary</span><textarea rows={3} value={value.commentary || ''} onChange={(e) => set({ commentary: e.target.value })} />
-        <small>KPI values are entered here from ticket 10.</small></label>
+      <div>
+        <KpiEditor kpis={section.kpis} values={value.values || {}} onChange={(values) => set({ values })} />
+        <label className="field"><span>Commentary (shown under the KPI tiles)</span>
+          <textarea rows={3} value={value.commentary || ''} onChange={(e) => set({ commentary: e.target.value })} /></label>
+      </div>
     );
     default: return null;
   }
+}
+
+const STATUS = { ON_TARGET: 'On target', BELOW_TARGET: 'Below target', OFF_TARGET: 'Off target' };
+const num = (v) => (v === '' || v == null || Number.isNaN(Number(v)) ? null : Number(v));
+const statusOf = (k, v) => {
+  if (v == null) return null;
+  const s = k.direction === 'HIGHER' ? 1 : -1;
+  if (s * (v - k.target) >= 0) return 'ON_TARGET';
+  if (s * (v - k.amberThreshold) >= 0) return 'BELOW_TARGET';
+  return 'OFF_TARGET';
+};
+const delta = (k, v) => (v == null || k.previousValue == null ? '' : `${v - k.previousValue >= 0 ? '+' : '−'}${Math.abs(+(v - k.previousValue).toFixed(2))} ${k.unit} vs last month`);
+const fmtTarget = (k) => `${k.direction === 'HIGHER' ? '≥' : '≤'} ${k.target}${k.unit === '%' ? '%' : ` ${k.unit}`}`;
+
+/** Status preview mirrors the server rule (KpiStatus); the server value is what is saved and shown. */
+function KpiEditor({ kpis, values, onChange }) {
+  const set = (key, patch) => {
+    const next = { ...(values[key] || {}), ...patch };
+    if (!next.override) { delete next.override; delete next.reason; }
+    onChange({ ...values, [key]: next });
+  };
+  return (
+    <div className="table-wrap"><table>
+      <thead><tr><th>KPI</th><th>Target</th><th>This month</th><th>Status</th><th>Override</th><th>Reason (shown on slide)</th></tr></thead>
+      <tbody>{kpis.map((k) => {
+        const v = values[k.key] || {};
+        const computed = statusOf(k, num(v.value));
+        return (
+          <tr key={k.key}>
+            <td>{k.name}{k.required && <span className="hint"> · required</span>}<div className="hint">{delta(k, num(v.value))}</div></td>
+            <td className="tnum">{fmtTarget(k)}</td>
+            <td><input aria-label={`${k.name} value`} type="number" step="any" value={v.value ?? ''} onChange={(e) => set(k.key, { value: num(e.target.value) })} /></td>
+            <td>{computed ? <span className={`chip st-${computed}`}>{STATUS[computed]}</span> : <span className="hint">—</span>}</td>
+            <td><select aria-label={`${k.name} status override`} value={v.override || ''} onChange={(e) => set(k.key, { override: e.target.value || null })}>
+              <option value="">Automatic</option>{Object.entries(STATUS).map(([s, l]) => <option key={s} value={s}>{l}</option>)}</select></td>
+            <td><input aria-label={`${k.name} override reason`} maxLength={300} disabled={!v.override} required={!!v.override} value={v.reason || ''} onChange={(e) => set(k.key, { reason: e.target.value })} /></td>
+          </tr>
+        );
+      })}</tbody>
+    </table></div>
+  );
+}
+
+function KpiTiles({ kpis, commentary }) {
+  return (
+    <div>
+      <div className="kpi-grid">
+        {kpis.map((k, i) => (
+          <motion.div key={k.key} className="kpi-tile" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.1 }}>
+            <div className="hint">{k.name}</div>
+            <div className="kpi-value tnum">{k.value != null ? `${k.value}${k.unit === '%' ? '%' : ` ${k.unit}`}` : '—'}</div>
+            <div className="hint tnum">Target {fmtTarget(k)}</div>
+            <div className="hint tnum">{delta(k, k.value)}</div>
+            {k.status && <span className={`chip st-${k.status}`}>{STATUS[k.status]}{k.override ? ' (set by editor)' : ''}</span>}
+            {k.override && <div className="hint">{k.reason}</div>}
+          </motion.div>
+        ))}
+      </div>
+      {commentary && <p>{commentary}</p>}
+    </div>
+  );
 }
 
 function ListEditor({ label, items, onChange, numbered }) {
@@ -180,7 +244,7 @@ function SectionView({ section, actions }) {
       <div className="table-wrap"><table><thead><tr>{section.columns.map((h) => <th key={h}>{h}</th>)}</tr></thead>
         <tbody>{(c.rows || []).map((r, i) => <tr key={i}>{r.map((x, j) => <td key={j}>{x}</td>)}</tr>)}</tbody></table></div>
     );
-    case 'KPI': return <p>{c.commentary}</p>;
+    case 'KPI': return <KpiTiles kpis={section.kpis} commentary={c.commentary} />;
     default: return null;
   }
 }

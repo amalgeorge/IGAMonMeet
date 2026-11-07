@@ -12,7 +12,7 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 06 | Feature toggles | 04 | Done |
 | 07 | Template: Sections and KPIs | 02 | Done |
 | 08 | Meetings: create, list, soft delete | 07 | Done |
-| 09 | Document view: edit Sections | 08 | |
+| 09 | Document view: edit Sections | 08 | Done |
 | 10 | KPI values and computed status | 09 | |
 | 11 | Action items and Comments | 09 | |
 | 12 | Slide plan engine | 09, 13 | |

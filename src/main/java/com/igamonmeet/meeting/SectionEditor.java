@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.igamonmeet.account.AccountException;
 import com.igamonmeet.audit.AuditLog;
+import com.igamonmeet.template.TemplateService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
@@ -26,9 +27,11 @@ public class SectionEditor {
     private final MeetingTime time;
     private final AuditLog audit;
     private final ObjectMapper json;
+    private final TemplateService templates;
 
     public SectionEditor(MeetingService meetings, MeetingSectionRepository sections, SectionLockRepository locks,
-                         MeetingTime time, AuditLog audit, ObjectMapper json) {
+                         MeetingTime time, AuditLog audit, ObjectMapper json, TemplateService templates) {
+        this.templates = templates;
         this.meetings = meetings;
         this.sections = sections;
         this.locks = locks;
@@ -83,7 +86,7 @@ public class SectionEditor {
                     s.getVersion(), s.getContentJson(), s.getUpdatedBy(), s.getUpdatedAt()));
         }
         int columns = s.getColumnsSpec() == null ? 0 : s.getColumnsSpec().split("\\|").length;
-        SectionContent.validate(s.getKind(), columns, content);
+        SectionContent.validate(s.getKind(), columns, kpiKeys(m, s.getSectionKey()), content);
         String newJson = content.toString();
         if (newJson.length() > SectionContent.MAX_CHARS) {
             throw new AccountException(HttpStatus.BAD_REQUEST, "TOO_LARGE", "This section is too large to save.");
@@ -118,6 +121,15 @@ public class SectionEditor {
                 audit.recordChange("Meeting", meetingId, key + "." + f, a == null ? null : a.toString(), b == null ? null : b.toString());
             }
         }
+    }
+
+    /** KPI keys the Meeting's own Template version defines for this Section. */
+    Set<String> kpiKeys(Meeting m, String sectionKey) {
+        Set<String> keys = new LinkedHashSet<>();
+        templates.version(m.getTemplateVersionNo()).getSections().stream()
+                .filter(t -> t.getSectionKey().equals(sectionKey))
+                .forEach(t -> t.getKpis().forEach(k -> keys.add(k.getKpiKey())));
+        return keys;
     }
 
     private MeetingSection section(long meetingId, long sectionId) {

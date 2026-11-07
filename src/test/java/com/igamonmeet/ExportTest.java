@@ -62,8 +62,17 @@ class ExportTest {
         return new XMLSlideShow(new ByteArrayInputStream(bytes));
     }
 
+    /** Text of every text shape and table cell on the slide. */
     private static String texts(XSLFSlide s) {
-        return s.getShapes().stream().filter(x -> x instanceof XSLFTextShape).map(x -> ((XSLFTextShape) x).getText()).collect(Collectors.joining(" | "));
+        StringBuilder out = new StringBuilder();
+        for (XSLFShape x : s.getShapes()) {
+            if (x instanceof XSLFTextShape t) {
+                out.append(t.getText()).append(" | ");
+            } else if (x instanceof XSLFTable t) {
+                t.getRows().forEach(r -> r.getCells().forEach(c -> out.append(c.getText()).append(" | ")));
+            }
+        }
+        return out.toString();
     }
 
     @Test

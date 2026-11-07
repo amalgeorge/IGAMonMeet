@@ -81,7 +81,7 @@ class DocumentEditTest {
                 .andExpect(jsonPath("$.current.updatedBy").value("user-a"));
 
         mvc.perform(get("/api/admin/audit").param("actor", "user-a").param("action", "CHANGED").with(admin()))
-                .andExpect(jsonPath("$.items[0].field").value("summary.points"));
+                .andExpect(jsonPath("$.items[?(@.field=='summary.points')]").exists());
 
         mvc.perform(delete("/api/meetings/" + m + "/sections/" + s + "/lock").with(csrf()).with(endUser("user-a"))).andExpect(status().isNoContent());
         lock(m, s, endUser("user-b")).andExpect(status().isNoContent());

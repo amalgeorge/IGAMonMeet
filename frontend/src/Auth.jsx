@@ -24,6 +24,7 @@ export default function Auth({ onSignedIn }) {
   }
 
   const signIn = (f) => api('/api/auth/login', { method: 'POST', form: f }).then(onSignedIn);
+  const forgot = (f) => api('/api/auth/forgot', { method: 'POST', json: f }).then(() => setMode('requested'));
   const register = (f) => api('/api/auth/register', { method: 'POST', json: f }).then(() => setMode('pending'));
 
   return (
@@ -37,7 +38,7 @@ export default function Auth({ onSignedIn }) {
       </section>
       <section className="auth-side">
         <div className="card">
-          {mode !== 'pending' && (
+          {(mode === 'signin' || mode === 'register') && (
             <div className="tabs" role="group" aria-label="Account">
               <button type="button" className={mode === 'signin' ? 'on' : ''} aria-pressed={mode === 'signin'} onClick={() => { setMode('signin'); setError(''); }}>Sign in</button>
               <button type="button" className={mode === 'register' ? 'on' : ''} aria-pressed={mode === 'register'} onClick={() => { setMode('register'); setError(''); }}>Register</button>
@@ -49,6 +50,7 @@ export default function Auth({ onSignedIn }) {
               <motion.form key="signin" {...fade} onSubmit={(e) => submit(e, signIn)}>
                 <Field label="Username" name="username" autoComplete="username" />
                 <Field label="Password" name="password" type="password" autoComplete="current-password" />
+                <button type="button" className="link" onClick={() => { setMode('forgot'); setError(''); }}>Forgot password?</button>
                 <button className="btn pri" disabled={busy}>Sign in</button>
               </motion.form>
             )}
@@ -62,6 +64,22 @@ export default function Auth({ onSignedIn }) {
                 <button className="btn pri" disabled={busy}>Create account</button>
                 <p className="hint">An Admin approves each new account and sets its access.</p>
               </motion.form>
+            )}
+            {mode === 'forgot' && (
+              <motion.form key="forgot" {...fade} onSubmit={(e) => submit(e, forgot)}>
+                <h2>Forgot password</h2>
+                <p className="hint">An Admin will reset it and give you a temporary password.</p>
+                <Field label="Username" name="username" autoComplete="username" />
+                <button className="btn pri" disabled={busy}>Send request to Admin</button>
+                <button type="button" className="link" onClick={() => setMode('signin')}>Back to sign in</button>
+              </motion.form>
+            )}
+            {mode === 'requested' && (
+              <motion.div key="requested" {...fade}>
+                <h2>Request sent</h2>
+                <p>If the username exists, an Admin will reset the password and give you a temporary one.</p>
+                <button className="btn" onClick={() => setMode('signin')}>Back to sign in</button>
+              </motion.div>
             )}
             {mode === 'pending' && (
               <motion.div key="pending" {...fade}>

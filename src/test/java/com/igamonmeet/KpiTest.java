@@ -71,7 +71,7 @@ class KpiTest {
         long nov = meeting("2036-11", "2036-11-26");
         JsonNode s = kpiSection(nov);
         save(nov, s, 0, "{\"sla\":{\"value\":96.4},\"provisioning\":{\"value\":7},"
-                + "\"certification\":{\"value\":78,\"override\":\"BELOW_TARGET\",\"reason\":\"Two BUs escalated\"}}").andExpect(status().isOk());
+                + "\"certification\":{\"value\":70,\"override\":\"BELOW_TARGET\",\"reason\":\"Two BUs escalated\"}}").andExpect(status().isOk());
 
         mvc.perform(get("/api/meetings/" + nov).with(user("r").roles("END_USER")))
                 .andExpect(jsonPath("$.sections[?(@.kind=='KPI')].kpis[?(@.key=='sla')].status").value("ON_TARGET"))

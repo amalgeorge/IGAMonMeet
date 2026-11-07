@@ -4,6 +4,7 @@ import Auth from './Auth.jsx';
 import AuditLog from './AuditLog.jsx';
 import ChangePassword from './ChangePassword.jsx';
 import Recover from './Recover.jsx';
+import { AudienceWindow } from './SlidesView.jsx';
 import { AdminQueue, AdminUsers } from './AdminUsers.jsx';
 import AdminSettings from './AdminSettings.jsx';
 import AdminTemplate from './AdminTemplate.jsx';
@@ -31,6 +32,8 @@ export default function App() {
   }, [me]);
 
   if (window.location.pathname.endsWith('/recover')) return <Recover />;
+  const audience = window.location.hash.match(/^#audience\/(\d+)$/);
+  if (audience) return <AudienceWindow meetingId={Number(audience[1])} />;
   if (me === undefined) return null;
   if (!me) return <Auth onSignedIn={loadMe} />;
   if (me.mustChangePassword) return <ChangePassword forced onDone={loadMe} />;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { api } from './api.js';
 import { ActionItems, Comments } from './Collab.jsx';
+import SlidesView from './SlidesView.jsx';
 
 const TEAM = { ENGINEERING: 'Engineering', OPERATIONS: 'Operations', SHARED: 'Shared' };
 const LABEL = { PREPARING: 'Preparing', HELD: 'Held' };
@@ -16,6 +17,7 @@ export default function MeetingDocument({ id, me, onBack }) {
   const [error, setError] = useState('');
   const [threads, setThreads] = useState([]);
   const [perSection, setPerSection] = useState({});
+  const [tab, setTab] = useState('document');
   const load = () => {
     api(`/api/meetings/${id}`).then(setDoc);
     api(`/api/meetings/${id}/slides`).then((p) => setPerSection(p.slidesPerSection)).catch(() => {});
@@ -43,8 +45,14 @@ export default function MeetingDocument({ id, me, onBack }) {
         <span className={`chip ${m.label.toLowerCase()}`}>{LABEL[m.label]}</span>
       </div>
       <p className="hint">Meeting {dateFmt.format(new Date(`${m.meetingDate}T00:00:00+08:00`))} · {doc.canEdit ? (m.editWindowOpen ? `Editable until ${timeFmt.format(new Date(m.editableUntil))}` : 'Edit window closed: Admin editing') : 'Read only: edit window closed'}</p>
+      <nav className="seg" aria-label="View">
+        {[['document', 'Document'], ['slides', 'Slides']].map(([k, label]) => (
+          <button key={k} className={tab === k ? 'on' : ''} aria-current={tab === k ? 'page' : undefined} onClick={() => { setTab(k); if (k === 'document') load(); }}>{label}</button>
+        ))}
+      </nav>
       {error && <p className="error" role="alert">{error}</p>}
-      <div className="doc">
+      {tab === 'slides' && <SlidesView meetingId={id} />}
+      {tab === 'document' && <div className="doc">
         <nav className="outline" aria-label="Sections">
           <div className="label">Progress · {doc.requiredFilled} of {doc.requiredSections} required</div>
           <div className="bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><motion.div initial={false} animate={{ width: `${pct}%` }} /></div>
@@ -77,7 +85,7 @@ export default function MeetingDocument({ id, me, onBack }) {
             </article>
           ))}
         </div>
-      </div>
+      </div>}
     </section>
   );
 }

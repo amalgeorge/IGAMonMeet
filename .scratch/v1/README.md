@@ -15,7 +15,7 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 09 | Document view: edit Sections | 08 | Done |
 | 10 | KPI values and computed status | 09 | Done |
 | 11 | Action items and Comments | 09 | Done |
-| 12 | Slide plan engine | 09, 13 | |
+| 12 | Slide plan engine | 09, 13 | Done |
 | 13 | House template: bundled default and Admin upload | 07 | Done |
 | 14 | Slides view, show and Presenter view | 12 | |
 | 15 | PPTX export | 12 | |

@@ -1,0 +1,7 @@
+{
+  "name": "iam-house-template",
+  "private": true,
+  "description": "Regenerates src/main/resources/templates/IAM_Monthly_Meeting_Template.pptx",
+  "scripts": { "build": "node build.js ../../src/main/resources/templates/IAM_Monthly_Meeting_Template.pptx" },
+  "dependencies": { "pptxgenjs": "4.0.1" }
+}

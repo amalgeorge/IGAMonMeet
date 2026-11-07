@@ -1,0 +1,9 @@
+target/
+node_modules/
+frontend/node_modules/
+tools/template/node_modules/
+*.log
+.idea/
+*.iml
+.vscode/
+.env

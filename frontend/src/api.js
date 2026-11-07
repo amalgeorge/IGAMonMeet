@@ -20,6 +20,6 @@ export async function api(path, { method = 'GET', json, form } = {}) {
   // Paths are resolved relative to the app's base, so it works under any Tomcat context path.
   const res = await fetch(path.replace(/^\//, ''), { method, headers, body, credentials: 'same-origin' });
   const data = res.status === 204 ? null : await res.json().catch(() => null);
-  if (!res.ok) throw Object.assign(new Error(data?.message || 'Request failed'), { status: res.status, code: data?.error });
+  if (!res.ok) throw Object.assign(new Error(data?.message || 'Request failed'), { status: res.status, code: data?.error, data });
   return data;
 }

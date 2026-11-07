@@ -107,8 +107,12 @@ public class PptxWriter {
      * POI would then reuse the same part names for new charts and fail. Layouts and masters never hold charts.
      */
     private static void removeOrphanedChartParts(XMLSlideShow ppt) {
-        for (PackagePart part : ppt.getPackage().getPartsByName(Pattern.compile("/ppt/(charts|embeddings)/.*"))) {
-            ppt.getPackage().removePart(part);
+        var pkg = ppt.getPackage();
+        for (PackagePart part : pkg.getPartsByName(Pattern.compile("/ppt/(charts|embeddings)/.*"))) {
+            // Removing a part also removes its _rels part, which may still be in this list.
+            if (pkg.containPart(part.getPartName())) {
+                pkg.removePart(part.getPartName());
+            }
         }
     }
 

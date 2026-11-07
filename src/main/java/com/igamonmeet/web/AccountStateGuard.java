@@ -32,7 +32,7 @@ public class AccountStateGuard implements HandlerInterceptor, WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(this).addPathPatterns("/api/**")
-                .excludePathPatterns("/api/health", "/api/auth/csrf", "/api/auth/register", "/api/auth/forgot");
+                .excludePathPatterns("/api/health", "/api/auth/csrf", "/api/auth/register", "/api/auth/forgot", "/api/auth/recover");
     }
 
     @Override

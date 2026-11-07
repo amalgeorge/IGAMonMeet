@@ -33,15 +33,20 @@ public class AuthController {
     public record ForgotRequest(@NotBlank String username) {
     }
 
+    public record RecoverRequest(@NotBlank String token, @NotBlank String newPassword, @NotBlank String confirmPassword) {
+    }
+
     public record Me(String username, String fullName, String role, boolean mustChangePassword) {
     }
 
     private final AccountService accounts;
     private final AppUserRepository users;
     private final AdminUserService admin;
+    private final RecoveryService recovery;
 
-    public AuthController(AccountService accounts, AppUserRepository users, AdminUserService admin) {
+    public AuthController(AccountService accounts, AppUserRepository users, AdminUserService admin, RecoveryService recovery) {
         this.admin = admin;
+        this.recovery = recovery;
         this.accounts = accounts;
         this.users = users;
     }
@@ -64,6 +69,13 @@ public class AuthController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void forgot(@Valid @RequestBody ForgotRequest r) {
         admin.requestReset(r.username());
+    }
+
+    /** Completes a DBA-issued recovery link (token from the URL fragment). */
+    @PostMapping("/api/auth/recover")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void recover(@Valid @RequestBody RecoverRequest r) {
+        recovery.redeem(r.token(), r.newPassword(), r.confirmPassword());
     }
 
     @GetMapping("/api/auth/me")

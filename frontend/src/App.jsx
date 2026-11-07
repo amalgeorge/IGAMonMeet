@@ -3,6 +3,7 @@ import { api } from './api.js';
 import Auth from './Auth.jsx';
 import AuditLog from './AuditLog.jsx';
 import ChangePassword from './ChangePassword.jsx';
+import Recover from './Recover.jsx';
 import { AdminQueue, AdminUsers } from './AdminUsers.jsx';
 
 const ADMIN_VIEWS = { queue: 'Admin queue', users: 'Users', audit: 'Audit log' };
@@ -16,6 +17,7 @@ export default function App() {
   useEffect(() => { loadMe(); }, []);
   useEffect(() => { if (me?.role === 'ADMIN' && !me.mustChangePassword) api('/api/admin/queue').then((d) => setQueueCount(d.count)).catch(() => {}); }, [me]);
 
+  if (window.location.pathname.endsWith('/recover')) return <Recover />;
   if (me === undefined) return null;
   if (!me) return <Auth onSignedIn={loadMe} />;
   if (me.mustChangePassword) return <ChangePassword forced onDone={loadMe} />;

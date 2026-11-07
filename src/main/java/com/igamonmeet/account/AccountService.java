@@ -68,6 +68,13 @@ public class AccountService {
         if (!encoder.matches(currentPassword, user.getPasswordHash())) {
             throw new AccountException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD", "Current password is incorrect.");
         }
+        setNewPassword(user, newPassword, confirmPassword);
+        audit.recordAs(user.getUsername(), AuditLog.PASSWORD_CHANGED, "User", user.getId(), null);
+    }
+
+    /** Applies the password rules (length, confirmation, last 5) and stores the new hash. */
+    @Transactional
+    public void setNewPassword(AppUser user, String newPassword, String confirmPassword) {
         checkNewPassword(newPassword, confirmPassword);
         boolean reused = history.findTop5ByUserIdOrderByCreatedAtDescIdDesc(user.getId()).stream()
                 .anyMatch(h -> encoder.matches(newPassword, h.getPasswordHash()));
@@ -78,7 +85,6 @@ public class AccountService {
         user.setPasswordHash(encoder.encode(newPassword));
         user.setMustChangePassword(false);
         history.save(new PasswordHistory(user.getId(), user.getPasswordHash(), clock.instant()));
-        audit.recordAs(user.getUsername(), AuditLog.PASSWORD_CHANGED, "User", user.getId(), null);
     }
 
     /** Counts a wrong password; the 5th in a row locks the account for 15 minutes. */

@@ -37,8 +37,8 @@ jobs:
       - name: Create database
         run: docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Ci_Passw0rd!2026' -Q "CREATE DATABASE igamonmeet"
       - name: Apply migrations
-        run: >-
-          mvn -B -Dskip.frontend=true flyway:migrate
-          -Dflyway.url='jdbc:sqlserver://localhost:1433;databaseName=igamonmeet;encrypt=true;trustServerCertificate=true'
-          -Dflyway.user=sa -Dflyway.password='Ci_Passw0rd!2026'
-          -Dflyway.locations=filesystem:src/main/resources/db/migration
+        env:
+          MSSQL_URL: jdbc:sqlserver://localhost:1433;databaseName=igamonmeet;encrypt=true;trustServerCertificate=true
+          MSSQL_USER: sa
+          MSSQL_PASSWORD: Ci_Passw0rd!2026
+        run: mvn -B -Dskip.frontend=true -Dtest=MssqlMigrationTest -Dsurefire.failIfNoSpecifiedTests=false test

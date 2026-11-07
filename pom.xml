@@ -47,18 +47,6 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
-      <!-- Used by CI to run migrations against SQL Server; version managed by the Boot parent. -->
-      <plugin>
-        <groupId>org.flywaydb</groupId>
-        <artifactId>flyway-maven-plugin</artifactId>
-        <dependencies>
-          <dependency>
-            <groupId>com.microsoft.sqlserver</groupId>
-            <artifactId>mssql-jdbc</artifactId>
-            <version>${mssql-jdbc.version}</version>
-          </dependency>
-        </dependencies>
-      </plugin>
       <!-- Builds the React app into target/classes/static. Node is needed on the build machine only. -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

@@ -15,7 +15,11 @@ export default function MeetingDocument({ id, me, onBack }) {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState('');
   const [threads, setThreads] = useState([]);
-  const load = () => api(`/api/meetings/${id}`).then(setDoc);
+  const [perSection, setPerSection] = useState({});
+  const load = () => {
+    api(`/api/meetings/${id}`).then(setDoc);
+    api(`/api/meetings/${id}/slides`).then((p) => setPerSection(p.slidesPerSection)).catch(() => {});
+  };
   const loadThreads = () => api(`/api/meetings/${id}/comments`).then(setThreads);
   useEffect(() => { loadThreads(); }, [id]);
   useEffect(() => { load(); }, [id]);
@@ -58,6 +62,7 @@ export default function MeetingDocument({ id, me, onBack }) {
                 <h2>{s.name}</h2>
                 <span>
                   <span className="chip">{TEAM[s.teamTag]}</span>{' '}
+                  {perSection[s.key] > 1 && <span className="chip lock" title="Content does not fit one slide">Will use {perSection[s.key]} slides</span>}{' '}
                   {s.lockedBy && s.lockedBy !== me.username && <span className="chip lock">Being edited by {s.lockedBy}</span>}{' '}
                   {doc.canEdit && s.kind !== 'ACTION_ITEMS' && (editing === s.id
                     ? <button className="btn pri" onClick={() => stopEdit(s)}>Done</button>

@@ -17,4 +17,7 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
     Optional<Meeting> findFirstByDeletedAtIsNullAndMeetingDateLessThanOrderByMeetingDateDesc(LocalDate date);
 
     List<Meeting> findByDeletedAtBefore(Instant cutoff);
+
+    /** This Meeting and the ones before it, newest first (KPI trend charts). */
+    List<Meeting> findTop12ByDeletedAtIsNullAndMeetingDateLessThanEqualOrderByMeetingDateDesc(LocalDate date);
 }

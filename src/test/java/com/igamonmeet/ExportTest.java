@@ -86,7 +86,7 @@ class ExportTest {
             XSLFSlide kpi = slides.stream().filter(s -> s.getSlideLayout().getName().equals("IAM_KPI")).findFirst().orElseThrow();
             assertThat(texts(kpi)).contains("96.4%").contains("On target");
 
-            XSLFSlide table = slides.stream().filter(s -> texts(s).contains("Roadmap")).findFirst().orElseThrow();
+            XSLFSlide table = slides.stream().filter(s -> s.getSlideLayout().getName().equals("IAM_TABLE") && texts(s).contains("Roadmap")).findFirst().orElseThrow();
             XSLFTable t = (XSLFTable) table.getShapes().stream().filter(x -> x instanceof XSLFTable).findFirst().orElseThrow();
             assertThat(t.getCell(0, 0).getText()).isEqualTo("Initiative");
             assertThat(t.getCell(1, 0).getText()).isEqualTo("SSO wave 3");

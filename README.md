@@ -7,6 +7,7 @@ Prepare, present and keep the IAM Engineering and IAM Operations monthly meeting
 - Decisions: [docs/adr](docs/adr)
 - Tickets: [.scratch/v1](.scratch/v1/README.md)
 - Deployment: [docs/deploy.md](docs/deploy.md)
+- Admin recovery and first Admin: [docs/admin-recovery.md](docs/admin-recovery.md)
 
 ## Stack
 

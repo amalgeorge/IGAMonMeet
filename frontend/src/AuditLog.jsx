@@ -21,7 +21,7 @@ export default function AuditLog() {
     <section>
       <div className="row">
         <h1>Audit log</h1>
-        <a className="btn" href={`/api/admin/audit.csv?${new URLSearchParams(filters)}`}>Download CSV</a>
+        <a className="btn" href={`api/admin/audit.csv?${new URLSearchParams(filters)}`}>Download CSV</a>
       </div>
       <form className="filters" onSubmit={onFilter}>
         <label className="field"><span>User</span><input name="actor" defaultValue={filters.actor} /></label>

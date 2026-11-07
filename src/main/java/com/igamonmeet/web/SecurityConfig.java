@@ -39,7 +39,7 @@ public class SecurityConfig {
         // and every wrong password is counted (and audited) twice.
         http.authenticationManager(new ProviderManager(provider))
             .authorizeRequests(auth -> auth
-                .antMatchers("/api/health", "/api/auth/csrf", "/api/auth/register", "/api/auth/login", "/api/auth/forgot").permitAll()
+                .antMatchers("/api/health", "/api/auth/csrf", "/api/auth/register", "/api/auth/login", "/api/auth/forgot", "/api/auth/recover").permitAll()
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll())

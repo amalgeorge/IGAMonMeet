@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.sl.usermodel.AutoNumberingScheme;
 import org.apache.poi.sl.usermodel.Placeholder;
 import org.apache.poi.sl.usermodel.ShapeType;
@@ -71,6 +73,7 @@ public class PptxWriter {
             while (!ppt.getSlides().isEmpty()) {
                 ppt.removeSlide(0);
             }
+            removeOrphanedChartParts(ppt);
             double w = ppt.getPageSize().getWidth();
             double h = ppt.getPageSize().getHeight();
             List<Slide> slides = new ArrayList<>(plan.slides());
@@ -96,6 +99,16 @@ public class PptxWriter {
             }
             ppt.write(out);
             return out.toByteArray();
+        }
+    }
+
+    /**
+     * Removing the template's sample slides leaves their charts and embedded workbooks in the package;
+     * POI would then reuse the same part names for new charts and fail. Layouts and masters never hold charts.
+     */
+    private static void removeOrphanedChartParts(XMLSlideShow ppt) {
+        for (PackagePart part : ppt.getPackage().getPartsByName(Pattern.compile("/ppt/(charts|embeddings)/.*"))) {
+            ppt.getPackage().removePart(part);
         }
     }
 

@@ -6,8 +6,9 @@ import ChangePassword from './ChangePassword.jsx';
 import Recover from './Recover.jsx';
 import { AdminQueue, AdminUsers } from './AdminUsers.jsx';
 import AdminSettings from './AdminSettings.jsx';
+import AdminTemplate from './AdminTemplate.jsx';
 
-const ADMIN_VIEWS = { queue: 'Admin queue', users: 'Users', audit: 'Audit log', settings: 'Settings' };
+const ADMIN_VIEWS = { queue: 'Admin queue', users: 'Users', template: 'Template', audit: 'Audit log', settings: 'Settings' };
 
 export default function App() {
   const [me, setMe] = useState(undefined);
@@ -46,6 +47,7 @@ export default function App() {
       {me.role !== 'ADMIN' && <h1>Welcome, {me.fullName}</h1>}
       {me.role === 'ADMIN' && view === 'queue' && <AdminQueue onChange={setQueueCount} />}
       {me.role === 'ADMIN' && view === 'users' && <AdminUsers />}
+      {me.role === 'ADMIN' && view === 'template' && <AdminTemplate />}
       {me.role === 'ADMIN' && view === 'audit' && <AuditLog />}
       {me.role === 'ADMIN' && view === 'settings' && <AdminSettings onChange={loadFeatures} />}
     </main>

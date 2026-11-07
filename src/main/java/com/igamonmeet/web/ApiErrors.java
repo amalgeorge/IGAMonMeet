@@ -2,6 +2,7 @@ package com.igamonmeet.web;
 
 import com.igamonmeet.account.AccountException;
 import java.util.Map;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,6 +16,13 @@ public class ApiErrors {
     @ExceptionHandler(AccountException.class)
     ResponseEntity<Map<String, String>> account(AccountException e) {
         return ResponseEntity.status(e.getStatus()).body(Map.of("error", e.getCode(), "message", e.getMessage()));
+    }
+
+    /** Two saves raced on a unique key (e.g. two Admins publishing at once). */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<Map<String, String>> conflict(DataIntegrityViolationException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", "CONFLICT", "message", "Someone else saved at the same moment. Reload and try again."));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

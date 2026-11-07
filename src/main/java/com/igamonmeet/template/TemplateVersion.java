@@ -1,0 +1,54 @@
+package com.igamonmeet.template;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
+import javax.persistence.Table;
+import org.hibernate.annotations.Immutable;
+
+@Entity
+@Immutable
+@Table(name = "template_version")
+public class TemplateVersion {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private int versionNo;
+    private String createdBy;
+    private Instant createdAt;
+    private String note;
+
+    @OneToMany(mappedBy = "version", cascade = CascadeType.PERSIST)
+    @OrderBy("sortOrder")
+    private List<TemplateSection> sections = new ArrayList<>();
+
+    protected TemplateVersion() {
+    }
+
+    TemplateVersion(int versionNo, String createdBy, Instant createdAt, String note) {
+        this.versionNo = versionNo;
+        this.createdBy = createdBy;
+        this.createdAt = createdAt;
+        this.note = note;
+    }
+
+    void add(TemplateSection s) {
+        sections.add(s);
+    }
+
+    public Long getId() { return id; }
+    public int getVersionNo() { return versionNo; }
+    public String getCreatedBy() { return createdBy; }
+    public Instant getCreatedAt() { return createdAt; }
+    public String getNote() { return note; }
+    public List<TemplateSection> getSections() { return sections; }
+}

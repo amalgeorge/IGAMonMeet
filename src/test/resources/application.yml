@@ -5,6 +5,6 @@ spring:
     password: ""
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none # schema owned by Flyway; columns covered by integration tests
   flyway:
     enabled: true

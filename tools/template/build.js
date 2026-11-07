@@ -250,8 +250,45 @@ s.addText([
 ], { placeholder: 'body' });
 s.addNotes('Layout IAM_CLOSING.');
 
+// Placeholder names per layout, in the order the layout defines them. pptxgenjs names every shape
+// "Text 0"; the app finds placeholders by these names (ADR 0005), so they are written in afterwards.
+const PLACEHOLDERS = {
+  IAM_TITLE: ['title', 'subtitle', 'meta'],
+  IAM_SECTION: ['title', 'body'],
+  IAM_SUMMARY: ['team', 'title', 'body'],
+  IAM_KPI: ['team', 'title', 'body'],
+  IAM_CHART: ['team', 'title', 'chart', 'body'],
+  IAM_TABLE: ['team', 'title'],
+  IAM_TWO_COLUMN: ['team', 'title', 'leftHead', 'left', 'rightHead', 'right'],
+  IAM_CLOSING: ['title', 'body']
+};
+
+async function namePlaceholders(file) {
+  const fs = require('fs');
+  const JSZip = require(require.resolve('jszip', { paths: [require.resolve('pptxgenjs')] }));
+  const zip = await JSZip.loadAsync(fs.readFileSync(file));
+  for (const path of Object.keys(zip.files).filter((p) => /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(p))) {
+    let xml = await zip.file(path).async('string');
+    const layout = (xml.match(/<p:cSld name="([^"]+)"/) || [])[1];
+    const names = PLACEHOLDERS[layout];
+    if (!names) continue;
+    let i = 0;
+    // Each <p:sp> whose nvPr holds a non slide-number placeholder gets the next name.
+    xml = xml.replace(/<p:sp>([\s\S]*?)<\/p:sp>/g, (sp) => {
+      if (!/<p:ph\b/.test(sp) || /type="sldNum"/.test(sp)) return sp;
+      const name = names[i++];
+      if (!name) throw new Error(`${layout}: more placeholders than names`);
+      return sp.replace(/(<p:cNvPr id="\d+" name=")[^"]*"/, `$1${name}"`);
+    });
+    if (i !== names.length) throw new Error(`${layout}: expected ${names.length} placeholders, found ${i}`);
+    zip.file(path, xml);
+  }
+  fs.writeFileSync(file, await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }));
+}
+
 (async () => {
   await pres.writeFile({ fileName: OUT });
   await applyTheme(OUT, THEME);
+  await namePlaceholders(OUT);
   console.log('wrote', OUT);
 })();

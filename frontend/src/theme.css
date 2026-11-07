@@ -93,3 +93,10 @@ td input[type=checkbox], .check input { height: 18px; width: 18px; accent-color:
 .list-edit input { flex: 1; height: 40px; border: 1px solid #8c8c8f; border-radius: 8px; padding: 0 10px; font-family: inherit; }
 textarea { border: 1px solid #8c8c8f; border-radius: 8px; padding: 10px; font-family: inherit; font-size: 14px; }
 td input { width: 100%; }
+
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.kpi-tile { background: var(--surface); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.kpi-value { font-size: 32px; font-weight: 700; line-height: 1.1; }
+.chip.st-ON_TARGET { background: #e3f3e9; color: #17643a; }
+.chip.st-BELOW_TARGET { background: #fff3dc; color: #7a4500; }
+.chip.st-OFF_TARGET { background: #fdecee; color: #9e0b23; }

@@ -3,6 +3,11 @@ package com.igamonmeet.meeting;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.igamonmeet.template.OverflowRule;
+import com.igamonmeet.template.TemplateKpi;
+import com.igamonmeet.template.TemplateSection;
+import com.igamonmeet.template.TemplateService;
+import java.util.Map;
+import java.util.Set;
 import com.igamonmeet.template.SectionKind;
 import com.igamonmeet.template.TeamTag;
 import java.time.Instant;
@@ -43,7 +48,7 @@ public class MeetingController {
 
     public record SectionView(long id, String key, String name, TeamTag teamTag, SectionKind kind, String layout, OverflowRule overflowRule,
                               boolean required, List<String> columns, String chartKpiKey, String contentJson, String updatedBy,
-                              Instant updatedAt, long version, String lockedBy, boolean filled) {
+                              Instant updatedAt, long version, String lockedBy, boolean filled, List<KpiView> kpis) {
     }
 
     public record SaveRequest(long version, @NotNull JsonNode content) {
@@ -63,9 +68,11 @@ public class MeetingController {
     private final SectionEditor editor;
     private final SectionLockRepository locks;
     private final ObjectMapper json;
+    private final TemplateService templates;
 
     public MeetingController(MeetingService service, MeetingRepository meetings, ActionItemRepository actions, MeetingTime time,
-                             SectionEditor editor, SectionLockRepository locks, ObjectMapper json) {
+                             SectionEditor editor, SectionLockRepository locks, ObjectMapper json, TemplateService templates) {
+        this.templates = templates;
         this.editor = editor;
         this.locks = locks;
         this.json = json;
@@ -91,12 +98,27 @@ public class MeetingController {
         Meeting m = service.live(id);
         Instant now = time.now();
         long openItems = actions.findByMeetingIdOrderBySortOrder(id).size();
-        List<SectionView> sections = m.getSections().stream().map(s -> new SectionView(s.getId(), s.getSectionKey(), s.getName(), s.getTeamTag(),
-                s.getKind(), s.getLayout(), s.getOverflowRule(), s.isRequired(),
-                s.getColumnsSpec() == null ? List.of() : Arrays.asList(s.getColumnsSpec().split("\\|")),
-                s.getChartKpiKey(), s.getContentJson(), s.getUpdatedBy(), s.getUpdatedAt(), s.getVersion(),
-                locks.findById(s.getId()).filter(l -> l.isLiveAt(now)).map(SectionLock::getUsername).orElse(null),
-                SectionContent.filled(s.getKind(), s.getContentJson(), openItems, json))).collect(Collectors.toList());
+        Map<String, TemplateSection> defs = templates.version(m.getTemplateVersionNo()).getSections().stream()
+                .collect(Collectors.toMap(TemplateSection::getSectionKey, t -> t));
+        Meeting previous = meetings.findFirstByDeletedAtIsNullAndMeetingDateLessThanOrderByMeetingDateDesc(m.getMeetingDate()).orElse(null);
+        List<SectionView> sections = m.getSections().stream().map(s -> {
+            List<TemplateKpi> kpiDefs = defs.containsKey(s.getSectionKey()) ? defs.get(s.getSectionKey()).getKpis() : List.of();
+            Set<String> requiredKpis = kpiDefs.stream().filter(TemplateKpi::isRequired).map(TemplateKpi::getKpiKey).collect(Collectors.toSet());
+            List<KpiView> kpis = List.of();
+            if (s.getKind() == SectionKind.KPI) {
+                JsonNode values = read(s.getContentJson()).path("values");
+                JsonNode prevValues = previous == null ? null : previous.getSections().stream()
+                        .filter(p -> p.getSectionKey().equals(s.getSectionKey())).findFirst()
+                        .map(p -> read(p.getContentJson()).path("values")).orElse(null);
+                kpis = kpiDefs.stream().map(k -> KpiView.of(k, values, prevValues)).collect(Collectors.toList());
+            }
+            return new SectionView(s.getId(), s.getSectionKey(), s.getName(), s.getTeamTag(),
+                    s.getKind(), s.getLayout(), s.getOverflowRule(), s.isRequired(),
+                    s.getColumnsSpec() == null ? List.of() : Arrays.asList(s.getColumnsSpec().split("\\|")),
+                    s.getChartKpiKey(), s.getContentJson(), s.getUpdatedBy(), s.getUpdatedAt(), s.getVersion(),
+                    locks.findById(s.getId()).filter(l -> l.isLiveAt(now)).map(SectionLock::getUsername).orElse(null),
+                    SectionContent.filled(s.getKind(), s.getContentJson(), openItems, requiredKpis, json), kpis);
+        }).collect(Collectors.toList());
         List<ActionView> items = actions.findByMeetingIdOrderBySortOrder(id).stream()
                 .map(a -> new ActionView(a.getId(), a.getTitle(), a.getOwner(), a.getTeamTag(), a.getDueDate(), a.getStatus(), a.getOriginMeetingId()))
                 .collect(Collectors.toList());
@@ -121,6 +143,14 @@ public class MeetingController {
     @PutMapping("/api/meetings/{id}/sections/{sectionId}")
     public java.util.Map<String, Long> save(@PathVariable long id, @PathVariable long sectionId, @Valid @RequestBody SaveRequest r, Authentication auth) {
         return java.util.Map.of("version", editor.save(id, sectionId, r.version(), r.content(), auth.getName(), isAdmin(auth)));
+    }
+
+    private JsonNode read(String content) {
+        try {
+            return content == null ? json.createObjectNode() : json.readTree(content);
+        } catch (Exception e) {
+            return json.createObjectNode();
+        }
     }
 
     private static boolean isAdmin(Authentication auth) {

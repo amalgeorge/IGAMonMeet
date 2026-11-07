@@ -3,7 +3,9 @@ package com.igamonmeet.meeting;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.igamonmeet.account.AccountException;
+import com.igamonmeet.template.KpiStatus;
 import com.igamonmeet.template.SectionKind;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -19,7 +21,7 @@ final class SectionContent {
     private SectionContent() {
     }
 
-    static void validate(SectionKind kind, int columnCount, JsonNode c) {
+    static void validate(SectionKind kind, int columnCount, Set<String> kpiKeys, JsonNode c) {
         check(c != null && c.isObject(), "Content must be an object.");
         switch (kind) {
             case SUMMARY -> {
@@ -32,6 +34,17 @@ final class SectionContent {
             case KPI -> {
                 check(!c.has("values") || c.get("values").isObject(), "'values' must be an object keyed by KPI.");
                 check(!c.has("commentary") || c.get("commentary").isTextual(), "'commentary' must be text.");
+                c.path("values").fields().forEachRemaining(e -> {
+                    check(kpiKeys.contains(e.getKey()), "Unknown KPI '" + e.getKey() + "'.");
+                    JsonNode v = e.getValue();
+                    check(v.isObject(), "Each KPI entry must be an object.");
+                    check(!v.hasNonNull("value") || v.get("value").isNumber(), "KPI values must be numbers.");
+                    if (v.hasNonNull("override")) {
+                        check(isStatus(v.get("override").asText()), "Unknown status override.");
+                        check(v.path("reason").isTextual() && !v.get("reason").asText().isBlank() && v.get("reason").asText().length() <= 300,
+                                "A status override needs a reason (up to 300 characters); it is shown on the slide.");
+                    }
+                });
             }
             case CHART -> textArray(c, "commentary");
             case TABLE -> {
@@ -51,7 +64,7 @@ final class SectionContent {
     }
 
     /** True when a Section has the content it needs to count towards progress. */
-    static boolean filled(SectionKind kind, String json, long actionItems, ObjectMapper mapper) {
+    static boolean filled(SectionKind kind, String json, long actionItems, Set<String> requiredKpis, ObjectMapper mapper) {
         if (kind == SectionKind.ACTION_ITEMS) {
             return actionItems > 0;
         }
@@ -70,7 +83,8 @@ final class SectionContent {
                     for (JsonNode v : c.path("values")) {
                         any |= v.path("value").isNumber();
                     }
-                    yield any;
+                    boolean allRequired = requiredKpis.stream().allMatch(k -> c.path("values").path(k).path("value").isNumber());
+                    yield any && allRequired;
                 }
                 case TABLE -> c.path("rows").size() > 0;
                 case TWO_COLUMN -> hasText(c.path("left")) || hasText(c.path("right"));
@@ -79,6 +93,15 @@ final class SectionContent {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static boolean isStatus(String s) {
+        for (KpiStatus k : KpiStatus.values()) {
+            if (k.name().equals(s)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean hasText(JsonNode arr) {

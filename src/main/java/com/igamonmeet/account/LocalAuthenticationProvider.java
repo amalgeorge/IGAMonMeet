@@ -1,5 +1,6 @@
 package com.igamonmeet.account;
 
+import com.igamonmeet.audit.AuditLog;
 import java.util.List;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -23,10 +24,12 @@ public class LocalAuthenticationProvider implements AuthenticationProvider {
     private final AppUserRepository users;
     private final AccountService accounts;
     private final PasswordEncoder encoder;
+    private final AuditLog audit;
     /** Compared against when the username is unknown, so response time does not reveal it. */
     private final String dummyHash;
 
-    public LocalAuthenticationProvider(AppUserRepository users, AccountService accounts, PasswordEncoder encoder) {
+    public LocalAuthenticationProvider(AppUserRepository users, AccountService accounts, PasswordEncoder encoder, AuditLog audit) {
+        this.audit = audit;
         this.users = users;
         this.accounts = accounts;
         this.encoder = encoder;
@@ -41,24 +44,34 @@ public class LocalAuthenticationProvider implements AuthenticationProvider {
         AppUser user = users.findByUsernameIgnoreCase(username).orElse(null);
         if (user == null) {
             encoder.matches(password, dummyHash);
+            failed(username, null, "UNKNOWN_USER");
             throw new BadCredentialsException(GENERIC);
         }
         if (user.isLockedAt(accounts.now())) {
+            failed(user.getUsername(), user.getId(), "LOCKED");
             throw new BadCredentialsException(GENERIC);
         }
         if (!encoder.matches(password, user.getPasswordHash())) {
             accounts.recordFailedSignIn(user.getId());
+            failed(user.getUsername(), user.getId(), "WRONG_PASSWORD");
             throw new BadCredentialsException(GENERIC);
         }
         accounts.recordSuccessfulSignIn(user.getId());
         if (user.getStatus() == UserStatus.PENDING) {
+            failed(user.getUsername(), user.getId(), "PENDING");
             throw new PendingApprovalException();
         }
         if (user.getStatus() != UserStatus.ACTIVE) {
+            failed(user.getUsername(), user.getId(), user.getStatus().name());
             throw new DisabledException("Account is not active");
         }
+        audit.recordAs(user.getUsername(), AuditLog.SIGN_IN, "User", user.getId(), null);
         return new UsernamePasswordAuthenticationToken(user.getUsername(), null,
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
+    }
+
+    private void failed(String actor, Long userId, String reason) {
+        audit.recordAs(actor, AuditLog.SIGN_IN_FAILED, "User", userId, reason);
     }
 
     @Override

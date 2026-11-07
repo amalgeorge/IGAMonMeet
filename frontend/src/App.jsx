@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from './api.js';
 import Auth from './Auth.jsx';
+import AuditLog from './AuditLog.jsx';
 
 export default function App() {
   const [me, setMe] = useState(undefined);
@@ -14,8 +15,11 @@ export default function App() {
   // Meetings screens arrive with ticket 08.
   return (
     <main className="shell">
-      <h1>Welcome, {me.fullName}</h1>
-      <button className="btn" onClick={() => api('/api/auth/logout', { method: 'POST' }).then(() => setMe(null))}>Sign out</button>
+      <div className="row">
+        <span>Signed in as {me.fullName}</span>
+        <button className="btn" onClick={() => api('/api/auth/logout', { method: 'POST' }).then(() => setMe(null))}>Sign out</button>
+      </div>
+      {me.role === 'ADMIN' ? <AuditLog /> : <h1>Welcome, {me.fullName}</h1>}
     </main>
   );
 }

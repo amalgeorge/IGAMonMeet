@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,7 +35,9 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, LocalAuthenticationProvider provider) throws Exception {
-        http.authenticationProvider(provider)
+        // Own manager with no parent: otherwise a failed sign-in is retried by the global manager
+        // and every wrong password is counted (and audited) twice.
+        http.authenticationManager(new ProviderManager(provider))
             .authorizeRequests(auth -> auth
                 .antMatchers("/api/health", "/api/auth/csrf", "/api/auth/register", "/api/auth/login").permitAll()
                 .antMatchers("/api/admin/**").hasRole("ADMIN")

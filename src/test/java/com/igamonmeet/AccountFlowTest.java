@@ -119,6 +119,15 @@ class AccountFlowTest {
     }
 
     @Test
+    void oneWrongPasswordCountsOnce() throws Exception {
+        String name = newName();
+        register(name, PW, PW);
+        approve(name);
+        login(name, "wrong-password-x").andExpect(status().isUnauthorized());
+        assertThat(users.findByUsernameIgnoreCase(name).orElseThrow().getFailedAttempts()).isEqualTo(1);
+    }
+
+    @Test
     void endUserCannotApprove() throws Exception {
         mvc.perform(post("/api/admin/users/1/approve").with(csrf()).with(user("someone").roles("END_USER")))
                 .andExpect(status().isForbidden());

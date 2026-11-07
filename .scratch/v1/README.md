@@ -13,7 +13,7 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 07 | Template: Sections and KPIs | 02 | Done |
 | 08 | Meetings: create, list, soft delete | 07 | Done |
 | 09 | Document view: edit Sections | 08 | Done |
-| 10 | KPI values and computed status | 09 | |
+| 10 | KPI values and computed status | 09 | Done |
 | 11 | Action items and Comments | 09 | |
 | 12 | Slide plan engine | 09, 13 | |
 | 13 | House template: bundled default and Admin upload | 07 | |

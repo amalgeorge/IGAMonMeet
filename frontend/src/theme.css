@@ -142,3 +142,6 @@ tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
 .presenter .label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #bdbdc0; }
 .presenter .hint { color: #bdbdc0; }
 .end-box { padding: 24px; border: 1px dashed #5c5c5c; border-radius: 8px; color: #bdbdc0; }
+
+.notes-view { background: #fafafa; border-left: 3px solid #d0d0d3; padding: 8px 12px; border-radius: 4px; font-size: 14px; white-space: pre-line; }
+.presenter-notes { font-size: 20px; line-height: 1.5; white-space: pre-line; }

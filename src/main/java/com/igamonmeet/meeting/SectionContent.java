@@ -13,16 +13,20 @@ import org.springframework.http.HttpStatus;
  * SUMMARY {points:[text], stats:[{value,label}]}; KPI {values:{kpiKey:{value,override,reason}}, commentary};
  * CHART {commentary:[text]}; TABLE {rows:[[cell...]]}; TWO_COLUMN {leftHead, left:[text], rightHead, right:[text]};
  * ACTION_ITEMS keeps its items in action_item (ticket 11).
+ * Every kind may also carry {notes}: speaker notes shown in Presenter view and exported to PPTX notes.
  */
 final class SectionContent {
 
     static final int MAX_CHARS = 200_000;
+    static final int MAX_NOTES = 4000;
 
     private SectionContent() {
     }
 
     static void validate(SectionKind kind, int columnCount, Set<String> kpiKeys, JsonNode c) {
         check(c != null && c.isObject(), "Content must be an object.");
+        check(!c.has("notes") || c.get("notes").isNull() || (c.get("notes").isTextual() && c.get("notes").asText().length() <= MAX_NOTES),
+                "Speaker notes must be text of up to " + MAX_NOTES + " characters.");
         switch (kind) {
             case SUMMARY -> {
                 textArray(c, "points");

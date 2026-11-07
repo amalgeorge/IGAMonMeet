@@ -105,7 +105,9 @@ class DocumentEditTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("INVALID_CONTENT"));
         StringBuilder row = new StringBuilder("[");
         for (int i = 0; i < cols; i++) row.append(i == 0 ? "" : ",").append("\"c").append(i).append('"');
-        save(m, roadmap.get("id").asLong(), 0, "{\"rows\":[" + row + "]]}", endUser("user-a")).andExpect(status().isOk());
+        save(m, roadmap.get("id").asLong(), 0, "{\"rows\":[" + row + "]],\"notes\":\"Lead with wave 3\"}", endUser("user-a")).andExpect(status().isOk());
+        save(m, roadmap.get("id").asLong(), 1, "{\"rows\":[],\"notes\":\"" + "x".repeat(4001) + "\"}", endUser("user-a"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("INVALID_CONTENT"));
     }
 
     @Test

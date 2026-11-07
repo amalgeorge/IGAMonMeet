@@ -67,7 +67,13 @@ public class SlidePlanner {
             if (s.team() != TeamTag.SHARED) {
                 lastTeam = s.team();
             }
+            int first = main.size();
             section(s, in, main, appendix);
+            String notes = s.content() == null ? "" : s.content().path("notes").asText("");
+            if (!notes.isBlank()) {
+                // Notes go on the Section's first slide only; continuation and appendix slides stay clean.
+                (first < main.size() ? main.get(first) : appendix.get(appendix.size() - 1)).data().put("notes", notes);
+            }
         }
         long open = in.actions().stream().filter(a -> !a.closed()).count();
         main.add(new Draft("IAM_CLOSING", null, data("title", "Thank you",

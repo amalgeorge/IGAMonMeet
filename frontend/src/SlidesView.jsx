@@ -166,6 +166,7 @@ export default function SlidesView({ meetingId }) {
             <span className="tnum">Slide {current + 1} of {slides.length}</span>
             <button className="btn" disabled={current === slides.length - 1} onClick={() => setCurrent(current + 1)} aria-label="Next slide">›</button>
           </div>
+          {slide.data.notes && <p className="notes-view"><strong>Speaker notes:</strong> {slide.data.notes}</p>}
           <p className="hint">{slide.sectionKey ? `From section "${slide.sectionKey}"${slide.continuation ? ' (continued)' : ''}${slide.appendix ? ' · appendix' : ''}. Edit the content in the Document view.` : 'Generated slide.'}</p>
         </div>
       </div>
@@ -198,7 +199,7 @@ function Presenter({ slides, theme, show, transition, onEnd }) {
           <div className="label">Next</div>
           {nextSlide ? <SlideRenderer slide={nextSlide} theme={theme} /> : <div className="end-box">End of show</div>}
           <div className="label">Notes</div>
-          <p>Speaker notes are not stored yet. Section: {s.sectionKey || 'generated slide'}.</p>
+          <p className="presenter-notes">{s.data.notes || 'No speaker notes for this slide.'}</p>
           <p className="hint">The audience window opened separately. Move it to the projector and press F11 there.</p>
         </div>
       </div>

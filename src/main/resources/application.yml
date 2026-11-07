@@ -10,7 +10,8 @@ spring:
     properties:
       hibernate.jdbc.time_zone: UTC
   flyway:
-    locations: classpath:db/migration
+    # {vendor} adds database-specific scripts, e.g. db/vendor/sqlserver.
+    locations: classpath:db/migration,classpath:db/vendor/{vendor}
   servlet:
     multipart:
       max-file-size: 50MB

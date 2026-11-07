@@ -3,6 +3,7 @@ package com.igamonmeet.account;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import com.igamonmeet.audit.AuditLog;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,8 +24,10 @@ public class AccountService {
     private final PasswordHistoryRepository history;
     private final PasswordEncoder encoder;
     private final Clock clock;
+    private final AuditLog audit;
 
-    public AccountService(AppUserRepository users, PasswordHistoryRepository history, PasswordEncoder encoder, Clock clock) {
+    public AccountService(AppUserRepository users, PasswordHistoryRepository history, PasswordEncoder encoder, Clock clock, AuditLog audit) {
+        this.audit = audit;
         this.users = users;
         this.history = history;
         this.encoder = encoder;
@@ -42,6 +45,7 @@ public class AccountService {
         AppUser user = users.save(new AppUser(name, fullName.trim(), email.trim(), encoder.encode(password),
                 Role.END_USER, UserStatus.PENDING, clock.instant()));
         history.save(new PasswordHistory(user.getId(), user.getPasswordHash(), clock.instant()));
+        audit.recordAs(user.getUsername(), AuditLog.REGISTERED, "User", user.getId(), null);
         return user;
     }
 
@@ -53,6 +57,7 @@ public class AccountService {
             throw new AccountException(HttpStatus.CONFLICT, "NOT_PENDING", "Only pending users can be approved.");
         }
         user.setStatus(UserStatus.ACTIVE);
+        audit.record(AuditLog.APPROVED, "User", user.getId(), user.getUsername());
         return user;
     }
 
@@ -73,6 +78,7 @@ public class AccountService {
         user.setPasswordHash(encoder.encode(newPassword));
         user.setMustChangePassword(false);
         history.save(new PasswordHistory(user.getId(), user.getPasswordHash(), clock.instant()));
+        audit.recordAs(user.getUsername(), AuditLog.PASSWORD_CHANGED, "User", user.getId(), null);
     }
 
     /** Counts a wrong password; the 5th in a row locks the account for 15 minutes. */
@@ -83,6 +89,7 @@ public class AccountService {
             if (attempts >= MAX_FAILED_ATTEMPTS) {
                 user.setLockedUntil(clock.instant().plus(LOCKOUT));
                 attempts = 0;
+                audit.recordAs(user.getUsername(), AuditLog.LOCKED_OUT, "User", user.getId(), "Locked for " + LOCKOUT.toMinutes() + " minutes");
             }
             user.setFailedAttempts(attempts);
         });

@@ -15,7 +15,7 @@ class MssqlMigrationTest {
     void allMigrationsApplyToSqlServer() {
         MigrateResult result = Flyway.configure()
                 .dataSource(System.getenv("MSSQL_URL"), System.getenv("MSSQL_USER"), System.getenv("MSSQL_PASSWORD"))
-                .locations("classpath:db/migration")
+                .locations("classpath:db/migration", "classpath:db/vendor/sqlserver")
                 .load()
                 .migrate();
         assertThat(result.success).isTrue();

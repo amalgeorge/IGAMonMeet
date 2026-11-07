@@ -61,3 +61,11 @@ h2 { font-size: 18px; margin: 24px 0 8px; }
 .switch.on { background: var(--red); }
 .switch.on span { translate: 20px 0; }
 @media (prefers-reduced-motion: reduce) { .switch span { transition: none; } }
+
+.tpl-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.tpl-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 0 0 1px rgba(0,0,0,.06); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: end; margin-bottom: 12px; }
+.field select, .field input, td input, td select { height: 40px; border: 1px solid #8c8c8f; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 14px; }
+td input[type=checkbox], .check input { height: 18px; width: 18px; accent-color: var(--red); }
+.check { display: flex; gap: 8px; align-items: center; min-height: 40px; font-weight: 600; font-size: 13px; }
+.grow { flex: 1 1 320px; }

@@ -30,13 +30,18 @@ public class AuthController {
     public record ChangePasswordRequest(@NotBlank String currentPassword, @NotBlank String newPassword, @NotBlank String confirmPassword) {
     }
 
+    public record ForgotRequest(@NotBlank String username) {
+    }
+
     public record Me(String username, String fullName, String role, boolean mustChangePassword) {
     }
 
     private final AccountService accounts;
     private final AppUserRepository users;
+    private final AdminUserService admin;
 
-    public AuthController(AccountService accounts, AppUserRepository users) {
+    public AuthController(AccountService accounts, AppUserRepository users, AdminUserService admin) {
+        this.admin = admin;
         this.accounts = accounts;
         this.users = users;
     }
@@ -54,6 +59,13 @@ public class AuthController {
         return Map.of("status", UserStatus.PENDING.name());
     }
 
+    /** Always 202, whether or not the username exists, so it cannot be used to find accounts. */
+    @PostMapping("/api/auth/forgot")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void forgot(@Valid @RequestBody ForgotRequest r) {
+        admin.requestReset(r.username());
+    }
+
     @GetMapping("/api/auth/me")
     public Me me(Authentication auth) {
         AppUser u = users.findByUsernameIgnoreCase(auth.getName()).orElseThrow();
@@ -66,9 +78,4 @@ public class AuthController {
         accounts.changePassword(auth.getName(), r.currentPassword(), r.newPassword(), r.confirmPassword());
     }
 
-    /** Temporary until the Admin users screen (ticket 04). */
-    @PostMapping("/api/admin/users/{id}/approve")
-    public Map<String, String> approve(@org.springframework.web.bind.annotation.PathVariable long id) {
-        return Map.of("status", accounts.approve(id).getStatus().name());
-    }
 }

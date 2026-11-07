@@ -15,6 +15,12 @@ public class AuditLog {
     public static final String REGISTERED = "REGISTERED";
     public static final String APPROVED = "APPROVED";
     public static final String PASSWORD_CHANGED = "PASSWORD_CHANGED";
+    public static final String REJECTED = "REJECTED";
+    public static final String DISABLED = "DISABLED";
+    public static final String ENABLED = "ENABLED";
+    public static final String UNLOCKED = "UNLOCKED";
+    public static final String PASSWORD_RESET = "PASSWORD_RESET";
+    public static final String RESET_REQUESTED = "RESET_REQUESTED";
 
     private final AuditLogRepository repository;
     private final Clock clock;

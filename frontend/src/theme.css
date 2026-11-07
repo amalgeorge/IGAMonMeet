@@ -40,3 +40,15 @@ th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacin
 td { padding: 10px 14px; border-bottom: 1px solid #eeeeef; font-size: 14px; }
 .tnum { font-variant-numeric: tabular-nums; white-space: nowrap; }
 a.btn { display: inline-flex; align-items: center; text-decoration: none; color: inherit; }
+
+.nav { display: flex; gap: 4px; flex-wrap: wrap; }
+.nav button { height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; font-family: inherit; font-weight: 600; color: #444; cursor: pointer; }
+.nav button.on { background: #fdecee; color: var(--red); }
+.badge { display: inline-block; min-width: 20px; margin-left: 6px; padding: 0 6px; border-radius: 999px; background: var(--red); color: #fff; font-size: 12px; line-height: 20px; }
+.link { background: none; border: 0; padding: 0; color: var(--red); font-family: inherit; font-weight: 600; cursor: pointer; align-self: flex-start; min-height: 24px; }
+.actions { white-space: nowrap; }
+.actions .btn, td select { height: 34px; font-size: 13px; }
+.notice { background: #fff3dc; border-radius: 10px; padding: 12px 14px; margin: 12px 0; }
+.notice code { font-size: 16px; font-weight: 700; letter-spacing: .05em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+h2 { font-size: 18px; margin: 24px 0 8px; }

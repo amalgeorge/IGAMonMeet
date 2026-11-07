@@ -4,6 +4,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import com.igamonmeet.audit.AuditLog;
+import com.igamonmeet.settings.FeatureToggle;
+import com.igamonmeet.settings.Settings;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,9 +27,12 @@ public class AccountService {
     private final PasswordEncoder encoder;
     private final Clock clock;
     private final AuditLog audit;
+    private final Settings settings;
 
-    public AccountService(AppUserRepository users, PasswordHistoryRepository history, PasswordEncoder encoder, Clock clock, AuditLog audit) {
+    public AccountService(AppUserRepository users, PasswordHistoryRepository history, PasswordEncoder encoder, Clock clock, AuditLog audit,
+                          Settings settings) {
         this.audit = audit;
+        this.settings = settings;
         this.users = users;
         this.history = history;
         this.encoder = encoder;
@@ -37,6 +42,9 @@ public class AccountService {
     /** Creates a Pending user; an Admin must approve before sign-in works. */
     @Transactional
     public AppUser register(String username, String fullName, String email, String password, String confirmPassword) {
+        if (!settings.isOn(FeatureToggle.SELF_REGISTRATION)) {
+            throw new AccountException(HttpStatus.FORBIDDEN, "REGISTRATION_CLOSED", "Registration is closed. Ask an Admin for an account.");
+        }
         String name = username.trim();
         if (users.existsByUsernameIgnoreCase(name)) {
             throw new AccountException(HttpStatus.CONFLICT, "USERNAME_TAKEN", "That username is already taken.");
@@ -45,7 +53,11 @@ public class AccountService {
         AppUser user = users.save(new AppUser(name, fullName.trim(), email.trim(), encoder.encode(password),
                 Role.END_USER, UserStatus.PENDING, clock.instant()));
         history.save(new PasswordHistory(user.getId(), user.getPasswordHash(), clock.instant()));
-        audit.recordAs(user.getUsername(), AuditLog.REGISTERED, "User", user.getId(), null);
+        boolean approval = settings.isOn(FeatureToggle.REGISTRATION_APPROVAL);
+        if (!approval) {
+            user.setStatus(UserStatus.ACTIVE);
+        }
+        audit.recordAs(user.getUsername(), AuditLog.REGISTERED, "User", user.getId(), approval ? null : "Auto-approved (approval step off)");
         return user;
     }
 

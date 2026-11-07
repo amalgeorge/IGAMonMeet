@@ -1,6 +1,8 @@
 package com.igamonmeet.account;
 
 import com.igamonmeet.audit.AuditLog;
+import com.igamonmeet.settings.FeatureToggle;
+import com.igamonmeet.settings.Settings;
 import java.security.SecureRandom;
 import java.time.Clock;
 import org.springframework.http.HttpStatus;
@@ -22,10 +24,12 @@ public class AdminUserService {
     private final PasswordEncoder encoder;
     private final AuditLog audit;
     private final Clock clock;
+    private final Settings settings;
     private final SecureRandom random = new SecureRandom();
 
     public AdminUserService(AppUserRepository users, PasswordHistoryRepository history, PasswordResetRequestRepository resets,
-                            PasswordEncoder encoder, AuditLog audit, Clock clock) {
+                            PasswordEncoder encoder, AuditLog audit, Clock clock, Settings settings) {
+        this.settings = settings;
         this.users = users;
         this.history = history;
         this.resets = resets;
@@ -101,6 +105,9 @@ public class AdminUserService {
     /** "Forgot password?": queues a request for active users only, and reveals nothing either way. */
     @Transactional
     public void requestReset(String username) {
+        if (!settings.isOn(FeatureToggle.FORGOT_PASSWORD)) {
+            throw new AccountException(HttpStatus.FORBIDDEN, "FEATURE_OFF", "Password reset requests are switched off. Contact an Admin.");
+        }
         users.findByUsernameIgnoreCase(username.trim())
                 .filter(u -> u.getStatus() == UserStatus.ACTIVE)
                 .filter(u -> resets.findByUserIdAndStatus(u.getId(), PasswordResetRequest.OPEN).isEmpty())

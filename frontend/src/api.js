@@ -1,5 +1,5 @@
 // Fetch wrapper: sends cookies and the CSRF token Spring Security expects (X-XSRF-TOKEN).
-function csrfToken() {
+export function csrfToken() {
   const m = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : null;
 }

@@ -14,6 +14,7 @@ spring:
     locations: classpath:db/migration,classpath:db/vendor/{vendor}
     placeholders:
       longText: NVARCHAR(MAX)
+      longBinary: VARBINARY(MAX)
   servlet:
     multipart:
       max-file-size: 50MB

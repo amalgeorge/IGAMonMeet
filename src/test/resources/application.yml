@@ -13,3 +13,4 @@ spring:
     placeholders:
       # H2 has no NVARCHAR(MAX); production uses NVARCHAR(MAX).
       longText: CLOB
+      longBinary: BLOB

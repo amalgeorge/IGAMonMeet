@@ -28,7 +28,7 @@ class MssqlMigrationTest {
         MigrateResult result = Flyway.configure()
                 .dataSource(System.getenv("MSSQL_URL"), System.getenv("MSSQL_USER"), System.getenv("MSSQL_PASSWORD"))
                 .locations("classpath:db/migration", "classpath:db/vendor/sqlserver")
-                .placeholders(java.util.Map.of("longText", "NVARCHAR(MAX)"))
+                .placeholders(java.util.Map.of("longText", "NVARCHAR(MAX)", "longBinary", "VARBINARY(MAX)"))
                 .load()
                 .migrate();
         assertThat(result.success).isTrue();

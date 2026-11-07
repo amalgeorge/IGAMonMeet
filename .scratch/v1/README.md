@@ -21,5 +21,5 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 14a | Speaker notes per Section | 14 | Done |
 | 15 | PPTX export | 12 | Done |
 | 16 | PPTX import wizard | 09, 13 | Done |
-| 17 | Versions, diff, restore, meeting-date snapshot | 09 | |
-| 18 | Dashboard view | 10, 11 | |
+| 17 | Versions, diff, restore, meeting-date snapshot | 09 | Done |
+| 18 | Dashboard view | 10, 11 | Done |

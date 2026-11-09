@@ -95,6 +95,9 @@ public class PptxWriter {
                     background(ppt, slide, theme, ThemeSpec.kindOf(s.layout()), w, h);
                 }
                 fill(ppt, slide, s, w, h, status, links);
+                if (s.data().get("frame") instanceof Map<?, ?> frame) {
+                    applyFrame(slide, s.layout(), (Map<String, Object>) frame, w, h);
+                }
                 if (s.data().get("agendaTarget") instanceof Integer a) {
                     backLink(slide, a, links, w, h);
                 }
@@ -283,7 +286,8 @@ public class PptxWriter {
                 list(slide, "right", (List<String>) d.get("right"), size, false);
             }
             case "IAM_KPI" -> {
-                kpis(slide, (List<KpiView>) d.get("kpis"), d.get("perSlide") instanceof Integer n ? n : 4, w, h, status);
+                kpis(slide, (List<KpiView>) d.get("kpis"), d.get("perSlide") instanceof Integer n ? n : 4, w, h, status,
+                        d.get("frame") instanceof Map<?, ?> f && f.get("tiles") instanceof List<?> t ? (List<Map<String, Object>>) t : null);
                 text(slide, "body", String.valueOf(d.getOrDefault("body", "")));
             }
             case "IAM_CHART" -> {
@@ -314,6 +318,65 @@ public class PptxWriter {
             }
         }
         return null;
+    }
+
+    // ---- Admin's slide layout (spec-v3 §6) ----
+
+    private static Rectangle2D rect(Map<String, Object> pct, double w, double h) {
+        return new Rectangle2D.Double(num(pct.get("x")) / 100 * w, num(pct.get("y")) / 100 * h, num(pct.get("w")) / 100 * w, num(pct.get("h")) / 100 * h);
+    }
+
+    private static double num(Object o) {
+        return o instanceof Number n ? n.doubleValue() : 0;
+    }
+
+    /** Moves the generated shapes into the Admin's boxes: title, content (table, text), chart, columns. KPI tiles are drawn in place. */
+    @SuppressWarnings("unchecked")
+    private static void applyFrame(XSLFSlide slide, String layout, Map<String, Object> frame, double w, double h) {
+        if (frame.get("title") instanceof Map<?, ?> t) {
+            XSLFTextShape title = placeholder(slide, "title");
+            if (title != null) title.setAnchor(rect((Map<String, Object>) t, w, h));
+        }
+        Rectangle2D content = frame.get("content") instanceof Map<?, ?> c ? rect((Map<String, Object>) c, w, h) : null;
+        switch (layout) {
+            case "IAM_TABLE" -> {
+                if (content == null) return;
+                for (XSLFShape shape : slide.getShapes()) {
+                    if (shape instanceof XSLFTable t) {
+                        double old = t.getAnchor().getWidth();
+                        for (int c = 0; c < t.getNumberOfColumns(); c++) {
+                            t.setColumnWidth(c, t.getColumnWidth(c) * content.getWidth() / old);
+                        }
+                        t.setAnchor(new Rectangle2D.Double(content.getX(), content.getY(), content.getWidth(), t.getAnchor().getHeight()));
+                    }
+                }
+            }
+            case "IAM_SUMMARY" -> {
+                XSLFTextShape body = placeholder(slide, "body");
+                if (content != null && body != null) body.setAnchor(content);
+            }
+            case "IAM_CHART" -> {
+                XSLFTextShape body = placeholder(slide, "body");
+                if (content != null && body != null) body.setAnchor(content);
+                if (frame.get("chart") instanceof Map<?, ?> ch) {
+                    for (XSLFShape shape : slide.getShapes()) {
+                        if (shape instanceof org.apache.poi.xslf.usermodel.XSLFGraphicFrame g) g.setAnchor(rect((Map<String, Object>) ch, w, h));
+                    }
+                }
+            }
+            case "IAM_TWO_COLUMN" -> {
+                for (String side : List.of("left", "right")) {
+                    if (!(frame.get(side) instanceof Map<?, ?> m)) continue;
+                    Rectangle2D r = rect((Map<String, Object>) m, w, h);
+                    double headH = Math.min(0.15 * r.getHeight(), 0.08 * h);
+                    XSLFTextShape head = placeholder(slide, side + "Head");
+                    if (head != null) head.setAnchor(new Rectangle2D.Double(r.getX(), r.getY(), r.getWidth(), headH));
+                    XSLFTextShape list = placeholder(slide, side);
+                    if (list != null) list.setAnchor(new Rectangle2D.Double(r.getX(), r.getY() + headH, r.getWidth(), r.getHeight() - headH));
+                }
+            }
+            default -> { }
+        }
     }
 
     // ---- agenda and slide links (spec-v3 §5) ----
@@ -494,7 +557,8 @@ public class PptxWriter {
     }
 
     /** Tiles in one row (2 to 4 per slide) or two rows (6 or 8), compact in two rows (spec-v2 §2.5). */
-    private static void kpis(XSLFSlide slide, List<KpiView> kpis, int perSlide, double w, double h, Map<String, Color[]> status) {
+    private static void kpis(XSLFSlide slide, List<KpiView> kpis, int perSlide, double w, double h, Map<String, Color[]> status,
+                             List<Map<String, Object>> tiles) {
         double gap = 21.6;
         int cols = perSlide <= 4 ? perSlide : perSlide / 2;
         boolean compact = perSlide > 4;
@@ -505,6 +569,14 @@ public class PptxWriter {
             KpiView k = kpis.get(i);
             double x = 0.045 * w + (i % cols) * (tw + gap);
             double y = top + (i / cols) * (th + gap);
+            if (tiles != null && i < tiles.size()) { // Admin's tile boxes (spec-v3 §6)
+                Rectangle2D r = rect(tiles.get(i), w, h);
+                x = r.getX();
+                y = r.getY();
+                tw = r.getWidth();
+                th = r.getHeight();
+                compact = th < 0.3 * h;
+            }
             tile(slide, x, y, tw, th);
             box(slide, k.name(), x + 14, y + (compact ? 8 : 18), tw - 28, compact ? 30 : 40, compact ? 11 : 14, false, MUTED);
             // Formatted by value type on the server (KpiFormat), the same text as the in-app slide.

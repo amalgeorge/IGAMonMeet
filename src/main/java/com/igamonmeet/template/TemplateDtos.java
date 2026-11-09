@@ -46,7 +46,15 @@ public final class TemplateDtos {
             Boolean onSlides,
             String groupKey,
             @Pattern(regexp = "2|3|4|6|8|TABLE") String kpiLayout,
-            com.fasterxml.jackson.databind.JsonNode tableStyle) {
+            com.fasterxml.jackson.databind.JsonNode tableStyle,
+            com.fasterxml.jackson.databind.JsonNode slideLayout) {
+
+        public Section(String key, String name, TeamTag teamTag, SectionKind kind, String layout, OverflowRule overflowRule, boolean required,
+                       List<String> columns, String chartKpiKey, List<Kpi> kpis, Visibility visibility, Boolean onSlides, String groupKey,
+                       String kpiLayout, com.fasterxml.jackson.databind.JsonNode tableStyle) {
+            this(key, name, teamTag, kind, layout, overflowRule, required, columns, chartKpiKey, kpis, visibility, onSlides, groupKey,
+                    kpiLayout, tableStyle, null);
+        }
 
         public Visibility visibilityOrDefault() { return visibility == null ? Visibility.SHOWN : visibility; }
 
@@ -131,6 +139,6 @@ public final class TemplateDtos {
                 .collect(Collectors.toList());
         return new Section(s.getSectionKey(), s.getName(), s.getTeamTag(), s.getKind(), s.getLayout(), s.getOverflowRule(),
                 s.isRequired(), cols, s.getChartKpiKey(), kpis, s.getVisibility(), s.isOnSlides(), s.getGroupKey(), s.getKpiLayout(),
-                readJson(s.getTableStyle()));
+                readJson(s.getTableStyle()), readJson(s.getSlideLayout()));
     }
 }

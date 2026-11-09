@@ -219,6 +219,28 @@ public class SlidePlanner {
     }
 
     private void section(SectionInput s, Input in, List<Draft> main, List<Draft> appendix) {
+        int mainStart = main.size();
+        int appendixStart = appendix.size();
+        sectionSlides(s, in, main, appendix);
+        // Admin's slide layout (spec-v3 §6): the Section's own slides carry the boxes; renderers place shapes in them.
+        SlideLayout.Frame fr = SlideLayout.frame(s.slideLayout());
+        if (fr != null) {
+            Map<String, Object> frameData = fr.data();
+            for (List<Draft> list : List.of(main.subList(mainStart, main.size()), appendix.subList(appendixStart, appendix.size()))) {
+                for (Draft d : list) {
+                    if (d.layout().equals(s.layout()) && !d.data().containsKey("empty")) d.data().put("frame", frameData);
+                }
+            }
+        }
+    }
+
+    /** The Section's box for this layout, or null: only the Section's own layout follows the Admin's slide layout. */
+    private static SlideLayout.Rect box(SectionInput s, String layout, java.util.function.Function<SlideLayout.Frame, SlideLayout.Rect> pick) {
+        SlideLayout.Frame fr = SlideLayout.frame(s.slideLayout());
+        return fr == null || !layout.equals(s.layout()) ? null : pick.apply(fr);
+    }
+
+    private void sectionSlides(SectionInput s, Input in, List<Draft> main, List<Draft> appendix) {
         String team = teamLabel(s.team());
         if (!s.filled()) {
             main.add(new Draft(s.layout(), s.key(), data("team", team, "title", s.name(), "empty", "Not provided yet."), false));
@@ -252,7 +274,9 @@ public class SlidePlanner {
 
     private void summary(SectionInput s, Input in, String team, List<Draft> main, List<Draft> appendix) {
         List<String> points = texts(s.content().path("points"));
-        Box box = in.boxes().getOrDefault("IAM_SUMMARY", new Box(in.slideWidth() * 0.5475, in.slideHeight() * 0.6133));
+        SlideLayout.Rect area = box(s, s.layout(), SlideLayout.Frame::content);
+        Box box = area != null ? new Box(in.slideWidth() * area.w(), in.slideHeight() * area.h())
+                : in.boxes().getOrDefault("IAM_SUMMARY", new Box(in.slideWidth() * 0.5475, in.slideHeight() * 0.6133));
         Fitted f = fitList(points, SUMMARY_PT, box, 24, 14, s.rule());
         List<Object> stats = new ArrayList<>();
         s.content().path("stats").forEach(st -> stats.add(data("value", st.path("value").asText(), "label", st.path("label").asText())));
@@ -328,8 +352,10 @@ public class SlidePlanner {
         if (lines.isEmpty()) {
             return;
         }
-        // Text Sections use the whole content width of the IAM_SUMMARY layout (no stat tiles).
-        Box box = new Box(in.slideWidth() * 0.91, in.boxes().getOrDefault("IAM_SUMMARY", new Box(0, in.slideHeight() * 0.6133)).h());
+        // Text Sections use the whole content width of the IAM_SUMMARY layout (no stat tiles), or the Admin's content box.
+        SlideLayout.Rect area = box(s, layout, SlideLayout.Frame::content);
+        Box box = area != null ? new Box(in.slideWidth() * area.w(), in.slideHeight() * area.h())
+                : new Box(in.slideWidth() * 0.91, in.boxes().getOrDefault("IAM_SUMMARY", new Box(0, in.slideHeight() * 0.6133)).h());
         Fitted f = fitList(lines, SUMMARY_PT, box, 24, 12, s.rule());
         emit(s, team, f, (page, first) -> {
             List<Map<String, Object>> blocks = new ArrayList<>();
@@ -342,7 +368,9 @@ public class SlidePlanner {
         JsonNode c = s.content();
         List<String> left = texts(c.path("left"));
         List<String> right = texts(c.path("right"));
-        Box box = in.boxes().getOrDefault("IAM_TWO_COLUMN", new Box(in.slideWidth() * 0.405, in.slideHeight() * 0.48));
+        SlideLayout.Rect area = box(s, s.layout(), SlideLayout.Frame::left);
+        Box box = area != null ? new Box(in.slideWidth() * area.w(), in.slideHeight() * area.h() * 0.85) // heading takes the top
+                : in.boxes().getOrDefault("IAM_TWO_COLUMN", new Box(in.slideWidth() * 0.405, in.slideHeight() * 0.48));
         float size = TWO_COLUMN_PT;
         List<List<String>> lp = null;
         List<List<String>> rp = null;
@@ -475,7 +503,8 @@ public class SlidePlanner {
             }
             return;
         }
-        int per = tilesPerSlide(s.kpiLayout());
+        SlideLayout.Frame fr = SlideLayout.frame(s.slideLayout());
+        int per = fr != null && !fr.tiles().isEmpty() ? fr.tiles().size() : tilesPerSlide(s.kpiLayout());
         int pages = Math.max(1, (all.size() + per - 1) / per);
         for (int p = 0; p < pages; p++) {
             boolean toAppendix = s.rule() == OverflowRule.APPENDIX && p > 0;
@@ -501,7 +530,8 @@ public class SlidePlanner {
 
     private void table(SectionInput s, Input in, String team, List<String> head, List<List<String>> rows, List<String> flags,
                        List<Draft> main, List<Draft> appendix, String layout, TableStyle style) {
-        double width = in.slideWidth() * 0.91;
+        SlideLayout.Rect area = box(s, layout, SlideLayout.Frame::content);
+        double width = area != null ? in.slideWidth() * area.w() : in.slideWidth() * 0.91;
         int n = Math.max(head.size(), 1);
         double[] cols = new double[n];
         boolean sized = style.widths() != null && style.widths().size() == n;
@@ -529,7 +559,7 @@ public class SlidePlanner {
         }
         final List<List<String>> tableRows = rows;
         double headH = TABLE_HEAD_PT * 1.2 + CELL_PAD_Y;
-        double cap = in.slideHeight() * (CONTENT_BOTTOM - CONTENT_TOP) - headH;
+        double cap = (area != null ? in.slideHeight() * area.h() : in.slideHeight() * (CONTENT_BOTTOM - CONTENT_TOP)) - headH;
         List<Integer> idx = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {
             idx.add(i);

@@ -86,7 +86,8 @@ public class SlidePlanService {
             sections.add(new SectionInput(s.key(), s.name(), s.teamTag(), s.kind(), s.layout(), s.overflowRule(), s.required(),
                     s.filled(), s.columns(), read(s.contentJson()), s.kpis(), series,
                     s.groupKey() == null ? null : new PlanModel.SectionGroup(s.groupKey(), s.groupName(), s.groupDivider()), s.kpiLayout(),
-                    s.tableStyle() == null ? null : readStyle(s.tableStyle())));
+                    s.tableStyle() == null ? null : readStyle(s.tableStyle()),
+                    s.slideLayout() == null ? null : readStyle(s.slideLayout())));
         }
         List<ActionRow> actions = new ArrayList<>();
         for (ActionView a : d.actionItems()) {

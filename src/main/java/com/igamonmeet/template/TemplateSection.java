@@ -106,6 +106,13 @@ public class TemplateSection {
     public String getKpiLayout() { return kpiLayout; }
     void setKpiLayout(String kpiLayout) { this.kpiLayout = kpiLayout; }
     public String getTableStyle() { return tableStyle; }
+
+    /** Admin's slide layout (docs/spec-v3.md §6): JSON boxes on a 12 x 8 grid; null means the generated layout. */
+    @Column(name = "slide_layout")
+    private String slideLayout;
+
+    public String getSlideLayout() { return slideLayout; }
+    void setSlideLayout(String slideLayout) { this.slideLayout = slideLayout; }
     void setTableStyle(String tableStyle) { this.tableStyle = tableStyle; }
 
     void setVisibility(Visibility visibility, boolean onSlides) {

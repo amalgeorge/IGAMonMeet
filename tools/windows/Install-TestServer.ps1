@@ -35,8 +35,16 @@ function Ok($m)   { Write-Host "    $m" -ForegroundColor Green }
 function Refresh-Path {
   $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
 }
+function Native([scriptblock] $block) {
+  # Windows PowerShell 5.1 turns a program's redirected stderr into a terminating error under
+  # ErrorActionPreference=Stop, even on success (keytool, gh and sqlcmd print progress there).
+  # Run the program with Continue and let callers check $LASTEXITCODE instead.
+  $old = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try { & $block } finally { $ErrorActionPreference = $old }
+}
 function Winget-Install($id) {
-  winget list --id $id -e --accept-source-agreements *> $null
+  Native { winget list --id $id -e --accept-source-agreements } *> $null
   if ($LASTEXITCODE -eq 0) { Ok "$id already installed"; return }
   winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements
   if ($LASTEXITCODE -ne 0) { throw "winget could not install $id (exit $LASTEXITCODE)" }
@@ -53,7 +61,7 @@ function New-Secret([int] $n = 24) {
   return 'Aa1' + $s   # guarantees upper, lower and digit
 }
 function Sql([string] $query, [string] $db = 'master') {
-  $out = & $script:Sqlcmd -S 'localhost,1433' -E -C -b -d $db -W -Q $query 2>&1
+  $out = Native { & $script:Sqlcmd -S 'localhost,1433' -E -C -b -d $db -W -Q $query 2>&1 }
   if ($LASTEXITCODE -ne 0) { throw "sqlcmd failed: $($out -join [Environment]::NewLine)" }
   return $out
 }
@@ -107,7 +115,7 @@ $script:Sqlcmd = @(
 ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 if (-not $script:Sqlcmd) { throw 'sqlcmd.exe not found after install.' }
 for ($i = 0; $i -lt 30; $i++) {
-  & $script:Sqlcmd -S 'localhost,1433' -E -C -Q 'SELECT 1' *> $null
+  Native { & $script:Sqlcmd -S 'localhost,1433' -E -C -Q 'SELECT 1' } *> $null
   if ($LASTEXITCODE -eq 0) { break }
   Start-Sleep -Seconds 2
 }
@@ -138,7 +146,7 @@ if (Test-Path "$Tomcat\bin\catalina.bat") {
   if (Test-NetConnection -ComputerName localhost -Port 8443 -InformationLevel Quiet -WarningAction SilentlyContinue) {
     Write-Host '    Stopping running Tomcat...'
     $env:JAVA_HOME = $JavaHome
-    & "$Tomcat\bin\shutdown.bat" *> $null
+    Native { & "$Tomcat\bin\shutdown.bat" } *> $null
     Start-Sleep -Seconds 8
   }
 } else {
@@ -158,9 +166,9 @@ if (Test-Path "$Tomcat\bin\catalina.bat") {
 $keystore = "$Tomcat\conf\igamonmeet.p12"
 $ksPassword = New-Secret
 if (Test-Path $keystore) { Remove-Item $keystore }
-& "$JavaHome\bin\keytool.exe" -genkeypair -alias tomcat -keyalg RSA -keysize 2048 -validity 825 `
+Native { & "$JavaHome\bin\keytool.exe" -genkeypair -alias tomcat -keyalg RSA -keysize 2048 -validity 825 `
   -dname 'CN=localhost' -ext 'SAN=dns:localhost,ip:127.0.0.1' `
-  -keystore $keystore -storetype PKCS12 -storepass $ksPassword -keypass $ksPassword -noprompt 2>&1 | Out-Null
+  -keystore $keystore -storetype PKCS12 -storepass $ksPassword -keypass $ksPassword -noprompt 2>&1 } | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'keytool could not create the certificate.' }
 
 $serverXml = "$Tomcat\conf\server.xml"
@@ -187,6 +195,8 @@ Ok 'HTTPS on port 8443 (self-signed certificate), HTTP connector removed'
 @echo off
 rem Written by Install-TestServer.ps1. TEST settings: trustServerCertificate=true accepts SQL Express's self-signed certificate.
 set "JAVA_HOME=$JavaHome"
+rem A machine-wide JRE_HOME (e.g. from another Java install) would override JAVA_HOME in catalina.bat.
+set "JRE_HOME="
 set "DB_URL=jdbc:sqlserver://localhost:1433;databaseName=igamonmeet;encrypt=true;trustServerCertificate=true"
 set "DB_USER=igamonmeet"
 set "DB_PASSWORD=$DbPassword"
@@ -200,7 +210,7 @@ Ok 'setenv.bat written (readable by Administrators only)'
 Step 'Application WAR'
 if (-not $WarPath) {
   Winget-Install 'GitHub.cli'
-  gh auth status *> $null
+  Native { gh auth status } *> $null
   if ($LASTEXITCODE -ne 0) {
     Write-Host '    Sign in to GitHub once (a browser opens) so the CI build can be downloaded.'
     gh auth login --hostname github.com --git-protocol https --web
@@ -227,7 +237,7 @@ Write-Host '    Waiting for the app (first start runs the database migrations)..
 $up = $false
 for ($i = 0; $i -lt 60; $i++) {
   Start-Sleep -Seconds 5
-  $health = curl.exe -k -s "$BaseUrl/api/health" 2>$null
+  $health = Native { curl.exe -k -s "$BaseUrl/api/health" 2>$null }
   if ($health -match '"UP"') { $up = $true; break }
 }
 if (-not $up) { throw "App did not report UP. Check $Tomcat\logs\catalina.*.log and localhost.*.log." }

@@ -142,7 +142,7 @@ class RichContentTest {
         publish(draft);
         try {
             long m = meeting("2050-08", LocalDate.of(2050, 8, 27));
-            save(m, "rc-tables", "{\"blocks\":[{\"type\":\"table\",\"columns\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\",\"i\"],\"rows\":[]}]}")
+            save(m, "rc-tables", "{\"blocks\":[{\"type\":\"table\",\"columns\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\",\"i\",\"j\",\"k\",\"l\",\"m\"],\"rows\":[]}]}")
                     .andExpect(status().isBadRequest());
             save(m, "rc-tables", "{\"blocks\":[{\"type\":\"table\",\"columns\":[\"Vendor\",\"Status\"],\"rows\":[[\"Only one cell\"]]}]}")
                     .andExpect(status().isBadRequest());

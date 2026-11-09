@@ -42,3 +42,39 @@ jobs:
           MSSQL_USER: sa
           MSSQL_PASSWORD: Ci_Passw0rd!2026
         run: mvn -B -Dskip.frontend=true -Dtest=MssqlMigrationTest -Dsurefire.failIfNoSpecifiedTests=false test
+
+  rhel-smoke:
+    # Installs the WAR with tools/linux/install-server.sh on Rocky Linux 9 (RHEL-compatible)
+    # against SQL Server, then checks the health endpoint (docs/deploy-linux.md).
+    needs: build
+    runs-on: ubuntu-latest
+    container: rockylinux:9
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env: { ACCEPT_EULA: 'Y', MSSQL_SA_PASSWORD: 'Ci_Passw0rd!2026' }
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Ci_Passw0rd!2026' -Q 'SELECT 1'"
+          --health-interval 10s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with: { name: igamonmeet-war, path: war }
+      - name: Create database
+        run: |
+          curl -fsSL -o /etc/yum.repos.d/mssql-release.repo https://packages.microsoft.com/config/rhel/9/prod.repo
+          ACCEPT_EULA=Y dnf -y -q install mssql-tools18 >/dev/null
+          /opt/mssql-tools18/bin/sqlcmd -C -S mssql -U sa -P 'Ci_Passw0rd!2026' -Q "CREATE DATABASE igamonmeet"
+      - name: Install with install-server.sh
+        env: { DB_PASSWORD: 'Ci_Passw0rd!2026' }
+        run: |
+          tools/linux/install-server.sh --war war/igamonmeet.war --db-host mssql --db-user sa --db-trust-server-cert --hostname localhost --no-start
+      - name: Start Tomcat and check health
+        run: |
+          runuser -u tomcat -- env CATALINA_HOME=/opt/igamonmeet/tomcat /opt/igamonmeet/tomcat/bin/catalina.sh start
+          for i in $(seq 1 60); do
+            sleep 5
+            if curl -ks https://localhost:8443/igamonmeet/api/health | grep -q '"UP"'; then echo UP; exit 0; fi
+          done
+          tail -n 200 /opt/igamonmeet/tomcat/logs/catalina.out || true
+          exit 1

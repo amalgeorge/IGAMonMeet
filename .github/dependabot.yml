@@ -4,6 +4,11 @@ updates:
   - package-ecosystem: maven
     directory: /
     schedule: { interval: weekly }
+    ignore:
+      # Spring Boot 3+ needs Jakarta EE and Tomcat 10+; the IIQ platform is Tomcat 9 (ADR 0001).
+      # Patch and minor updates within 2.7 still come through.
+      - dependency-name: "org.springframework.boot:*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: /frontend
     schedule: { interval: weekly }

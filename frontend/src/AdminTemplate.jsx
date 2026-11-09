@@ -192,6 +192,12 @@ function KpiLibrary({ library, onChange, onRemove }) {
             <td><input aria-label="Amber threshold" type="number" step="any" disabled={text} value={k.amberThreshold} onChange={(e) => set(i, { amberThreshold: e.target.value })} /></td>
             <td><button className="btn" onClick={() => { onRemove(k.key); onChange(library.filter((_, j) => j !== i)); }}>Remove</button></td>
           </tr>
+          <tr className="sub-row"><td colSpan={8}><div className="options-row">
+            <label className="field"><span>Subtitle</span><input aria-label="Subtitle" maxLength={200} value={k.subtitle || ''} onChange={(e) => set(i, { subtitle: e.target.value })} /></label>
+            <label className="field grow"><span>Description (speaker notes and Dashboard tooltip)</span><input aria-label="Description" maxLength={1000} value={k.description || ''} onChange={(e) => set(i, { description: e.target.value })} /></label>
+            {!text && type !== 'COUNT' && type !== 'DURATION' && <label className="field"><span>Decimals</span><select aria-label="Decimal places" value={k.decimals ?? ''} onChange={(e) => set(i, { decimals: e.target.value === '' ? null : Number(e.target.value) })}>
+              <option value="">As entered</option>{[0, 1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>}
+          </div></td></tr>
           {text && <tr><td colSpan={8}><StatusOptions options={k.statusOptions || []} onChange={(statusOptions) => set(i, { statusOptions })} /></td></tr>}
         </Fragment>); })}</tbody>
       </table></div>

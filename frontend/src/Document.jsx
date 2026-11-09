@@ -8,6 +8,7 @@ import ImportPanel from './ImportPanel.jsx';
 import HistoryPanel from './HistoryPanel.jsx';
 import DashboardPanel from './DashboardPanel.jsx';
 import AvailablePanel from './AvailablePanel.jsx';
+import { STATUS_LABELS } from './labels.js';
 
 const TEAM = { ENGINEERING: 'Engineering', OPERATIONS: 'Operations', SHARED: 'Shared' };
 const LABEL = { PREPARING: 'Preparing', HELD: 'Held' };
@@ -188,7 +189,7 @@ function outlineGroups(sections) {
   return out;
 }
 
-const STATUS = { ON_TARGET: 'On target', BELOW_TARGET: 'Below target', OFF_TARGET: 'Off target' };
+const STATUS = STATUS_LABELS;
 const num = (v) => (v === '' || v == null || Number.isNaN(Number(v)) ? null : Number(v));
 const statusOf = (k, v) => {
   if (v == null) return null;
@@ -266,11 +267,12 @@ function KpiTiles({ kpis, commentary }) {
       <div className="kpi-grid">
         {kpis.map((k, i) => (
           <motion.div key={k.key} className="kpi-tile" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.1 }}>
-            <div className="hint">{k.name}</div>
+            <div className="hint" title={k.description || undefined}>{k.name}</div>
+            {k.subtitle && <div className="hint">{k.subtitle}</div>}
             <div className="kpi-value tnum">{k.display}</div>
             {k.targetLine && <div className="hint tnum">{k.targetLine}</div>}
             {k.deltaLine && <div className="hint tnum">{k.deltaLine}</div>}
-            {k.status && <span className={`chip st-${k.status}`}>{STATUS[k.status]}{k.override ? ' (set by editor)' : ''}</span>}
+            {k.status && <span className={`chip st-${k.status}`}>{k.statusLabel || STATUS[k.status]}{k.override ? ' (set by editor)' : ''}</span>}
             {k.override && <div className="hint">{k.reason}</div>}
           </motion.div>
         ))}

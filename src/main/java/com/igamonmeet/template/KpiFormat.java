@@ -22,16 +22,24 @@ public final class KpiFormat {
     }
 
     public static String format(ValueType type, String unit, String currency, BigDecimal v) {
+        return format(type, unit, currency, null, v);
+    }
+
+    /** As above, rounded to {@code decimals} places when set (docs/spec-v2.md §2.3). */
+    public static String format(ValueType type, String unit, String currency, Integer decimals, BigDecimal v) {
         if (v == null) {
             return "—";
         }
+        if (decimals != null && type != ValueType.COUNT && type != ValueType.DURATION) {
+            v = v.setScale(decimals, RoundingMode.HALF_UP);
+        }
         return switch (type) {
-            case PERCENT -> plain(v) + "%";
+            case PERCENT -> plain(v, decimals) + "%";
             case COUNT -> grouped(v.setScale(0, RoundingMode.HALF_UP), 0);
             case DURATION -> duration(v);
-            case CURRENCY -> (currency == null || currency.isBlank() ? DEFAULT_CURRENCY : currency) + " " + grouped(v, 2);
-            case TEXT_STATUS -> plain(v);
-            case NUMBER -> plain(v) + ("%".equals(unit) ? "%" : unit == null || unit.isBlank() ? "" : " " + unit);
+            case CURRENCY -> (currency == null || currency.isBlank() ? DEFAULT_CURRENCY : currency) + " " + grouped(v, decimals == null ? 2 : decimals);
+            case TEXT_STATUS -> plain(v, decimals);
+            case NUMBER -> plain(v, decimals) + ("%".equals(unit) ? "%" : unit == null || unit.isBlank() ? "" : " " + unit);
         };
     }
 
@@ -63,12 +71,12 @@ public final class KpiFormat {
         }
     }
 
-    private static String plain(BigDecimal v) {
-        return v.stripTrailingZeros().toPlainString();
+    private static String plain(BigDecimal v, Integer decimals) {
+        return decimals != null ? v.toPlainString() : v.stripTrailingZeros().toPlainString();
     }
 
     private static String grouped(BigDecimal v, int decimals) {
-        DecimalFormat f = new DecimalFormat(decimals == 0 ? "#,##0" : "#,##0.00", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+        DecimalFormat f = new DecimalFormat(decimals == 0 ? "#,##0" : "#,##0." + "0".repeat(decimals), DecimalFormatSymbols.getInstance(Locale.ENGLISH));
         return f.format(v);
     }
 }

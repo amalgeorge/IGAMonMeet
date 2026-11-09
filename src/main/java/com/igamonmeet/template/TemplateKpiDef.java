@@ -42,6 +42,9 @@ public class TemplateKpiDef {
 
     private String currency;
     private String statusOptions;
+    private String subtitle;
+    private String description;
+    private Integer decimals;
 
     protected TemplateKpiDef() {
     }
@@ -68,6 +71,16 @@ public class TemplateKpiDef {
     public ValueType getValueType() { return valueType == null ? ValueType.NUMBER : valueType; }
     public String getCurrency() { return currency; }
     public java.util.List<KpiFormat.StatusOption> getStatusOptions() { return KpiFormat.options(statusOptions); }
+
+    public String getSubtitle() { return subtitle; }
+    public String getDescription() { return description; }
+    public Integer getDecimals() { return decimals; }
+
+    void setDisplay(String subtitle, String description, Integer decimals) {
+        this.subtitle = subtitle == null || subtitle.isBlank() ? null : subtitle.trim();
+        this.description = description == null || description.isBlank() ? null : description.trim();
+        this.decimals = decimals;
+    }
 
     void setValueSpec(ValueType valueType, String currency, String statusOptionsJson) {
         this.valueType = valueType == null ? ValueType.NUMBER : valueType;

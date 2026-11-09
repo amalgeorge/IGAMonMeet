@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { loadStatusLabels } from './labels.js';
 import { api } from './api.js';
 import Auth from './Auth.jsx';
 import AuditLog from './AuditLog.jsx';
@@ -24,7 +25,7 @@ export default function App() {
   const [features, setFeatures] = useState({});
   const loadFeatures = () => api('/api/settings/features').then(setFeatures).catch(() => {});
 
-  const loadMe = () => api('/api/auth/me').then(setMe).catch(() => setMe(null));
+  const loadMe = () => api('/api/auth/me').then((m) => (m ? loadStatusLabels().then(() => m) : m)).then(setMe).catch(() => setMe(null));
   useEffect(() => { loadMe(); }, []);
   useEffect(() => {
     if (me?.role === 'ADMIN' && !me.mustChangePassword) {

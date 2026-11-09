@@ -32,10 +32,12 @@ public class MeetingDetails {
     private final TemplateService templates;
     private final ActionsAndComments actionsAndComments;
     private final SectionDefs sectionDefs;
+    private final com.igamonmeet.settings.Settings settings;
 
     public MeetingDetails(MeetingService service, MeetingRepository meetings, ActionItemRepository actions, MeetingTime time,
                           SectionLockRepository locks, ObjectMapper json, TemplateService templates, ActionsAndComments actionsAndComments,
-                          SectionDefs sectionDefs) {
+                          SectionDefs sectionDefs, com.igamonmeet.settings.Settings settings) {
+        this.settings = settings;
         this.sectionDefs = sectionDefs;
         this.service = service;
         this.meetings = meetings;
@@ -53,6 +55,7 @@ public class MeetingDetails {
         Instant now = time.now();
         long openItems = actions.findByMeetingIdOrderBySortOrder(id).size();
         SectionDefs.Lookup defs = sectionDefs.lookup();
+        java.util.Map<String, String> labels = settings.statusLabels();
         Meeting previous = meetings.findFirstByDeletedAtIsNullAndMeetingDateLessThanOrderByMeetingDateDesc(m.getMeetingDate()).orElse(null);
         List<SectionView> sections = m.getSections().stream().filter(s -> !s.isHidden()).map(s -> {
             List<TemplateKpi> kpiDefs = defs.kpis(m, s);
@@ -61,7 +64,7 @@ public class MeetingDetails {
             if (s.getKind() == SectionKind.KPI) {
                 JsonNode values = read(s.getContentJson()).path("values");
                 JsonNode prevValues = previous == null ? null : previousValues(previous, s.getSectionKey());
-                kpis = kpiDefs.stream().map(k -> KpiView.of(k, values, prevValues)).collect(Collectors.toList());
+                kpis = kpiDefs.stream().map(k -> KpiView.of(k, values, prevValues, labels)).collect(Collectors.toList());
             }
             return new SectionView(s.getId(), s.getSectionKey(), s.getName(), s.getTeamTag(),
                     s.getKind(), s.getLayout(), s.getOverflowRule(), s.isRequired(),

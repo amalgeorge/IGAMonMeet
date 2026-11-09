@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from './api.js';
+import { STATUS_LABELS } from './labels.js';
 
 const TOGGLES = [
   ['SELF_REGISTRATION', 'Self-registration', 'People can create an account from the sign-in screen.'],
@@ -7,6 +8,33 @@ const TOGGLES = [
   ['FORGOT_PASSWORD', 'Forgot password requests', '"Forgot password?" sends a request to the Admin queue.'],
   ['QUEUE_BADGE', 'Admin queue badge', 'Shows how many items are waiting on the Admin queue tab.']
 ];
+
+/** Admin renames the three KPI statuses for everyone (spec-v2 §2.4). */
+function StatusLabelsForm() {
+  const [labels, setLabels] = useState(null);
+  const [msg, setMsg] = useState({});
+  useEffect(() => { api('/api/status-labels').then(setLabels); }, []);
+  if (!labels) return null;
+  const save = (e) => {
+    e.preventDefault(); setMsg({});
+    api('/api/admin/status-labels', { method: 'PUT', json: labels })
+      .then(() => { Object.assign(STATUS_LABELS, labels); setMsg({ ok: 'Saved. All Meetings, slides and exports use the new names.' }); })
+      .catch((err) => setMsg({ error: err.message }));
+  };
+  return (
+    <form className="tpl-card" onSubmit={save}>
+      <strong>KPI status names</strong>
+      <div className="grid">
+        {[['ON_TARGET', 'On target'], ['BELOW_TARGET', 'Below target'], ['OFF_TARGET', 'Off target']].map(([k, d]) => (
+          <label key={k} className="field"><span>{d}</span><input maxLength={30} required value={labels[k]} onChange={(e) => setLabels({ ...labels, [k]: e.target.value })} /></label>
+        ))}
+      </div>
+      {msg.error && <p className="error" role="alert">{msg.error}</p>}
+      {msg.ok && <p className="notice" role="status">{msg.ok}</p>}
+      <button className="btn pri">Save names</button>
+    </form>
+  );
+}
 
 export default function AdminSettings({ onChange }) {
   const [values, setValues] = useState(null);
@@ -21,6 +49,7 @@ export default function AdminSettings({ onChange }) {
   return (
     <section>
       <h1>Settings</h1>
+      <StatusLabelsForm />
       <ul className="toggles">
         {TOGGLES.map(([key, label, help]) => (
           <li key={key}>

@@ -72,10 +72,13 @@ public final class TemplateDtos {
             @NotNull BigDecimal amberThreshold,
             ValueType valueType,
             @Pattern(regexp = "[A-Z]{3}") String currency,
-            List<KpiFormat.StatusOption> statusOptions) {
+            List<KpiFormat.StatusOption> statusOptions,
+            @Size(max = 200) String subtitle,
+            @Size(max = 1000) String description,
+            @javax.validation.constraints.Min(0) @javax.validation.constraints.Max(4) Integer decimals) {
 
         public LibraryKpi(String key, String name, String unit, BigDecimal target, Direction direction, BigDecimal amberThreshold) {
-            this(key, name, unit, target, direction, amberThreshold, null, null, null);
+            this(key, name, unit, target, direction, amberThreshold, null, null, null, null, null, null);
         }
 
         public ValueType valueTypeOrDefault() { return valueType == null ? ValueType.NUMBER : valueType; }
@@ -99,7 +102,8 @@ public final class TemplateDtos {
                 v.getSections().stream().map(TemplateDtos::of).collect(Collectors.toList()),
                 v.getGroups().stream().map(g -> new Group(g.getGroupKey(), g.getName(), g.getVisibility(), g.isDivider())).collect(Collectors.toList()),
                 v.getKpiLibrary().stream().map(d -> new LibraryKpi(d.getKpiKey(), d.getName(), d.getUnit(), d.getTarget(), d.getDirection(),
-                        d.getAmberThreshold(), d.getValueType(), d.getCurrency(), d.getStatusOptions())).collect(Collectors.toList()));
+                        d.getAmberThreshold(), d.getValueType(), d.getCurrency(), d.getStatusOptions(), d.getSubtitle(), d.getDescription(),
+                        d.getDecimals())).collect(Collectors.toList()));
     }
 
     static Section of(TemplateSection s) {

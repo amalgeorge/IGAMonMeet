@@ -5,10 +5,11 @@ import { LineChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import { SVGRenderer } from 'echarts/renderers';
 import { api } from './api.js';
+import { STATUS_LABELS } from './labels.js';
 
 echarts.use([LineChart, GridComponent, TooltipComponent, SVGRenderer]);
 
-const STATUS = { ON_TARGET: 'On target', BELOW_TARGET: 'Below target', OFF_TARGET: 'Off target' };
+const STATUS = STATUS_LABELS;
 const STATUS_COLOR = { ON_TARGET: '#1e7d43', BELOW_TARGET: '#a35d00', OFF_TARGET: '#c8102e' };
 const HEALTH_COLOR = ['#1e7d43', '#a35d00', '#c8102e', '#5b6770', '#8a96a0'];
 const dateFmt = new Intl.DateTimeFormat('en-SG', { day: 'numeric', month: 'short', timeZone: 'Asia/Singapore' });
@@ -87,10 +88,11 @@ export default function DashboardPanel({ meetingId }) {
         {group && <h3 className="dash-group">{group}</h3>}
         <div className="dash-kpis">
           {tiles.map(({ kpi, section, trend }, i) => (
-            <motion.div key={kpi.key} className="kpi-tile dash-kpi" {...rise(i + 3)}>
+            <motion.div key={kpi.key + section} className="kpi-tile dash-kpi" title={kpi.description || undefined} {...rise(i + 3)}>
               <span className="dash-label">{kpi.name} <span className="hint">· {section}</span></span>
+              {kpi.subtitle && <span className="hint">{kpi.subtitle}</span>}
               <span className="kpi-value">{kpi.display}</span>
-              {kpi.status && <span className="dash-pill" style={{ color: STATUS_COLOR[kpi.status], borderColor: STATUS_COLOR[kpi.status] }}>{STATUS[kpi.status]}{kpi.override ? ' (override)' : ''}</span>}
+              {kpi.status && <span className="dash-pill" style={{ color: STATUS_COLOR[kpi.status], borderColor: STATUS_COLOR[kpi.status] }}>{kpi.statusLabel || STATUS[kpi.status]}{kpi.override ? ' (override)' : ''}</span>}
               <span className="hint">{[kpi.targetLine, kpi.deltaLine].filter(Boolean).join(' · ')}</span>
               {trend.statuses ? <Strip trend={trend} /> : <Spark trend={trend} target={kpi.target} />}
             </motion.div>

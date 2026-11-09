@@ -262,7 +262,7 @@ public class PptxWriter {
                 XSLFTextParagraph p = pill.addNewTextParagraph();
                 p.setTextAlign(TextAlign.CENTER);
                 XSLFTextRun r = p.addNewTextRun();
-                r.setText(STATUS_LABEL.get(k.status().name()));
+                r.setText(k.statusLabel() != null ? k.statusLabel() : STATUS_LABEL.get(k.status().name()));
                 r.setFontSize(11.0);
                 r.setBold(true);
                 r.setFontColor(c[1]);

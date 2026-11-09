@@ -68,7 +68,11 @@ class ProgrammeSectionsTest {
         for (JsonNode s : detail.get("sections")) if (s.get("key").asText().equals("jml")) jml = s;
         assertThat(jml).isNotNull();
         assertThat(jml.get("groupName").asText()).isEqualTo("Programme");
-        // Once one of its Sections is in, the group's divider slide appears.
+        // Once one of its Sections is in and filled (empty optional Sections stay off the slides), the group's divider appears.
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/meetings/" + m + "/sections/" + jml.get("id").asLong())
+                .with(csrf()).with(user("ps-admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":" + jml.get("version").asLong() + ",\"content\":{\"rows\":[[\"Joiner\",\"12\",\"11\"]]}}"))
+                .andExpect(status().isOk());
         JsonNode after = json.readTree(mvc.perform(get("/api/meetings/" + m + "/slides").with(user("r").roles("END_USER")))
                 .andReturn().getResponse().getContentAsString()).get("slides");
         boolean divider = false;

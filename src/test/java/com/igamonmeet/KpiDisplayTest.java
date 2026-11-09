@@ -108,7 +108,14 @@ class KpiDisplayTest {
             mvc.perform(get("/api/meetings/" + m).with(user("r").roles("END_USER")))
                     .andExpect(jsonPath(k + "display").value("96.4%"))
                     .andExpect(jsonPath(k + "subtitle").value("Monthly"))
+                    .andExpect(jsonPath(k + "description").value("Share of requests done within SLA."))
                     .andExpect(jsonPath(k + "statusLabel").value("Green"));
+            String plan = mvc.perform(get("/api/meetings/" + m + "/slides").with(user("r").roles("END_USER"))).andReturn().getResponse().getContentAsString();
+            JsonNode kpiSlide = null;
+            for (JsonNode sl : json.readTree(plan).get("slides")) if ("kpis".equals(sl.path("sectionKey").asText())) kpiSlide = sl;
+            org.assertj.core.api.Assertions.assertThat(kpiSlide).as("KPI slide in " + plan).isNotNull();
+            org.assertj.core.api.Assertions.assertThat(kpiSlide.path("data").path("notes").asText()).as(kpiSlide.toString())
+                    .contains("Share of requests done within SLA.");
             mvc.perform(get("/api/meetings/" + m + "/slides").with(user("r").roles("END_USER")))
                     .andExpect(jsonPath("$.slides[?(@.layout=='IAM_KPI')].data.notes")
                             .value(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.containsString("Share of requests done within SLA."))));

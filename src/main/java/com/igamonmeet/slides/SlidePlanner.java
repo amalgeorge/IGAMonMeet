@@ -178,7 +178,7 @@ public class SlidePlanner {
     private static final char BULLET = '\u0001';
 
     /** The blocks of a Text Section as lines; a bullet item is marked so the slide can show it as a list item. */
-    static List<String> textLines(JsonNode content) {
+    public static List<String> textLines(JsonNode content) {
         List<String> lines = new ArrayList<>();
         if (content.path("text").isTextual() && !content.has("blocks")) {
             lines.add(content.get("text").asText()); // plain text from before rich content: one paragraph

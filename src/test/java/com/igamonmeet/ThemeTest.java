@@ -110,16 +110,17 @@ class ThemeTest {
     }
 
     @Test
-    void meetingSlidesUseTheDefaultTheme() throws Exception {
+    void newMeetingsTakeTheDefaultTheme() throws Exception {
         long id = json.readTree(create("Default swap test", settings("5B2C83", "Verdana")).andReturn().getResponse().getContentAsString()).get("id").asLong();
         JsonNode all = json.readTree(mvc.perform(get("/api/themes").with(user("r").roles("END_USER"))).andReturn().getResponse().getContentAsString());
         long red = 0;
         for (JsonNode t : all) if (t.get("name").asText().equals("IAM Red")) red = t.get("id").asLong();
-        long m = json.readTree(mvc.perform(post("/api/admin/meetings").with(csrf()).with(user("th-admin").roles("ADMIN"))
-                .contentType(MediaType.APPLICATION_JSON).content("{\"month\":\"2051-01\",\"meetingDate\":\"2051-01-30\"}"))
-                .andReturn().getResponse().getContentAsString()).get("id").asLong();
+        // A Meeting takes the default Theme when it is created (ticket 31), so switch the default first.
         mvc.perform(post("/api/admin/themes/" + id + "/default").with(csrf()).with(user("th-admin").roles("ADMIN"))).andExpect(status().isNoContent());
         try {
+            long m = json.readTree(mvc.perform(post("/api/admin/meetings").with(csrf()).with(user("th-admin").roles("ADMIN"))
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"month\":\"2051-01\",\"meetingDate\":\"2051-01-30\"}"))
+                    .andReturn().getResponse().getContentAsString()).get("id").asLong();
             mvc.perform(get("/api/meetings/" + m + "/theme").with(user("r").roles("END_USER")))
                     .andExpect(jsonPath("$.colors.accent1").value("5B2C83"))
                     .andExpect(jsonPath("$.headFont").value("Verdana"));

@@ -205,3 +205,9 @@ tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
 .block textarea { width: 100%; }
 .table-style { margin-top: 8px; }
 .table-style summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+
+/* Themes (spec-v2 §4.1) */
+.theme-edit { display: grid; grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
+.theme-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; position: sticky; top: 12px; }
+.theme-edit input[type=color] { width: 48px; height: 32px; padding: 0; border: 1px solid rgba(0,0,0,.15); border-radius: 6px; }
+@media (max-width: 900px) { .theme-edit { grid-template-columns: 1fr; } }

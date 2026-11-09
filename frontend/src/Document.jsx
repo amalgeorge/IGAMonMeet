@@ -1,4 +1,5 @@
 import { SITREP_TYPES } from './labels.js';
+import CsvImport from './CsvImport.jsx';
 import ColumnsEditor, { remapRows } from './ColumnsEditor.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -170,8 +171,13 @@ function KindEditor({ section, value, onChange }) {
           <ListEditor label="Right item" items={value.right || []} onChange={(right) => set({ right })} /></div>
       </div>
     );
-    case 'TABLE': return <TableEditor columns={section.columns} rows={value.rows || []} onChange={(rows) => set({ rows })}
-      style={section.tableStyle ? JSON.parse(section.tableStyle) : null} />;
+    case 'TABLE': return (
+      <>
+        <TableEditor columns={section.columns} rows={value.rows || []} onChange={(rows) => set({ rows })}
+          style={section.tableStyle ? JSON.parse(section.tableStyle) : null} />
+        <CsvImport columns={section.columns} rows={value.rows || []} onApply={(_, rows) => set({ rows })} />
+      </>
+    );
     case 'KPI': return (
       <div>
         <KpiEditor kpis={section.kpis} values={value.values || {}} onChange={(values) => set({ values })} />
@@ -332,6 +338,8 @@ function TableBlockEditor({ block, onChange }) {
     <div>
       <ColumnsEditor columns={cols} onChange={setColumns} />
       <TableEditor columns={cols} rows={block.rows || []} onChange={(rows) => onChange({ rows })} />
+      <CsvImport columns={cols} rows={block.rows || []} allowNewColumns
+        onApply={(columns, rows) => onChange({ columns, rows, style: columns === cols ? block.style : null })} />
       <TableStyleEditor key={cols.join('|')} columns={cols} value={block.style} onChange={(style) => onChange({ style })} />
     </div>
   );

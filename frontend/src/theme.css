@@ -155,3 +155,6 @@ tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
   body { background: #fff; }
   .print-page { width: 13.333in; }
 }
+
+.diff-del { background: #fdecee; color: #9e0b23; white-space: pre-wrap; overflow-wrap: anywhere; }
+.diff-add { background: #e3f3e9; color: #17643a; white-space: pre-wrap; overflow-wrap: anywhere; }

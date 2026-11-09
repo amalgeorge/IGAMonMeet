@@ -129,4 +129,50 @@ class RichContentTest {
             publish(restore);
         }
     }
+
+    @Test
+    void tableBlocksGetTheirOwnSlidesWithTheHeaderRepeated() throws Exception {
+        ObjectNode original = currentAsDraft();
+        ObjectNode draft = original.deepCopy();
+        ObjectNode sec = ((ArrayNode) draft.get("sections")).insertObject(1);
+        sec.put("key", "rc-tables").put("name", "Vendor status").put("teamTag", "SHARED").put("kind", "TEXT")
+                .put("layout", "IAM_SUMMARY").put("overflowRule", "CONTINUE").put("required", false);
+        sec.putArray("columns");
+        sec.putArray("kpis");
+        publish(draft);
+        try {
+            long m = meeting("2050-08", LocalDate.of(2050, 8, 27));
+            save(m, "rc-tables", "{\"blocks\":[{\"type\":\"table\",\"columns\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\",\"i\"],\"rows\":[]}]}")
+                    .andExpect(status().isBadRequest());
+            save(m, "rc-tables", "{\"blocks\":[{\"type\":\"table\",\"columns\":[\"Vendor\",\"Status\"],\"rows\":[[\"Only one cell\"]]}]}")
+                    .andExpect(status().isBadRequest());
+
+            StringBuilder rows = new StringBuilder();
+            for (int i = 0; i < 40; i++) rows.append(i == 0 ? "" : ",").append("[\"Vendor ").append(i).append("\",\"On track\"]");
+            save(m, "rc-tables", "{\"blocks\":[{\"type\":\"paragraph\",\"text\":\"Before the table.\"},"
+                    + "{\"type\":\"table\",\"columns\":[\"Vendor\",\"Status\"],\"rows\":[" + rows + "]},"
+                    + "{\"type\":\"paragraph\",\"text\":\"After the table.\"}]}").andExpect(status().isOk());
+
+            JsonNode plan = json.readTree(mvc.perform(get("/api/meetings/" + m + "/slides").with(user("r").roles("END_USER")))
+                    .andReturn().getResponse().getContentAsString());
+            List<String> layouts = new java.util.ArrayList<>();
+            int tableRows = 0;
+            for (JsonNode sl : plan.get("slides")) {
+                if (!"rc-tables".equals(sl.path("sectionKey").asText())) continue;
+                layouts.add(sl.get("layout").asText());
+                if ("IAM_TABLE".equals(sl.get("layout").asText())) {
+                    org.assertj.core.api.Assertions.assertThat(sl.at("/data/head/0").asText()).isEqualTo("Vendor");
+                    tableRows += sl.at("/data/rows").size();
+                }
+            }
+            org.assertj.core.api.Assertions.assertThat(layouts.get(0)).isEqualTo("IAM_SUMMARY");
+            org.assertj.core.api.Assertions.assertThat(layouts.get(layouts.size() - 1)).isEqualTo("IAM_SUMMARY");
+            org.assertj.core.api.Assertions.assertThat(layouts.stream().filter("IAM_TABLE"::equals).count()).isGreaterThan(1);
+            org.assertj.core.api.Assertions.assertThat(tableRows).isEqualTo(40);
+        } finally {
+            ObjectNode restore = currentAsDraft();
+            restore.set("sections", original.get("sections"));
+            publish(restore);
+        }
+    }
 }

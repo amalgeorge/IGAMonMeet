@@ -36,9 +36,31 @@ public class ContentExtractor {
                 c.putArray("stats");
             }
             case TEXT -> {
-                // Each body paragraph becomes a paragraph block (the reader does not keep bullet formatting).
+                // Each body paragraph becomes a paragraph block (the reader does not keep bullet formatting); a PowerPoint table
+                // becomes a table block, and continuation slides with the same header extend it (docs/spec-v2.md §3.4).
                 ArrayNode blocks = c.putArray("blocks");
-                slides.forEach(s -> body(s).forEach(t -> blocks.addObject().put("type", "paragraph").put("text", t)));
+                ObjectNode lastTable = null;
+                for (RawSlide s : slides) {
+                    for (String t : body(s)) {
+                        blocks.addObject().put("type", "paragraph").put("text", t);
+                        lastTable = null;
+                    }
+                    if (s.table().isEmpty()) continue;
+                    List<String> header = s.table().get(0).subList(0, Math.min(8, s.table().get(0).size()));
+                    boolean continues = lastTable != null && header.equals(texts(lastTable.get("columns")));
+                    ObjectNode tb = continues ? lastTable : blocks.addObject().put("type", "table");
+                    if (!continues) {
+                        ArrayNode cols = tb.putArray("columns");
+                        for (int i = 0; i < header.size(); i++) cols.add(header.get(i).isBlank() ? "Column " + (i + 1) : header.get(i));
+                        tb.putArray("rows");
+                    }
+                    for (List<String> r : s.table().subList(1, s.table().size())) {
+                        if (r.stream().allMatch(String::isBlank) || r.equals(s.table().get(0))) continue;
+                        ArrayNode row = ((ArrayNode) tb.get("rows")).addArray();
+                        for (int i = 0; i < header.size(); i++) row.add(i < r.size() ? r.get(i) : "");
+                    }
+                    lastTable = tb;
+                }
             }
             case TABLE -> {
                 ArrayNode rows = c.putArray("rows");
@@ -143,6 +165,12 @@ public class ContentExtractor {
             for (int i = 0; i < columns.size(); i++) row.add(from[i] < r.size() ? r.get(from[i]) : "");
             out.add(row);
         }
+        return out;
+    }
+
+    private static List<String> texts(JsonNode arr) {
+        List<String> out = new ArrayList<>();
+        arr.forEach(n -> out.add(n.asText("")));
         return out;
     }
 

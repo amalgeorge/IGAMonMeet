@@ -24,6 +24,7 @@ export default function MeetingDocument({ id, me, onBack }) {
   const [threads, setThreads] = useState([]);
   const [perSection, setPerSection] = useState({});
   const [tab, setTab] = useState('document');
+  const [collapsed, setCollapsed] = useState({});
   const load = () => {
     api(`/api/meetings/${id}`).then(setDoc);
     api(`/api/meetings/${id}/slides`).then((p) => setPerSection(p.slidesPerSection)).catch(() => {});
@@ -66,12 +67,22 @@ export default function MeetingDocument({ id, me, onBack }) {
         <nav className="outline" aria-label="Sections">
           <div className="label">Progress · {doc.requiredFilled} of {doc.requiredSections} required</div>
           <div className="bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><motion.div initial={false} animate={{ width: `${pct}%` }} /></div>
-          {doc.sections.map((s) => (
-            <a key={s.id} href={`#sec-${s.id}`} className="outline-item">
-              <span className={`dot ${s.filled ? 'done' : ''}`} aria-hidden="true">{s.filled ? '✓' : ''}</span>
-              {s.name}{s.required ? '' : <span className="hint"> · optional</span>}{s.onSlides === false && <span className="hint"> · not on slides</span>}
-            </a>
-          ))}
+          {outlineGroups(doc.sections).map(({ key, name, items }) => {
+            const req = items.filter((s) => s.required);
+            const open = !key || !collapsed[key];
+            return (<div key={key || items[0].id} className={key ? 'outline-group' : ''}>
+              {key && <button className="outline-head" aria-expanded={open} onClick={() => setCollapsed({ ...collapsed, [key]: open })}>
+                <span aria-hidden="true">{open ? '▾' : '▸'}</span> {name}
+                {req.length > 0 && <span className="hint"> · {req.filter((s) => s.filled).length} of {req.length}</span>}
+              </button>}
+              {open && items.map((s) => (
+                <a key={s.id} href={`#sec-${s.id}`} className="outline-item">
+                  <span className={`dot ${s.filled ? 'done' : ''}`} aria-hidden="true">{s.filled ? '✓' : ''}</span>
+                  {s.name}{s.required ? '' : <span className="hint"> · optional</span>}{s.onSlides === false && <span className="hint"> · not on slides</span>}
+                </a>
+              ))}
+            </div>);
+          })}
           <AvailablePanel meetingId={id} sections={doc.sections} canEdit={doc.canEdit} onChange={load} />
         </nav>
         <div className="doc-body">
@@ -164,6 +175,17 @@ function KindEditor({ section, value, onChange }) {
     );
     default: return null;
   }
+}
+
+/** Consecutive Sections that share a Section group, in Template order (spec-v2 §1.5). */
+function outlineGroups(sections) {
+  const out = [];
+  sections.forEach((s) => {
+    const last = out[out.length - 1];
+    if (s.groupKey && last && last.key === s.groupKey) last.items.push(s);
+    else out.push({ key: s.groupKey || null, name: s.groupName, items: [s] });
+  });
+  return out;
 }
 
 const STATUS = { ON_TARGET: 'On target', BELOW_TARGET: 'Below target', OFF_TARGET: 'Off target' };

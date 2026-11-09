@@ -71,7 +71,8 @@ public class MeetingDetails {
                     s.getChartKpiKey(), s.getContentJson(), s.getUpdatedBy(), s.getUpdatedAt(), s.getVersion(),
                     locks.findById(s.getId()).filter(l -> l.isLiveAt(now)).map(SectionLock::getUsername).orElse(null),
                     SectionContent.filled(s.getKind(), s.getContentJson(), openItems, requiredKpis, json), kpis, s.isOnSlides(),
-                    s.isSwitchedOn(), s.getEnabledKpis());
+                    s.isSwitchedOn(), s.getEnabledKpis(),
+                    defs.group(m, s).map(g -> g.getGroupKey()).orElse(null), defs.group(m, s).map(g -> g.getName()).orElse(null));
         }).collect(Collectors.toList());
         List<ActionView> items = actionsAndComments.ordered(id).stream()
                 .map(a -> new ActionView(a.getId(), a.getTitle(), a.getOwner(), a.getTeamTag(), a.getDueDate(), a.getStatus(), a.getOriginMeetingId(),

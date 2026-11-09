@@ -11,12 +11,13 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g
 export default function AdminTemplate() {
   const [base, setBase] = useState(null);
   const [sections, setSections] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [note, setNote] = useState('');
   const [versions, setVersions] = useState([]);
   const [msg, setMsg] = useState({});
 
   const load = () => {
-    api('/api/templates/current').then((t) => { setBase(t.versionNo); setSections(t.sections); });
+    api('/api/templates/current').then((t) => { setBase(t.versionNo); setSections(t.sections); setGroups(t.groups || []); });
     api('/api/admin/templates').then(setVersions);
   };
   useEffect(() => { load(); }, []);
@@ -36,7 +37,7 @@ export default function AdminTemplate() {
 
   const publish = () => {
     setMsg({});
-    api('/api/admin/templates', { method: 'POST', json: { basedOnVersion: base, note, sections } })
+    api('/api/admin/templates', { method: 'POST', json: { basedOnVersion: base, note, sections, groups } })
       .then((v) => { setMsg({ ok: `Published version ${v.versionNo}. New meetings use it; existing meetings keep their version.` }); setNote(''); load(); })
       .catch((e) => setMsg({ error: e.message }));
   };
@@ -47,6 +48,7 @@ export default function AdminTemplate() {
       <div className="row"><h1>Template <span className="hint">editing from version {base}</span></h1></div>
       {msg.error && <p className="error" role="alert">{msg.error}</p>}
       {msg.ok && <p className="notice" role="status">{msg.ok}</p>}
+      <GroupsEditor groups={groups} onChange={setGroups} onRemove={(key) => setSections(sections.map((s) => (s.groupKey === key ? { ...s, groupKey: null } : s)))} />
       <ol className="tpl-list">
         {sections.map((s, i) => (
           <li key={s.key} className="tpl-card">
@@ -64,6 +66,8 @@ export default function AdminTemplate() {
                 {Object.entries(TEAMS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
               <label className="field"><span>When content overflows</span><select value={s.overflowRule} onChange={(e) => update(i, { overflowRule: e.target.value })}>
                 {Object.entries(OVERFLOW).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+              <label className="field"><span>Group</span><select value={s.groupKey || ''} onChange={(e) => update(i, { groupKey: e.target.value || null })}>
+                <option value="">No group</option>{groups.map((g) => <option key={g.key} value={g.key}>{g.name}</option>)}</select></label>
               <label className="field"><span>Visibility</span><select value={s.visibility || 'SHOWN'} onChange={(e) => update(i, { visibility: e.target.value })}>
                 {Object.entries(VISIBILITY).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
               <label className="check"><input type="checkbox" checked={s.required} onChange={(e) => update(i, { required: e.target.checked })} /> Required</label>
@@ -105,6 +109,32 @@ const VISIBILITY_HINT = {
   AVAILABLE: 'Hidden in new Meetings until an editor switches it on for that Meeting.',
   RETIRED: 'Hidden from new Meetings. Past Meetings and trend history are kept.',
 };
+
+function GroupsEditor({ groups, onChange, onRemove }) {
+  const set = (i, patch) => onChange(groups.map((g, j) => (j === i ? { ...g, ...patch } : g)));
+  const add = () => {
+    let n = groups.length + 1; let key = `group-${n}`;
+    while (groups.some((g) => g.key === key)) key = `group-${++n}`;
+    onChange([...groups, { key, name: 'New group', visibility: 'SHOWN', divider: true }]);
+  };
+  return (
+    <div className="tpl-card">
+      <div className="row"><strong>Section groups</strong><button className="btn" onClick={add}>Add group</button></div>
+      <p className="hint">A group gathers neighbouring Sections under one heading, with an optional divider slide. Sections of a group must be next to each other.</p>
+      {groups.length > 0 && <div className="table-wrap"><table>
+        <thead><tr><th>Group</th><th>Visibility</th><th>Divider slide</th><th><span className="sr">Remove</span></th></tr></thead>
+        <tbody>{groups.map((g, i) => (
+          <tr key={g.key}>
+            <td><input aria-label="Group name" value={g.name} onChange={(e) => set(i, { name: e.target.value })} /></td>
+            <td><select aria-label="Group visibility" value={g.visibility || 'SHOWN'} onChange={(e) => set(i, { visibility: e.target.value })}>
+              {Object.entries(VISIBILITY).map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select></td>
+            <td><input aria-label="Divider slide" type="checkbox" checked={g.divider !== false} onChange={(e) => set(i, { divider: e.target.checked })} /></td>
+            <td><button className="btn" onClick={() => { onRemove(g.key); onChange(groups.filter((_, j) => j !== i)); }}>Remove</button></td>
+          </tr>))}</tbody>
+      </table></div>}
+    </div>
+  );
+}
 
 function KpiEditor({ kpis, onChange }) {
   const set = (i, patch) => onChange(kpis.map((k, j) => (j === i ? { ...k, ...patch } : k)));

@@ -68,7 +68,7 @@ public class AvailableItems {
         TemplateVersion latest = templates.current();
         Set<String> visible = m.getSections().stream().filter(s -> !s.isHidden()).map(MeetingSection::getSectionKey).collect(Collectors.toSet());
         List<CatalogueSection> secs = latest.getSections().stream()
-                .filter(t -> t.getVisibility() == Visibility.AVAILABLE && !visible.contains(t.getSectionKey()))
+                .filter(t -> latest.effectiveVisibility(t) == Visibility.AVAILABLE && !visible.contains(t.getSectionKey()))
                 .map(t -> new CatalogueSection(t.getSectionKey(), t.getName(), t.getKind()))
                 .collect(Collectors.toList());
         SectionDefs.Lookup lookup = defs.lookup();
@@ -87,7 +87,7 @@ public class AvailableItems {
     public void sectionOn(long meetingId, String key, String user, boolean admin) {
         Meeting m = openForSwitching(meetingId, admin);
         TemplateVersion latest = templates.current();
-        TemplateSection t = latestDef(latest, key).filter(d -> d.getVisibility() == Visibility.AVAILABLE)
+        TemplateSection t = latestDef(latest, key).filter(d -> latest.effectiveVisibility(d) == Visibility.AVAILABLE)
                 .orElseThrow(() -> new AccountException(HttpStatus.NOT_FOUND, "NOT_AVAILABLE", "That Section is not available to switch on."));
         Optional<MeetingSection> existing = m.getSections().stream().filter(s -> s.getSectionKey().equals(key)).findFirst();
         if (existing.isPresent() && !existing.get().isHidden()) {

@@ -35,7 +35,7 @@ public class DashboardService {
     public record Trend(List<String> labels, List<BigDecimal> values) {
     }
 
-    public record KpiTile(KpiView kpi, String section, Trend trend) {
+    public record KpiTile(KpiView kpi, String section, String group, Trend trend) {
     }
 
     public record Health(String sectionKey, String section, Map<String, Integer> counts, int total) {
@@ -77,7 +77,7 @@ public class DashboardService {
         for (SectionView s : d.sections()) {
             if (s.kind() == SectionKind.KPI) {
                 for (KpiView k : s.kpis()) {
-                    tiles.add(new KpiTile(k, s.name(), trend(history, s.key(), k.key())));
+                    tiles.add(new KpiTile(k, s.name(), s.groupName(), trend(history, s.key(), k.key())));
                 }
             }
             if (s.kind() == SectionKind.TABLE) {

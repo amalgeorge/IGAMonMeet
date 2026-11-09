@@ -51,7 +51,7 @@ public class MeetingService {
         Meeting m = new Meeting(key, meetingDate, name, template.getVersionNo(), admin, now);
         int order = 0;
         for (TemplateSection s : template.getSections()) {
-            if (s.getVisibility() != Visibility.SHOWN) {
+            if (template.effectiveVisibility(s) != Visibility.SHOWN) {
                 continue; // Available ones are switched on per Meeting (ticket 20); Retired ones never appear.
             }
             MeetingSection ms = new MeetingSection(m, s.getSectionKey(), s.getName(), s.getTeamTag(), s.getKind(), s.getLayout(),

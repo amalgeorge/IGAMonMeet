@@ -3,6 +3,7 @@ package com.igamonmeet.template;
 import com.igamonmeet.account.AccountException;
 import com.igamonmeet.audit.AuditLog;
 import com.igamonmeet.template.TemplateDtos.Draft;
+import com.igamonmeet.template.TemplateDtos.Group;
 import com.igamonmeet.template.TemplateDtos.Kpi;
 import com.igamonmeet.template.TemplateDtos.Section;
 import java.time.Clock;
@@ -45,15 +46,20 @@ public class TemplateService {
             throw new AccountException(HttpStatus.CONFLICT, "TEMPLATE_CHANGED",
                     "Someone published version " + current + " while you were editing. Reload and apply your changes again.");
         }
-        validate(draft.sections());
+        validate(draft.sections(), draft.groupsOrEmpty());
 
         TemplateVersion v = new TemplateVersion(current + 1, admin, clock.instant(), draft.note());
+        int g = 0;
+        for (Group grp : draft.groupsOrEmpty()) {
+            v.add(new TemplateGroup(v, grp.key(), grp.name().trim(), grp.visibilityOrDefault(), grp.dividerOrDefault(), ++g));
+        }
         int order = 0;
         for (Section s : draft.sections()) {
             String cols = s.kind() == SectionKind.TABLE ? String.join("|", s.columns()) : null;
             TemplateSection ts = new TemplateSection(v, s.key(), s.name().trim(), s.teamTag(), s.kind(), s.layout(), s.overflowRule(),
                     s.required(), cols, s.kind() == SectionKind.CHART ? s.chartKpiKey() : null, ++order);
             ts.setVisibility(s.visibilityOrDefault(), s.onSlidesOrDefault());
+            ts.setGroupKey(s.groupKey() == null || s.groupKey().isBlank() ? null : s.groupKey());
             int k = 0;
             if (s.kind() == SectionKind.KPI) {
                 for (Kpi kpi : s.kpis()) {
@@ -70,7 +76,22 @@ public class TemplateService {
         return v;
     }
 
-    private static void validate(List<Section> sections) {
+    private static void validate(List<Section> sections, List<Group> groups) {
+        Set<String> groupKeys = new HashSet<>();
+        for (Group g : groups) {
+            check(groupKeys.add(g.key()), "Group key '" + g.key() + "' is used twice.");
+        }
+        Set<String> closed = new HashSet<>();
+        String previous = null;
+        for (Section s : sections) {
+            String gk = s.groupKey() == null || s.groupKey().isBlank() ? null : s.groupKey();
+            check(gk == null || groupKeys.contains(gk), "Section '" + s.name() + "' is in group '" + gk + "', which does not exist.");
+            if (previous != null && !previous.equals(gk)) {
+                closed.add(previous);
+            }
+            check(gk == null || !closed.contains(gk), "The Sections of a group must be next to each other ('" + s.name() + "').");
+            previous = gk;
+        }
         Set<String> sectionKeys = new HashSet<>();
         Set<String> kpiKeys = new HashSet<>();
         Set<String> liveKpiKeys = new HashSet<>();

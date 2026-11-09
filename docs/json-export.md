@@ -6,7 +6,7 @@
 { "sections": null, "notes": true, "comments": false, "versionStamp": false }
 ```
 
-`sections: null` means every Section switched on in the Meeting; a list of Section keys limits the export. `notes` adds speaker notes, `comments` adds comment threads. `versionStamp` is ignored. Any signed-in user may export; each export is audited as `EXPORTED`.
+`sections: null` means every Section shown in the Meeting; a list of Section keys limits the export. `notes` adds speaker notes, `comments` adds comment threads. `versionStamp` is ignored. Any signed-in user may export; each export is audited as `EXPORTED`.
 
 The file is document-shaped, not slide-shaped: no slide splitting, no overflow rules, and Sections kept off the slides are included. A converter walks `sections` in order and renders each block. It can ignore block types it does not know, so later additions do not break it. A breaking change gets a new schema id.
 

@@ -97,7 +97,7 @@ public class DocumentExport {
         ArrayNode sections = doc.putArray("sections");
         int exported = 0;
         for (SectionView s : d.sections()) {
-            if (!s.switchedOn() || (include != null && !include.contains(s.key()))) {
+            if (include != null && !include.contains(s.key())) { // hidden Sections are already left out of the detail
                 continue;
             }
             exported++;

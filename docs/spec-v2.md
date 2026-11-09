@@ -62,7 +62,7 @@ Builds on [v1](spec.md). Vocabulary follows [CONTEXT.md](../CONTEXT.md). Decisio
 ## 5. JSON export for Word
 
 1. **Export** (user request after Q24). The Export panel offers "JSON (for Word)" next to PPTX and PDF. It honours the same Section, speaker-notes and comments choices; the export stamp does not apply.
-2. **Shape**. Document-shaped, not slide-shaped: Sections in Meeting order, each a list of blocks (`paragraph`, `bullets`, `stats`, `table`, `kpis`, `chart`, `columns`, `actionItems`). No pagination, no overflow rules. All Sections switched on in the Meeting are included, also those kept off the slides. Schema id `igamonmeet.document/1`; see [json-export.md](json-export.md).
+2. **Shape**. Document-shaped, not slide-shaped: Sections in Meeting order, each a list of blocks (`paragraph`, `bullets`, `stats`, `table`, `kpis`, `chart`, `columns`, `actionItems`). No pagination, no overflow rules. All Sections shown in the Meeting are included, also those kept off the slides. Schema id `igamonmeet.document/1`; see [json-export.md](json-export.md).
 3. **Word**. `tools/json-to-word/json_to_docx.py` turns the file into a .docx with the Theme's fonts and colours. Other converters (Power Automate, pandoc filters) can read the same file.
 4. Audit: `EXPORTED`, "JSON".
 

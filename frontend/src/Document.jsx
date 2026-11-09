@@ -4,6 +4,7 @@ import { api } from './api.js';
 import { ActionItems, Comments } from './Collab.jsx';
 import SlidesView from './SlidesView.jsx';
 import ExportPanel from './ExportPanel.jsx';
+import ImportPanel from './ImportPanel.jsx';
 
 const TEAM = { ENGINEERING: 'Engineering', OPERATIONS: 'Operations', SHARED: 'Shared' };
 const LABEL = { PREPARING: 'Preparing', HELD: 'Held' };
@@ -48,12 +49,13 @@ export default function MeetingDocument({ id, me, onBack }) {
       </div>
       <p className="hint">Meeting {dateFmt.format(new Date(`${m.meetingDate}T00:00:00+08:00`))} · {doc.canEdit ? (m.editWindowOpen ? `Editable until ${timeFmt.format(new Date(m.editableUntil))}` : 'Edit window closed: Admin editing') : 'Read only: edit window closed'}</p>
       <nav className="seg" aria-label="View">
-        {[['document', 'Document'], ['slides', 'Slides'], ['export', 'Export']].map(([k, label]) => (
+        {[['document', 'Document'], ['slides', 'Slides'], ['import', 'Import'], ['export', 'Export']].map(([k, label]) => (
           <button key={k} className={tab === k ? 'on' : ''} aria-current={tab === k ? 'page' : undefined} onClick={() => { setTab(k); if (k === 'document') load(); }}>{label}</button>
         ))}
       </nav>
       {error && <p className="error" role="alert">{error}</p>}
       {tab === 'slides' && <SlidesView meetingId={id} />}
+      {tab === 'import' && <ImportPanel meetingId={id} sections={doc.sections} canEdit={doc.canEdit} onApplied={load} />}
       {tab === 'export' && <ExportPanel meetingId={id} sections={doc.sections} />}
       {tab === 'document' && <div className="doc">
         <nav className="outline" aria-label="Sections">

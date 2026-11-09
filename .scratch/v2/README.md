@@ -12,7 +12,7 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 24 | KPI value types | 23 | Done |
 | 25 | KPI display fields and status labels | 23 | Done |
 | 26 | KPI tiles per slide | 23 | Done |
-| 27 | Rich content blocks | 24, 25, 26 | |
+| 27 | Rich content blocks | 24, 25, 26 | Done |
 | 28 | Table blocks | 27 | |
 | 29 | Table styling | 28 | |
 | 30 | Theme editor | 29 | |

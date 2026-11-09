@@ -51,6 +51,19 @@ final class SectionContent {
                     }
                 });
             }
+            case TEXT -> {
+                check(c.path("blocks").isArray(), "'blocks' must be a list.");
+                check(c.get("blocks").size() <= 200, "A Text Section can hold up to 200 blocks.");
+                c.get("blocks").forEach(b -> {
+                    String type = b.path("type").asText();
+                    switch (type) {
+                        case "paragraph" -> check(b.path("text").isTextual() && b.get("text").asText().length() <= 5000,
+                                "A paragraph needs text of up to 5000 characters.");
+                        case "bullets" -> textArray(b, "items");
+                        default -> check(false, "Unknown block type '" + type + "'.");
+                    }
+                });
+            }
             case CHART -> textArray(c, "commentary");
             case TABLE -> {
                 check(c.path("rows").isArray(), "'rows' must be a list.");
@@ -93,6 +106,7 @@ final class SectionContent {
                 }
                 case TABLE -> c.path("rows").size() > 0;
                 case TWO_COLUMN -> hasText(c.path("left")) || hasText(c.path("right"));
+                case TEXT -> !com.igamonmeet.slides.SlidePlanner.textLines(c).isEmpty();
                 default -> true;
             };
         } catch (Exception e) {

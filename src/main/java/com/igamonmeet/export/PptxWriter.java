@@ -136,6 +136,10 @@ public class PptxWriter {
         switch (s.layout()) {
             case "IAM_SECTION", "IAM_CLOSING" -> text(slide, "body", String.valueOf(d.getOrDefault("body", "")));
             case "IAM_SUMMARY" -> {
+                if (d.containsKey("blocks")) {
+                    blocks(slide, (List<Map<String, Object>>) d.get("blocks"), ((Number) d.get("fontSize")).doubleValue(), w);
+                    break;
+                }
                 list(slide, "body", (List<String>) d.get("points"), ((Number) d.get("fontSize")).doubleValue(), true);
                 List<Map<String, Object>> stats = (List<Map<String, Object>>) d.getOrDefault("stats", List.of());
                 for (int i = 0; i < stats.size(); i++) {
@@ -191,7 +195,32 @@ public class PptxWriter {
         }
     }
 
-    private static void list(XSLFSlide slide, String name, List<String> items, double size, boolean numbered) {
+/** A Text Section's blocks in the body placeholder, widened to the full content width: paragraphs and bullet items. */
+    private static void blocks(XSLFSlide slide, List<Map<String, Object>> blocks, double size, double w) {
+        XSLFTextShape t = placeholder(slide, "body");
+        if (t == null) {
+            return;
+        }
+        Rectangle2D a = t.getAnchor();
+        t.setAnchor(new Rectangle2D.Double(0.045 * w, a.getY(), 0.91 * w, a.getHeight()));
+        t.clearText();
+        for (Map<String, Object> b : blocks) {
+            XSLFTextParagraph p = t.addNewTextParagraph();
+            boolean li = "li".equals(b.get("type"));
+            p.setBullet(li);
+            if (!li) {
+                p.setIndentLevel(0);
+                p.setIndent(0.0);
+                p.setLeftMargin(0.0);
+            }
+            p.setSpaceAfter(li ? 6.0 : 12.0);
+            XSLFTextRun r = p.addNewTextRun();
+            r.setText(String.valueOf(b.get("text")));
+            r.setFontSize(size);
+        }
+    }
+
+        private static void list(XSLFSlide slide, String name, List<String> items, double size, boolean numbered) {
         XSLFTextShape t = placeholder(slide, name);
         if (t == null || items == null) {
             return;

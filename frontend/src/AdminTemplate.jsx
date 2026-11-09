@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
+import ColumnsEditor from './ColumnsEditor.jsx';
 import TableStyleEditor from './TableStyleEditor.jsx';
 import { api } from './api.js';
 
@@ -82,8 +83,8 @@ export default function AdminTemplate() {
             </div>
             {(s.visibility || 'SHOWN') !== 'SHOWN' && <p className="hint">{VISIBILITY_HINT[s.visibility]}</p>}
             {s.kind === 'TABLE' && (
-              <label className="field"><span>Columns (comma-separated)</span>
-                <input value={s.columns.join(', ')} onChange={(e) => update(i, { columns: e.target.value.split(',').map((c) => c.trim()).filter(Boolean), tableStyle: null })} /></label>
+              <ColumnsEditor columns={s.columns.length ? s.columns : ['Column 1']}
+                onChange={(columns, from) => update(i, { columns, tableStyle: from.every((j, k) => j === k) && columns.length === s.columns.length ? s.tableStyle : null })} />
             )}
             {s.kind === 'TABLE' && s.columns.length > 0 && <TableStyleEditor key={s.columns.join('|')} columns={s.columns} value={s.tableStyle} onChange={(tableStyle) => update(i, { tableStyle })} />}
             {s.kind === 'CHART' && (

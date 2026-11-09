@@ -152,7 +152,9 @@ public class TemplateService {
             check(s.kind().allows(s.layout()), "Layout " + s.layout() + " cannot show a " + s.kind() + " section ('" + s.name() + "').");
             if (s.kind() == SectionKind.TABLE) {
                 check(s.columns() != null && !s.columns().isEmpty(), "Table section '" + s.name() + "' needs at least one column.");
-                s.columns().forEach(c -> check(!c.contains("|"), "Column names cannot contain '|'."));
+                check(s.columns().size() <= 12, "Table section '" + s.name() + "' can have up to 12 columns.");
+                s.columns().forEach(c -> check(c != null && !c.isBlank() && c.length() <= 80 && !c.contains("|"),
+                        "Each column of '" + s.name() + "' needs a name of up to 80 characters, without '|'."));
                 String styleProblem = com.igamonmeet.slides.TableStyle.problem(s.tableStyle(), s.columns().size());
                 check(styleProblem == null, "Table section '" + s.name() + "': " + styleProblem);
             }

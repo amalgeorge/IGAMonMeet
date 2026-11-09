@@ -17,4 +17,5 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 29 | Table styling | 28 | Done |
 | 30 | Theme editor | 29 | Done |
 | 31 | Meeting Theme choice and versions | 30 | Done |
-| 32 | Theme in PPTX and PDF export | 31 | |
+| 32 | Theme in PPTX and PDF export | 31 | Done |
+| 33 | JSON export for Word | 32 | Done |

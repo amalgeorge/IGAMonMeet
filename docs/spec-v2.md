@@ -56,8 +56,15 @@ Builds on [v1](spec.md). Vocabulary follows [CONTEXT.md](../CONTEXT.md). Decisio
    - preview of sample slides before saving
 2. **Choosing a Theme** (Q22). Admin at any time; any editor while the Meeting is Preparing.
 3. **Versions** (Q13, ADR 0008). Each save is a new Theme version. A Preparing Meeting follows the latest version; from the Meeting date it is frozen at the version in use.
-4. **Export** (Q23). Writes Theme colours and fonts into the PowerPoint theme and backgrounds into the title, divider and content layouts, so the file stays editable in PowerPoint. PDF via browser print uses the same styling.
+4. **Export** (Q23). Writes Theme colours and fonts into the PowerPoint theme, so the file stays editable in PowerPoint. Each slide gets the background of its kind (title, divider or content): the colour as the slide background, and the image, if any, as a full-slide picture behind everything. The logo sits top-right unless switched off; KPI pills use the Theme's status colours. PDF via browser print uses the same styling.
 5. **Import** (Q14). Content only; the file's styling is ignored.
+
+## 5. JSON export for Word
+
+1. **Export** (user request after Q24). The Export panel offers "JSON (for Word)" next to PPTX and PDF. It honours the same Section, speaker-notes and comments choices; the export stamp does not apply.
+2. **Shape**. Document-shaped, not slide-shaped: Sections in Meeting order, each a list of blocks (`paragraph`, `bullets`, `stats`, `table`, `kpis`, `chart`, `columns`, `actionItems`). No pagination, no overflow rules. All Sections shown in the Meeting are included, also those kept off the slides. Schema id `igamonmeet.document/1`; see [json-export.md](json-export.md).
+3. **Word**. `tools/json-to-word/json_to_docx.py` turns the file into a .docx with the Theme's fonts and colours. Other converters (Power Automate, pandoc filters) can read the same file.
+4. Audit: `EXPORTED`, "JSON".
 
 ## Out of scope for v2
 

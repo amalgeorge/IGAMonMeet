@@ -104,7 +104,7 @@ public class ProgrammeUpgrade implements ApplicationRunner {
         List<Kpi> pid = libraryKpis().stream().map(k -> new Kpi(k.key(), k.name(), k.unit(), k.target(), k.direction(), k.amberThreshold(),
                 false, Visibility.SHOWN)).toList();
         return List.of(
-                table("access-reviews", "Access reviews", List.of("Campaign", "Scope", "% complete", "Due", "Overdue reviewers", "Status"),
+                table("access-certifications", "Access reviews / certifications", List.of("Campaign", "Scope", "% complete", "Due", "Overdue reviewers", "Status"),
                         style().put("statusColumn", 5).set("wholeNumbers", json.createArrayNode().add(4))),
                 new Section("privileged-id", "Privileged ID", TeamTag.OPERATIONS, SectionKind.KPI, "IAM_KPI", OverflowRule.CONTINUE, false,
                         List.of(), null, pid, Visibility.AVAILABLE, true, GROUP, "3", null),

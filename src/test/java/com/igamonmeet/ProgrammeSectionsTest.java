@@ -39,7 +39,7 @@ class ProgrammeSectionsTest {
                 assertThat(s.get("visibility").asText()).isEqualTo("AVAILABLE");
             }
         }
-        assertThat(programme).containsExactly("access-reviews", "privileged-id", "jml", "app-onboarding", "decisions", "wins");
+        assertThat(programme).containsExactly("access-certifications", "privileged-id", "jml", "app-onboarding", "decisions", "wins");
         List<String> lib = new ArrayList<>();
         cur.get("kpiLibrary").forEach(k -> lib.add(k.get("key").asText()));
         assertThat(lib).contains("vault-coverage", "sessions-recorded", "break-glass");
@@ -50,7 +50,7 @@ class ProgrammeSectionsTest {
         JsonNode detail = json.readTree(mvc.perform(get("/api/meetings/" + m).with(user("r").roles("END_USER"))).andReturn().getResponse().getContentAsString());
         List<String> keys = new ArrayList<>();
         detail.get("sections").forEach(s -> keys.add(s.get("key").asText()));
-        assertThat(keys).doesNotContain("access-reviews", "wins");
+        assertThat(keys).doesNotContain("access-certifications", "wins");
 
         mvc.perform(post("/api/meetings/" + m + "/available/sections/jml").with(csrf()).with(user("ps-admin").roles("ADMIN")))
                 .andExpect(status().is2xxSuccessful());

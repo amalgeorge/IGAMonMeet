@@ -29,7 +29,7 @@ Builds on [v2](spec-v2.md). Decisions Q1 to Q11 are in [.scratch/v3/grilling.md]
 ## 3. New Sections (Q11)
 
 Added once to the Template (start-up upgrade) as Available, in a new Available group "Programme" with a divider slide, placed before Action items:
-1. Access reviews / certifications: table Campaign | Scope | % complete | Due | Overdue reviewers | Status (status-coloured).
+1. Access reviews / certifications (key `access-certifications`; the older "Access reviews" Section stays as it is): table Campaign | Scope | % complete | Due | Overdue reviewers | Status (status-coloured).
 2. Privileged ID: KPI Section (3 tiles) with library KPIs Privileged accounts vaulted (%, higher, target 95, amber 90), Privileged sessions recorded (%, higher, 95/90), Break-glass uses (count, lower, 0/2). The library needs a target, so these are starting points for the Admin to change.
 3. Joiner-Mover-Leaver: table Type | Requests | Completed, Total row.
 4. Application onboarding pipeline: table Application | Stage | ETA | Blocker | Status (status-coloured).

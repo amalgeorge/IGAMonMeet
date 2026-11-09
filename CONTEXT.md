@@ -23,6 +23,10 @@ _Avoid_: Draft, In review, Final
 One titled part of a Meeting (for example Key metrics, Roadmap, Action items), belonging to a Team tag, whose content is the single source for the Document view, slides, dashboard and export.
 _Avoid_: Page, slide, block
 
+**Section group**:
+An optional, Admin-defined heading in the Template that gathers several Sections under one title (for example "Operations review"). A Section belongs to at most one Section group.
+_Avoid_: Category, chapter
+
 **Section lock**:
 A short-lived claim one User holds while editing a Section, so another User sees it is being edited.
 
@@ -38,6 +42,10 @@ A Section the Template marks as expected to be filled; optional Sections may sta
 **House template**:
 The PowerPoint master file whose named layouts define how Sections become slides on export and are recognised on import.
 _Avoid_: Theme, master deck
+
+**Theme**:
+A named set of colours, fonts and slide backgrounds, maintained by an Admin, that styles a Meeting's slides on top of the House template. Each Meeting uses one Theme.
+_Avoid_: Skin, style, template (Template means the Sections and KPIs)
 
 **Overflow rule**:
 The per-Section setting for content that does not fit one slide: continue on new slides, shrink to fit, or show the first rows and move the rest to an appendix slide.

@@ -1,3 +1,4 @@
+import RichTextEditor, { fromPlain, RichView } from './RichText.jsx';
 import { SITREP_TYPES } from './labels.js';
 import CsvImport from './CsvImport.jsx';
 import ColumnsEditor, { remapRows } from './ColumnsEditor.jsx';
@@ -157,12 +158,33 @@ function SectionEditor({ meetingId, section }) {
   );
 }
 
+/** Each kind's fields, then the formatted-text box every Section has (spec-v3 §2). */
 function KindEditor({ section, value, onChange }) {
+  // Old commentary (KPI text, chart lines) moves into the formatted-text box the first time the Section is edited.
+  const legacy = section.kind === 'KPI' ? value.commentary : section.kind === 'CHART' ? value.commentary : null;
+  const rich = value.rich || fromPlain(legacy);
+  const setRich = (doc) => {
+    const next = { ...value, rich: doc };
+    if (section.kind === 'KPI') next.commentary = '';
+    if (section.kind === 'CHART') next.commentary = [];
+    onChange(next);
+  };
+  return (
+    <>
+      <KindFields section={section} value={value} onChange={onChange} />
+      {section.kind !== 'ACTION_ITEMS' && <RichTextEditor key={section.id} value={rich}
+        label={section.kind === 'TEXT' ? 'Formatted text' : 'Notes and commentary (formatted; on the slide when it fits, otherwise on the next slide)'}
+        onChange={setRich} />}
+    </>
+  );
+}
+
+function KindFields({ section, value, onChange }) {
   const set = (patch) => onChange({ ...value, ...patch });
   switch (section.kind) {
     case 'TEXT': return <BlocksEditor blocks={value.blocks || []} onChange={(blocks) => set({ blocks })} />;
     case 'SUMMARY': return <ListEditor label="Key point" items={value.points || []} onChange={(points) => set({ points })} numbered />;
-    case 'CHART': return <ListEditor label="Commentary line" items={value.commentary || []} onChange={(commentary) => set({ commentary })} />;
+    case 'CHART': return <p className="hint">The chart is drawn from the KPI's history. Add commentary in the box below.</p>;
     case 'TWO_COLUMN': return (
       <div className="grid">
         <div><label className="field"><span>Left heading</span><input value={value.leftHead || ''} onChange={(e) => set({ leftHead: e.target.value })} /></label>
@@ -181,8 +203,6 @@ function KindEditor({ section, value, onChange }) {
     case 'KPI': return (
       <div>
         <KpiEditor kpis={section.kpis} values={value.values || {}} onChange={(values) => set({ values })} />
-        <label className="field"><span>Commentary (shown under the KPI tiles)</span>
-          <textarea rows={3} value={value.commentary || ''} onChange={(e) => set({ commentary: e.target.value })} /></label>
       </div>
     );
     default: return null;
@@ -393,6 +413,10 @@ function TableEditor({ columns, rows, onChange, style }) {
 function SectionView({ section }) {
   const c = section.contentJson ? JSON.parse(section.contentJson) : null;
   if (!c) return <p className="hint">Not filled in yet.</p>;
+  return <><KindView section={section} c={c} />{c.rich && <RichView doc={c.rich} />}</>;
+}
+
+function KindView({ section, c }) {
   switch (section.kind) {
     case 'TEXT': return <BlocksView blocks={c.blocks || (c.text ? [{ type: 'paragraph', text: c.text }] : [])} />;
     case 'SUMMARY': return <ol>{(c.points || []).filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}</ol>;

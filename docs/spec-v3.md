@@ -23,7 +23,8 @@ Builds on [v2](spec-v2.md). Decisions Q1 to Q11 are in [.scratch/v3/grilling.md]
 1. Every Section has a rich text box, replacing the commentary boxes (KPI commentary, chart commentary, summary points stay as data, commentary moves to rich text).
 2. Formatting: bold, italic, bulleted list, numbered list, one level of sub-bullets, links. Paste strips other formatting.
 3. Stored as a small JSON document (paragraphs, lists, marks), never raw HTML.
-4. Slides: text goes on the Section's slide when it fits, otherwise onto continuation slides. PPTX keeps bold, italic, bullets, numbering and hyperlinks. JSON export carries the same structure.
+4. Slides: in Text Sections the formatted text flows after the blocks, on the same slide when it fits, otherwise onto continuation slides. In every other kind the main slide has no free text area, so the formatted text continues on the Section's own text slide(s) right after it. PPTX keeps bold, italic, bullets, numbering (1. / a.) and hyperlinks. JSON export carries the same structure (block type `richText`).
+5. Old commentary (KPI commentary, chart commentary lines) still shows until the Section is next edited; the editor then moves it into the formatted-text box.
 
 ## 3. New Sections (Q11)
 

@@ -10,6 +10,29 @@ const pt = (n) => `${(n * PT).toFixed(3)}cqw`;
 const STATUS = { ON_TARGET: ['On target', '#E3F3E9', '#17643A'], BELOW_TARGET: ['Below target', '#FFF3DC', '#7A4500'], OFF_TARGET: ['Off target', '#FDECEE', '#9E0B23'] };
 const ROW_FILL = { ON_TARGET: '#E3F3E9', BELOW_TARGET: '#FFF3DC', OFF_TARGET: '#FDECEE' };
 /** True when dark text reads better than white on this colour. */
+/** RichText inline marks (spec-v3 §2) as React: \u0010 bold, \u0011 italic, \u0012url\u0013text\u0014 link. */
+export function markedText(text) {
+  const out = [];
+  let bold = false; let italic = false; let href = null; let buf = '';
+  const flush = () => {
+    if (!buf) return;
+    let el = buf;
+    if (italic) el = <em key={`i${out.length}`}>{el}</em>;
+    if (bold) el = <strong key={`b${out.length}`}>{el}</strong>;
+    if (href) el = <a key={`a${out.length}`} href={href} target="_blank" rel="noopener noreferrer">{el}</a>;
+    out.push(typeof el === 'string' ? <span key={`s${out.length}`}>{el}</span> : el);
+    buf = '';
+  };
+  for (let i = 0; i < (text || '').length; i++) {
+    const c = text[i];
+    if (c === '\u0010') { flush(); bold = !bold; } else if (c === '\u0011') { flush(); italic = !italic; } else if (c === '\u0014') { flush(); href = null; } else if (c === '\u0012') {
+      flush(); const end = text.indexOf('\u0013', i); href = text.slice(i + 1, end); i = end;
+    } else buf += c;
+  }
+  flush();
+  return out;
+}
+
 function light(hex) {
   const h = (hex || '').replace('#', '');
   if (h.length !== 6) return false;
@@ -80,9 +103,11 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
 
       {!d.empty && slide.layout === 'IAM_SUMMARY' && d.blocks && (
         <div style={{ ...box(ph('body', { x: 4.5, y: 26.7, w: 54.75, h: 61.3 })), left: '4.5%', width: '91%', fontSize: pt(d.fontSize || 18), display: 'flex', flexDirection: 'column', gap: pt(12) }}>
-          {d.blocks.map((b, i) => (b.type === 'li'
-            ? <motion.div key={i} {...reveal(i)} style={{ display: 'flex', gap: pt(12), paddingLeft: pt(8) }}><span aria-hidden="true">•</span><span>{b.text}</span></motion.div>
-            : <motion.p key={i} {...reveal(i)} style={{ margin: 0 }}>{b.text}</motion.p>))}
+          {d.blocks.map((b, i) => (b.type === 'li' || b.type === 'oli'
+            ? <motion.div key={i} {...reveal(i)} style={{ display: 'flex', gap: pt(12), paddingLeft: pt(8 + 24 * (b.level || 0)) }}>
+                <span aria-hidden="true">{b.type === 'oli' ? (b.level ? String.fromCharCode(96 + Number(b.num)) + '.' : `${b.num}.`) : (b.level ? '–' : '•')}</span>
+                <span>{markedText(b.text)}</span></motion.div>
+            : <motion.p key={i} {...reveal(i)} style={{ margin: 0 }}>{markedText(b.text)}</motion.p>))}
         </div>
       )}
 

@@ -35,6 +35,10 @@ public class TemplateVersion {
     @OrderBy("sortOrder")
     private List<TemplateGroup> groups = new ArrayList<>();
 
+    @OneToMany(mappedBy = "version", cascade = CascadeType.PERSIST)
+    @OrderBy("sortOrder")
+    private List<TemplateKpiDef> kpiLibrary = new ArrayList<>();
+
     protected TemplateVersion() {
     }
 
@@ -53,6 +57,10 @@ public class TemplateVersion {
         groups.add(g);
     }
 
+    void add(TemplateKpiDef d) {
+        kpiLibrary.add(d);
+    }
+
     public Long getId() { return id; }
     public int getVersionNo() { return versionNo; }
     public String getCreatedBy() { return createdBy; }
@@ -60,6 +68,7 @@ public class TemplateVersion {
     public String getNote() { return note; }
     public List<TemplateSection> getSections() { return sections; }
     public List<TemplateGroup> getGroups() { return groups; }
+    public List<TemplateKpiDef> getKpiLibrary() { return kpiLibrary; }
 
     public java.util.Optional<TemplateGroup> group(String key) {
         return key == null ? java.util.Optional.empty() : groups.stream().filter(g -> g.getGroupKey().equals(key)).findFirst();

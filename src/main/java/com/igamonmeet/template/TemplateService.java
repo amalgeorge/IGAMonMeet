@@ -4,6 +4,7 @@ import com.igamonmeet.account.AccountException;
 import com.igamonmeet.audit.AuditLog;
 import com.igamonmeet.template.TemplateDtos.Draft;
 import com.igamonmeet.template.TemplateDtos.Group;
+import com.igamonmeet.template.TemplateDtos.LibraryKpi;
 import com.igamonmeet.template.TemplateDtos.Kpi;
 import com.igamonmeet.template.TemplateDtos.Section;
 import java.time.Clock;
@@ -46,12 +47,17 @@ public class TemplateService {
             throw new AccountException(HttpStatus.CONFLICT, "TEMPLATE_CHANGED",
                     "Someone published version " + current + " while you were editing. Reload and apply your changes again.");
         }
-        validate(draft.sections(), draft.groupsOrEmpty());
+        java.util.Map<String, LibraryKpi> library = library(draft);
+        validate(draft.sections(), draft.groupsOrEmpty(), library);
 
         TemplateVersion v = new TemplateVersion(current + 1, admin, clock.instant(), draft.note());
         int g = 0;
         for (Group grp : draft.groupsOrEmpty()) {
             v.add(new TemplateGroup(v, grp.key(), grp.name().trim(), grp.visibilityOrDefault(), grp.dividerOrDefault(), ++g));
+        }
+        int d = 0;
+        for (LibraryKpi lk : library.values()) {
+            v.add(new TemplateKpiDef(v, lk.key(), lk.name().trim(), lk.unit().trim(), lk.target(), lk.direction(), lk.amberThreshold(), ++d));
         }
         int order = 0;
         for (Section s : draft.sections()) {
@@ -63,8 +69,9 @@ public class TemplateService {
             int k = 0;
             if (s.kind() == SectionKind.KPI) {
                 for (Kpi kpi : s.kpis()) {
-                    TemplateKpi tk = new TemplateKpi(ts, kpi.key(), kpi.name().trim(), kpi.unit().trim(), kpi.target(), kpi.direction(),
-                            kpi.amberThreshold(), kpi.required(), ++k);
+                    LibraryKpi def = library.get(kpi.key()); // the placement copies the library definition
+                    TemplateKpi tk = new TemplateKpi(ts, kpi.key(), def.name().trim(), def.unit().trim(), def.target(), def.direction(),
+                            def.amberThreshold(), kpi.required(), ++k);
                     tk.setVisibility(kpi.visibilityOrDefault());
                     ts.add(tk);
                 }
@@ -76,7 +83,32 @@ public class TemplateService {
         return v;
     }
 
-    private static void validate(List<Section> sections, List<Group> groups) {
+    /** The draft's KPI library; KPIs placed in Sections but missing from it (older clients) are added from the placement. */
+    private static java.util.Map<String, LibraryKpi> library(Draft draft) {
+        java.util.Map<String, LibraryKpi> lib = new java.util.LinkedHashMap<>();
+        if (draft.kpiLibrary() != null) {
+            for (LibraryKpi k : draft.kpiLibrary()) {
+                check(lib.putIfAbsent(k.key(), k) == null, "KPI '" + k.key() + "' is in the library twice.");
+            }
+        }
+        for (Section s : draft.sections()) {
+            if (s.kind() == SectionKind.KPI && s.kpis() != null) {
+                for (Kpi k : s.kpis()) {
+                    lib.putIfAbsent(k.key(), new LibraryKpi(k.key(), k.name(), k.unit(), k.target(), k.direction(), k.amberThreshold()));
+                }
+            }
+        }
+        return lib;
+    }
+
+    private static void validate(List<Section> sections, List<Group> groups, java.util.Map<String, LibraryKpi> library) {
+        for (LibraryKpi k : library.values()) {
+            boolean amberOk = k.direction() == Direction.HIGHER
+                    ? k.amberThreshold().compareTo(k.target()) <= 0
+                    : k.amberThreshold().compareTo(k.target()) >= 0;
+            check(amberOk, "KPI '" + k.name() + "': the amber threshold must be on the "
+                    + (k.direction() == Direction.HIGHER ? "lower" : "higher") + " side of the target.");
+        }
         Set<String> groupKeys = new HashSet<>();
         for (Group g : groups) {
             check(groupKeys.add(g.key()), "Group key '" + g.key() + "' is used twice.");
@@ -108,16 +140,13 @@ public class TemplateService {
                 check(s.kpis() != null && !s.kpis().isEmpty(), "KPI section '" + s.name() + "' needs at least one KPI.");
                 check(s.visibilityOrDefault() != Visibility.SHOWN || s.kpis().stream().anyMatch(k -> k.visibilityOrDefault() == Visibility.SHOWN),
                         "Shown KPI section '" + s.name() + "' needs at least one Shown KPI.");
+                Set<String> sectionKpiKeys = new HashSet<>();
                 for (Kpi k : s.kpis()) {
-                    check(kpiKeys.add(k.key()), "KPI key '" + k.key() + "' is used twice.");
+                    check(sectionKpiKeys.add(k.key()), "KPI '" + k.key() + "' is placed twice in '" + s.name() + "'.");
+                    kpiKeys.add(k.key());
                     if (k.visibilityOrDefault() != Visibility.RETIRED) {
                         liveKpiKeys.add(k.key());
                     }
-                    boolean amberOk = k.direction() == Direction.HIGHER
-                            ? k.amberThreshold().compareTo(k.target()) <= 0
-                            : k.amberThreshold().compareTo(k.target()) >= 0;
-                    check(amberOk, "KPI '" + k.name() + "': the amber threshold must be on the "
-                            + (k.direction() == Direction.HIGHER ? "lower" : "higher") + " side of the target.");
                 }
             }
         }

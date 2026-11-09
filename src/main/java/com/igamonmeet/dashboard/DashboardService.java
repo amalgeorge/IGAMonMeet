@@ -113,11 +113,12 @@ public class DashboardService {
         List<String> labels = new ArrayList<>();
         List<BigDecimal> values = new ArrayList<>();
         for (Meeting past : history) {
+            // A KPI keeps one history across Sections (spec-v2 §2.1): this Section's value first, else any Section's.
             BigDecimal v = null;
             for (MeetingSection s : past.getSections()) {
-                if (s.getSectionKey().equals(sectionKey)) {
-                    JsonNode n = read(s.getContentJson()).path("values").path(kpiKey).path("value");
-                    v = n.isNumber() ? n.decimalValue() : null;
+                JsonNode n = read(s.getContentJson()).path("values").path(kpiKey).path("value");
+                if (n.isNumber() && (v == null || s.getSectionKey().equals(sectionKey))) {
+                    v = n.decimalValue();
                 }
             }
             labels.add(SHORT_MONTH.format(YearMonth.parse(past.getMonth())));

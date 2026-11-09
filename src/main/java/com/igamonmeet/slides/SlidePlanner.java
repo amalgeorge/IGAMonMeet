@@ -198,7 +198,49 @@ public class SlidePlanner {
     }
 
     private void text(SectionInput s, Input in, String team, List<Draft> main, List<Draft> appendix) {
-        List<String> lines = textLines(s.content());
+        JsonNode blocks = s.content().path("blocks");
+        boolean hasTable = false;
+        for (JsonNode b : blocks) hasTable |= "table".equals(b.path("type").asText());
+        if (!hasTable) {
+            textRun(s, in, team, textLines(s.content()), main, appendix);
+            return;
+        }
+        // Text runs go on IAM_SUMMARY slides; each table block gets IAM_TABLE slides of its own, in block order (spec-v2 §3.2).
+        com.fasterxml.jackson.databind.node.ArrayNode run = com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.arrayNode();
+        for (JsonNode b : blocks) {
+            if (!"table".equals(b.path("type").asText())) {
+                run.add(b);
+                continue;
+            }
+            textRun(s, in, team, linesOf(run), main, appendix);
+            run.removeAll();
+            List<String> head = cells(b.path("columns"));
+            List<List<String>> rows = new ArrayList<>();
+            b.path("rows").forEach(r -> rows.add(cells(r)));
+            if (!rows.isEmpty()) {
+                table(s, in, team, head, rows, null, main, appendix, "IAM_TABLE");
+            }
+        }
+        textRun(s, in, team, linesOf(run), main, appendix);
+    }
+
+    private static List<String> linesOf(com.fasterxml.jackson.databind.node.ArrayNode blocks) {
+        com.fasterxml.jackson.databind.node.ObjectNode c = com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+        c.set("blocks", blocks.deepCopy());
+        return textLines(c);
+    }
+
+    /** Every cell as text, blanks kept so columns stay aligned. */
+    private static List<String> cells(JsonNode arr) {
+        List<String> out = new ArrayList<>();
+        arr.forEach(n -> out.add(n.asText("")));
+        return out;
+    }
+
+    private void textRun(SectionInput s, Input in, String team, List<String> lines, List<Draft> main, List<Draft> appendix) {
+        if (lines.isEmpty()) {
+            return;
+        }
         // Text Sections use the whole content width of the IAM_SUMMARY layout (no stat tiles).
         Box box = new Box(in.slideWidth() * 0.91, in.boxes().getOrDefault("IAM_SUMMARY", new Box(0, in.slideHeight() * 0.6133)).h());
         Fitted f = fitList(lines, SUMMARY_PT, box, 24, 12, s.rule());

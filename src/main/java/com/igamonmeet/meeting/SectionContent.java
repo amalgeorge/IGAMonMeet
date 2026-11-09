@@ -19,6 +19,7 @@ final class SectionContent {
 
     static final int MAX_CHARS = 200_000;
     static final int MAX_NOTES = 4000;
+    static final int MAX_TABLE_COLUMNS = 8;
 
     private SectionContent() {
     }
@@ -60,6 +61,19 @@ final class SectionContent {
                         case "paragraph" -> check(b.path("text").isTextual() && b.get("text").asText().length() <= 5000,
                                 "A paragraph needs text of up to 5000 characters.");
                         case "bullets" -> textArray(b, "items");
+                        case "table" -> {
+                            // Table blocks: the editor sets the columns, up to 8 (docs/spec-v2.md §3.2).
+                            JsonNode cols = b.path("columns");
+                            check(cols.isArray() && cols.size() >= 1 && cols.size() <= MAX_TABLE_COLUMNS,
+                                    "A table needs 1 to " + MAX_TABLE_COLUMNS + " columns.");
+                            cols.forEach(h -> check(h.isTextual() && !h.asText().isBlank() && h.asText().length() <= 100,
+                                    "Each column needs a heading of up to 100 characters."));
+                            check(b.path("rows").isArray() && b.get("rows").size() <= 500, "A table holds up to 500 rows.");
+                            b.get("rows").forEach(r -> {
+                                check(r.isArray() && r.size() == cols.size(), "Each table row needs exactly " + cols.size() + " cells.");
+                                r.forEach(cell -> check(cell.isTextual() && cell.asText().length() <= 500, "Table cells must be text of up to 500 characters."));
+                            });
+                        }
                         default -> check(false, "Unknown block type '" + type + "'.");
                     }
                 });
@@ -106,7 +120,9 @@ final class SectionContent {
                 }
                 case TABLE -> c.path("rows").size() > 0;
                 case TWO_COLUMN -> hasText(c.path("left")) || hasText(c.path("right"));
-                case TEXT -> !com.igamonmeet.slides.SlidePlanner.textLines(c).isEmpty();
+                case TEXT -> !com.igamonmeet.slides.SlidePlanner.textLines(c).isEmpty()
+                        || java.util.stream.StreamSupport.stream(c.path("blocks").spliterator(), false)
+                                .anyMatch(b -> "table".equals(b.path("type").asText()) && b.path("rows").size() > 0);
                 default -> true;
             };
         } catch (Exception e) {

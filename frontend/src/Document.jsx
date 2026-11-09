@@ -292,30 +292,56 @@ function BlocksEditor({ blocks, onChange }) {
       {blocks.map((b, i) => (
         <div key={i} className="block">
           <div className="row">
-            <span className="hint">{b.type === 'bullets' ? 'Bullet list' : 'Paragraph'}</span>
+            <span className="hint">{b.type === 'bullets' ? 'Bullet list' : b.type === 'table' ? 'Table' : 'Paragraph'}</span>
             <span>
               <button className="btn" disabled={i === 0} aria-label={`Move block ${i + 1} up`} onClick={() => move(i, -1)}>↑</button>{' '}
               <button className="btn" disabled={i === blocks.length - 1} aria-label={`Move block ${i + 1} down`} onClick={() => move(i, 1)}>↓</button>{' '}
               <button className="btn" aria-label={`Remove block ${i + 1}`} onClick={() => onChange(blocks.filter((_, j) => j !== i))}>Remove</button>
             </span>
           </div>
+          {b.type === 'table' && <TableBlockEditor block={b} onChange={(patch) => set(i, patch)} />}
           {b.type === 'bullets'
             ? <ListEditor label="Bullet" items={b.items || []} onChange={(items) => set(i, { items })} />
-            : <textarea aria-label={`Paragraph ${i + 1}`} rows={3} maxLength={5000} value={b.text || ''} onChange={(e) => set(i, { text: e.target.value })} />}
+            : b.type !== 'table' && <textarea aria-label={`Paragraph ${i + 1}`} rows={3} maxLength={5000} value={b.text || ''} onChange={(e) => set(i, { text: e.target.value })} />}
         </div>
       ))}
       <div className="row">
         <span>
           <button className="btn" onClick={() => onChange([...blocks, { type: 'paragraph', text: '' }])}>Add paragraph</button>{' '}
-          <button className="btn" onClick={() => onChange([...blocks, { type: 'bullets', items: [''] }])}>Add bullet list</button>
+          <button className="btn" onClick={() => onChange([...blocks, { type: 'bullets', items: [''] }])}>Add bullet list</button>{' '}
+          <button className="btn" onClick={() => onChange([...blocks, { type: 'table', columns: ['Item', 'Owner', 'Status'], rows: [] }])}>Add table</button>
         </span>
       </div>
     </div>
   );
 }
 
+/** A table block: the editor names up to 8 columns, then fills the rows (spec-v2 §3.2). */
+function TableBlockEditor({ block, onChange }) {
+  const cols = block.columns || [];
+  const [draft, setDraft] = useState(cols.join(', '));
+  const setColumns = (text) => {
+    setDraft(text);
+    const next = text.split(',').map((c) => c.trim()).filter(Boolean).slice(0, 8);
+    if (!next.length) return;
+    // Keep existing cells by position; new columns start empty, removed ones drop their cells.
+    onChange({ columns: next, rows: (block.rows || []).map((r) => next.map((_, j) => r[j] ?? '')) });
+  };
+  return (
+    <div>
+      <label className="field"><span>Columns (comma-separated, up to 8)</span>
+        <input value={draft} onChange={(e) => setColumns(e.target.value)} /></label>
+      {cols.length > 8 && <p className="error">Only the first 8 columns are kept.</p>}
+      <TableEditor columns={cols} rows={block.rows || []} onChange={(rows) => onChange({ rows })} />
+    </div>
+  );
+}
+
 function BlocksView({ blocks }) {
-  return <div>{blocks.map((b, i) => (b.type === 'bullets'
+  return <div>{blocks.map((b, i) => (b.type === 'table'
+    ? <div key={i} className="table-wrap"><table><thead><tr>{(b.columns || []).map((h) => <th key={h}>{h}</th>)}</tr></thead>
+        <tbody>{(b.rows || []).map((r, j) => <tr key={j}>{r.map((x, k) => <td key={k}>{x}</td>)}</tr>)}</tbody></table></div>
+    : b.type === 'bullets'
     ? <ul key={i}>{(b.items || []).filter(Boolean).map((t, j) => <li key={j}>{t}</li>)}</ul>
     : b.text ? <p key={i}>{b.text}</p> : null))}</div>;
 }

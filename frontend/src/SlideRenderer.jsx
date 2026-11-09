@@ -78,21 +78,22 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
 
       {!d.empty && slide.layout === 'IAM_KPI' && (
         <>
-          <div style={{ position: 'absolute', left: '4.5%', right: '4.5%', top: '26.7%', height: '45.3%', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: pt(21.6) }}>
+          {(() => { const per = d.perSlide || 4; const cols = per <= 4 ? per : per / 2; const compact = per > 4; return (
+          <div style={{ position: 'absolute', left: '4.5%', right: '4.5%', top: '26.7%', height: compact ? '48%' : '45.3%', display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridAutoRows: '1fr', gap: pt(21.6) }}>
             {d.kpis.map((k, i) => {
               const st = STATUS[k.status];
               return (
-                <motion.div key={k.key} {...reveal(i)} style={{ background: soft, borderRadius: pt(6), padding: pt(18), display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ fontSize: pt(14), color: muted, minHeight: pt(40) }}>{k.name}{k.subtitle && <div style={{ fontSize: pt(11) }}>{k.subtitle}</div>}</div>
-                  <div style={{ fontSize: pt((k.display || '').length > 9 ? 30 : 44), fontWeight: 700, marginTop: pt(6) }}>{k.display}</div>
-                  {k.targetLine && <div style={{ fontSize: pt(13), color: muted, marginTop: pt(6) }}>{k.targetLine}</div>}
-                  {k.deltaLine && <div style={{ fontSize: pt(13), color: muted }}>{k.deltaLine}</div>}
-                  {st && <div style={{ marginTop: 'auto', alignSelf: 'flex-start', fontSize: pt(11), fontWeight: 700, padding: `${pt(5)} ${pt(14)}`, borderRadius: pt(99), background: st[1], color: st[2] }}>{k.statusLabel || st[0]}</div>}
-                  {k.override && <div style={{ fontSize: pt(10), color: muted, marginTop: pt(4) }}>{k.reason}</div>}
+                <motion.div key={k.key} {...reveal(i)} style={{ background: soft, borderRadius: pt(6), padding: pt(compact ? 10 : 18), display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <div style={{ fontSize: pt(compact ? 11 : 14), color: muted, minHeight: compact ? 0 : pt(40) }}>{k.name}{k.subtitle && !compact && <div style={{ fontSize: pt(11) }}>{k.subtitle}</div>}</div>
+                  <div style={{ fontSize: pt(compact ? ((k.display || '').length > 9 ? 18 : 24) : ((k.display || '').length > 9 ? 30 : 44)), fontWeight: 700, marginTop: pt(compact ? 2 : 6) }}>{k.display}</div>
+                  {k.targetLine && <div style={{ fontSize: pt(compact ? 10 : 13), color: muted, marginTop: pt(compact ? 2 : 6) }}>{k.targetLine}</div>}
+                  {k.deltaLine && !compact && <div style={{ fontSize: pt(13), color: muted }}>{k.deltaLine}</div>}
+                  {st && <div style={{ marginTop: 'auto', alignSelf: 'flex-start', fontSize: pt(compact ? 9 : 11), fontWeight: 700, padding: `${pt(compact ? 3 : 5)} ${pt(compact ? 10 : 14)}`, borderRadius: pt(99), background: st[1], color: st[2] }}>{k.statusLabel || st[0]}</div>}
+                  {k.override && !compact && <div style={{ fontSize: pt(10), color: muted, marginTop: pt(4) }}>{k.reason}</div>}
                 </motion.div>
               );
             })}
-          </div>
+          </div>); })()}
           <div style={{ ...box(ph('body', { x: 4.5, y: 76.7, w: 91, h: 12 })), fontSize: pt(14), color: muted }}>{d.body}</div>
         </>
       )}

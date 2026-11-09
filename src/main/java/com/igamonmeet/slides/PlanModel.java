@@ -20,11 +20,17 @@ public final class PlanModel {
 
     public record SectionInput(String key, String name, TeamTag team, SectionKind kind, String layout, OverflowRule rule,
                                boolean required, boolean filled, List<String> columns, JsonNode content, List<KpiView> kpis,
-                               Series chart, SectionGroup group) {
+                               Series chart, SectionGroup group, String kpiLayout) {
+
+        public SectionInput(String key, String name, TeamTag team, SectionKind kind, String layout, OverflowRule rule,
+                            boolean required, boolean filled, List<String> columns, JsonNode content, List<KpiView> kpis, Series chart,
+                            SectionGroup group) {
+            this(key, name, team, kind, layout, rule, required, filled, columns, content, kpis, chart, group, null);
+        }
 
         public SectionInput(String key, String name, TeamTag team, SectionKind kind, String layout, OverflowRule rule,
                             boolean required, boolean filled, List<String> columns, JsonNode content, List<KpiView> kpis, Series chart) {
-            this(key, name, team, kind, layout, rule, required, filled, columns, content, kpis, chart, null);
+            this(key, name, team, kind, layout, rule, required, filled, columns, content, kpis, chart, null, null);
         }
     }
 

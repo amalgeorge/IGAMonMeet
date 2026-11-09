@@ -19,7 +19,7 @@ final class SectionContent {
 
     static final int MAX_CHARS = 200_000;
     static final int MAX_NOTES = 4000;
-    static final int MAX_TABLE_COLUMNS = 8;
+    static final int MAX_TABLE_COLUMNS = 12;
 
     private SectionContent() {
     }
@@ -62,7 +62,7 @@ final class SectionContent {
                                 "A paragraph needs text of up to 5000 characters.");
                         case "bullets" -> textArray(b, "items");
                         case "table" -> {
-                            // Table blocks: the editor sets the columns, up to 8 (docs/spec-v2.md §3.2).
+                            // Table blocks: the editor sets the columns, up to 12 (docs/spec-v3.md §1.1).
                             JsonNode cols = b.path("columns");
                             check(cols.isArray() && cols.size() >= 1 && cols.size() <= MAX_TABLE_COLUMNS,
                                     "A table needs 1 to " + MAX_TABLE_COLUMNS + " columns.");

@@ -1,3 +1,4 @@
+import ColumnsEditor, { remapRows } from './ColumnsEditor.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { api } from './api.js';
@@ -317,22 +318,17 @@ function BlocksEditor({ blocks, onChange }) {
   );
 }
 
-/** A table block: the editor names up to 8 columns, then fills the rows (spec-v2 §3.2). */
+/** A table block: the editor names up to 12 columns, then fills the rows (spec-v3 §1.1). */
 function TableBlockEditor({ block, onChange }) {
-  const cols = block.columns || [];
-  const [draft, setDraft] = useState(cols.join(', '));
-  const setColumns = (text) => {
-    setDraft(text);
-    const next = text.split(',').map((c) => c.trim()).filter(Boolean).slice(0, 8);
-    if (!next.length) return;
-    // Keep existing cells by position; new columns start empty, removed ones drop their cells.
-    onChange({ columns: next, rows: (block.rows || []).map((r) => next.map((_, j) => r[j] ?? '')), style: next.length === cols.length ? block.style : null });
-  };
+  const cols = block.columns && block.columns.length ? block.columns : ['Column 1'];
+  const setColumns = (next, from) => onChange({
+    columns: next,
+    rows: remapRows(block.rows, from),
+    style: next.length === cols.length && from.every((j, k) => j === k) ? block.style : null
+  });
   return (
     <div>
-      <label className="field"><span>Columns (comma-separated, up to 8)</span>
-        <input value={draft} onChange={(e) => setColumns(e.target.value)} /></label>
-      {cols.length > 8 && <p className="error">Only the first 8 columns are kept.</p>}
+      <ColumnsEditor columns={cols} onChange={setColumns} />
       <TableEditor columns={cols} rows={block.rows || []} onChange={(rows) => onChange({ rows })} />
       <TableStyleEditor key={cols.join('|')} columns={cols} value={block.style} onChange={(style) => onChange({ style })} />
     </div>

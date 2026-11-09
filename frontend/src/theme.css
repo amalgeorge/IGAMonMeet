@@ -211,3 +211,9 @@ tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
 .theme-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; position: sticky; top: 12px; }
 .theme-edit input[type=color] { width: 48px; height: 32px; padding: 0; border: 1px solid rgba(0,0,0,.15); border-radius: 6px; }
 @media (max-width: 900px) { .theme-edit { grid-template-columns: 1fr; } }
+
+/* Column editor (spec-v3 §1.1): one input per column. */
+.columns-editor { border: 1px solid var(--line, #e5e5e5); border-radius: 8px; padding: 8px 12px 12px; margin: 12px 0; }
+.columns-editor legend { font-weight: 600; font-size: 13px; padding: 0 4px; }
+.columns-editor .row { justify-content: flex-start; gap: 6px; margin: 6px 0; flex-wrap: nowrap; }
+.columns-editor .row input { flex: 1; min-width: 0; }

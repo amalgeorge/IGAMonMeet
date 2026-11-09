@@ -12,6 +12,12 @@ updates:
   - package-ecosystem: npm
     directory: /frontend
     schedule: { interval: weekly }
+    # Packages that must move together arrive as one PR, so npm can resolve peer dependencies.
+    groups:
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      vite:
+        patterns: ["vite", "@vitejs/*"]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }

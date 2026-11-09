@@ -103,19 +103,14 @@ class KpiDisplayTest {
         try {
             mvc.perform(get("/api/status-labels").with(user("r").roles("END_USER"))).andExpect(jsonPath("$.BELOW_TARGET").value("Watch"));
             long m = meeting("2049-06", LocalDate.of(2049, 6, 24));
-            fill(m, "kpis", "{\"values\":{\"sla\":{\"value\":96.44}}}");
+            // All required KPIs filled, or the slide shows "Not provided yet." instead of tiles.
+            fill(m, "kpis", "{\"values\":{\"sla\":{\"value\":96.44},\"provisioning\":{\"value\":3},\"leaver\":{\"value\":100}}}");
             String k = "$.sections[?(@.key=='kpis')].kpis[?(@.key=='sla')].";
             mvc.perform(get("/api/meetings/" + m).with(user("r").roles("END_USER")))
                     .andExpect(jsonPath(k + "display").value("96.4%"))
                     .andExpect(jsonPath(k + "subtitle").value("Monthly"))
                     .andExpect(jsonPath(k + "description").value("Share of requests done within SLA."))
                     .andExpect(jsonPath(k + "statusLabel").value("Green"));
-            String plan = mvc.perform(get("/api/meetings/" + m + "/slides").with(user("r").roles("END_USER"))).andReturn().getResponse().getContentAsString();
-            JsonNode kpiSlide = null;
-            for (JsonNode sl : json.readTree(plan).get("slides")) if ("kpis".equals(sl.path("sectionKey").asText())) kpiSlide = sl;
-            org.assertj.core.api.Assertions.assertThat(kpiSlide).as("KPI slide in " + plan).isNotNull();
-            org.assertj.core.api.Assertions.assertThat(kpiSlide.path("data").path("notes").asText()).as(kpiSlide.toString())
-                    .contains("Share of requests done within SLA.");
             mvc.perform(get("/api/meetings/" + m + "/slides").with(user("r").roles("END_USER")))
                     .andExpect(jsonPath("$.slides[?(@.layout=='IAM_KPI')].data.notes")
                             .value(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.containsString("Share of requests done within SLA."))));

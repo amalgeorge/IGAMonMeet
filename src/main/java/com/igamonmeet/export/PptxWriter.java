@@ -93,7 +93,7 @@ public class PptxWriter {
                     text(slide, "team", "APPENDIX");
                     text(slide, "title", "Comments" + (pages > 1 ? " (" + (p + 1) + " of " + pages + ")" : ""));
                     table(slide, List.of("Section", "Comment", "Status"), options.commentRows().subList(p * perSlide,
-                            Math.min(options.commentRows().size(), (p + 1) * perSlide)), List.of(20.0, 62.0, 18.0), null, w, h);
+                            Math.min(options.commentRows().size(), (p + 1) * perSlide)), List.of(20.0, 62.0, 18.0), null, null, false, w, h);
                     stamp(slide, options.footerStamp(), w, h);
                 }
             }

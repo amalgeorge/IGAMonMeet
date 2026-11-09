@@ -9,7 +9,7 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 21 | Section groups | 19 | Done |
 | 22 | Divider slides for Section groups | 21 | Done |
 | 23 | KPI library | 22 | Done |
-| 24 | KPI value types | 23 | |
+| 24 | KPI value types | 23 | Done |
 | 25 | KPI display fields and status labels | 23 | |
 | 26 | KPI tiles per slide | 23 | |
 | 27 | Rich content blocks | 24, 25, 26 | |

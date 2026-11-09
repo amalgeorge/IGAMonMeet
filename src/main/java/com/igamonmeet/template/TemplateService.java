@@ -57,7 +57,9 @@ public class TemplateService {
         }
         int d = 0;
         for (LibraryKpi lk : library.values()) {
-            v.add(new TemplateKpiDef(v, lk.key(), lk.name().trim(), lk.unit().trim(), lk.target(), lk.direction(), lk.amberThreshold(), ++d));
+            TemplateKpiDef def = new TemplateKpiDef(v, lk.key(), lk.name().trim(), lk.unit().trim(), lk.target(), lk.direction(), lk.amberThreshold(), ++d);
+            def.setValueSpec(lk.valueTypeOrDefault(), lk.currency(), KpiFormat.optionsJson(lk.statusOptions()));
+            v.add(def);
         }
         int order = 0;
         for (Section s : draft.sections()) {
@@ -73,6 +75,7 @@ public class TemplateService {
                     TemplateKpi tk = new TemplateKpi(ts, kpi.key(), def.name().trim(), def.unit().trim(), def.target(), def.direction(),
                             def.amberThreshold(), kpi.required(), ++k);
                     tk.setVisibility(kpi.visibilityOrDefault());
+                    tk.setValueSpec(def.valueTypeOrDefault(), def.currency(), KpiFormat.optionsJson(def.statusOptions()));
                     ts.add(tk);
                 }
             }
@@ -103,6 +106,17 @@ public class TemplateService {
 
     private static void validate(List<Section> sections, List<Group> groups, java.util.Map<String, LibraryKpi> library) {
         for (LibraryKpi k : library.values()) {
+            if (k.valueTypeOrDefault() == ValueType.TEXT_STATUS) {
+                List<KpiFormat.StatusOption> opts = k.statusOptions() == null ? List.of() : k.statusOptions();
+                check(!opts.isEmpty(), "Text status KPI '" + k.name() + "' needs at least one option.");
+                Set<String> labels = new HashSet<>();
+                for (KpiFormat.StatusOption o : opts) {
+                    check(o.label() != null && !o.label().isBlank() && o.label().length() <= 40 && o.status() != null,
+                            "Each option of '" + k.name() + "' needs a label (up to 40 characters) and a status.");
+                    check(labels.add(o.label().trim().toLowerCase()), "Option '" + o.label() + "' is listed twice in '" + k.name() + "'.");
+                }
+                continue; // no target or amber for text statuses
+            }
             boolean amberOk = k.direction() == Direction.HIGHER
                     ? k.amberThreshold().compareTo(k.target()) <= 0
                     : k.amberThreshold().compareTo(k.target()) >= 0;
@@ -154,6 +168,8 @@ public class TemplateService {
             if (s.kind() == SectionKind.CHART) {
                 check(s.chartKpiKey() != null && kpiKeys.contains(s.chartKpiKey()),
                         "Chart section '" + s.name() + "' must show one of the template's KPIs.");
+                check(library.get(s.chartKpiKey()) == null || library.get(s.chartKpiKey()).valueTypeOrDefault().numeric(),
+                        "Chart section '" + s.name() + "' cannot chart a Text status KPI.");
                 check(s.visibilityOrDefault() == Visibility.RETIRED || liveKpiKeys.contains(s.chartKpiKey()),
                         "Chart section '" + s.name() + "' shows a Retired KPI. Pick another KPI or retire the chart too.");
             }

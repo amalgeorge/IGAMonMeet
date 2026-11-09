@@ -49,6 +49,17 @@ function groupTiles(tiles) {
   return out;
 }
 
+/** Text status KPIs: one coloured block per month instead of a line (spec-v2 §2.2). */
+function Strip({ trend }) {
+  return (
+    <div className="strip" role="img" aria-label={`History: ${trend.labels.map((l, i) => `${l} ${STATUS[trend.statuses[i]] || 'no value'}`).join(', ')}`}>
+      {trend.labels.map((l, i) => (
+        <span key={l + i} title={`${l}: ${STATUS[trend.statuses[i]] || 'no value'}`} style={{ background: STATUS_COLOR[trend.statuses[i]] || '#e3e6e8' }} />
+      ))}
+    </div>
+  );
+}
+
 const rise = (i) => ({ initial: reduced ? { opacity: 0 } : { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { delay: reduced ? 0 : i * 0.04, duration: 0.3 } });
 
 export default function DashboardPanel({ meetingId }) {
@@ -78,10 +89,10 @@ export default function DashboardPanel({ meetingId }) {
           {tiles.map(({ kpi, section, trend }, i) => (
             <motion.div key={kpi.key} className="kpi-tile dash-kpi" {...rise(i + 3)}>
               <span className="dash-label">{kpi.name} <span className="hint">· {section}</span></span>
-              <span className="kpi-value">{kpi.value == null ? '—' : `${kpi.value}${kpi.unit ?? ''}`}</span>
+              <span className="kpi-value">{kpi.display}</span>
               {kpi.status && <span className="dash-pill" style={{ color: STATUS_COLOR[kpi.status], borderColor: STATUS_COLOR[kpi.status] }}>{STATUS[kpi.status]}{kpi.override ? ' (override)' : ''}</span>}
-              <span className="hint">Target {kpi.target}{kpi.unit ?? ''}{kpi.previousValue != null ? ` · last month ${kpi.previousValue}${kpi.unit ?? ''}` : ''}</span>
-              <Spark trend={trend} target={kpi.target} />
+              <span className="hint">{[kpi.targetLine, kpi.deltaLine].filter(Boolean).join(' · ')}</span>
+              {trend.statuses ? <Strip trend={trend} /> : <Spark trend={trend} target={kpi.target} />}
             </motion.div>
           ))}
         </div></div>))

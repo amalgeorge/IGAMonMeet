@@ -105,6 +105,7 @@ public class SlidePlanService {
                 if (s.getKind() == SectionKind.KPI && v.isNumber()) {
                     labels.add(SHORT_MONTH.format(YearMonth.parse(past.getMonth())));
                     values.add(v.decimalValue());
+                    break; // one point per Meeting, even when the KPI is placed in several Sections
                 }
             }
         }

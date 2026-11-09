@@ -6,18 +6,20 @@ const KIND_LABEL = { SUMMARY: 'Summary', KPI: 'KPIs', CHART: 'KPI trend chart', 
 const TEAMS = { ENGINEERING: 'Engineering', OPERATIONS: 'Operations', SHARED: 'Shared' };
 const OVERFLOW = { CONTINUE: 'Continue on new slides', SHRINK_TO_FIT: 'Shrink, then continue', APPENDIX: 'First rows + appendix' };
 const fmt = new Intl.DateTimeFormat('en-SG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Singapore' });
+const pick = (d) => (d ? { name: d.name, unit: d.unit, target: d.target, direction: d.direction, amberThreshold: d.amberThreshold } : {});
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'section';
 
 export default function AdminTemplate() {
   const [base, setBase] = useState(null);
   const [sections, setSections] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [library, setLibrary] = useState([]);
   const [note, setNote] = useState('');
   const [versions, setVersions] = useState([]);
   const [msg, setMsg] = useState({});
 
   const load = () => {
-    api('/api/templates/current').then((t) => { setBase(t.versionNo); setSections(t.sections); setGroups(t.groups || []); });
+    api('/api/templates/current').then((t) => { setBase(t.versionNo); setSections(t.sections); setGroups(t.groups || []); setLibrary(t.kpiLibrary || []); });
     api('/api/admin/templates').then(setVersions);
   };
   useEffect(() => { load(); }, []);
@@ -31,13 +33,16 @@ export default function AdminTemplate() {
     while (sections.some((s) => s.key === key)) key = `${slug(name)}-${n++}`;
     setSections([...sections, { key, name, teamTag: 'SHARED', kind, layout: KINDS[kind], overflowRule: kind === 'SUMMARY' || kind === 'TWO_COLUMN' ? 'SHRINK_TO_FIT' : 'CONTINUE',
       required: false, columns: kind === 'TABLE' ? ['Item', 'Owner', 'Status'] : [], chartKpiKey: null,
-      kpis: kind === 'KPI' ? [{ key: `kpi-${Date.now() % 100000}`, name: 'New KPI', unit: '%', target: 100, direction: 'HIGHER', amberThreshold: 90, required: false }] : [] }]);
+      kpis: kind === 'KPI' && library.length ? [{ key: library[0].key, required: false, visibility: 'SHOWN' }] : [] }]);
   };
-  const allKpis = sections.flatMap((s) => s.kpis || []);
+  const allKpis = library;
+  // Each placement carries a copy of its library definition, which the server also takes from the library.
+  const withDefs = () => sections.map((s) => ({ ...s, kpis: (s.kpis || []).map((k) => ({ ...library.find((l) => l.key === k.key), ...k,
+    ...pick(library.find((l) => l.key === k.key)) })) }));
 
   const publish = () => {
     setMsg({});
-    api('/api/admin/templates', { method: 'POST', json: { basedOnVersion: base, note, sections, groups } })
+    api('/api/admin/templates', { method: 'POST', json: { basedOnVersion: base, note, sections: withDefs(), groups, kpiLibrary: library } })
       .then((v) => { setMsg({ ok: `Published version ${v.versionNo}. New meetings use it; existing meetings keep their version.` }); setNote(''); load(); })
       .catch((e) => setMsg({ error: e.message }));
   };
@@ -49,6 +54,7 @@ export default function AdminTemplate() {
       {msg.error && <p className="error" role="alert">{msg.error}</p>}
       {msg.ok && <p className="notice" role="status">{msg.ok}</p>}
       <GroupsEditor groups={groups} onChange={setGroups} onRemove={(key) => setSections(sections.map((s) => (s.groupKey === key ? { ...s, groupKey: null } : s)))} />
+      <KpiLibrary library={library} onChange={setLibrary} onRemove={(key) => setSections(sections.map((s) => ({ ...s, kpis: (s.kpis || []).filter((k) => k.key !== key) })))} />
       <ol className="tpl-list">
         {sections.map((s, i) => (
           <li key={s.key} className="tpl-card">
@@ -82,7 +88,7 @@ export default function AdminTemplate() {
               <label className="field"><span>KPI shown</span><select value={s.chartKpiKey || ''} onChange={(e) => update(i, { chartKpiKey: e.target.value })}>
                 <option value="">Choose a KPI</option>{allKpis.map((k) => <option key={k.key} value={k.key}>{k.name}</option>)}</select></label>
             )}
-            {s.kind === 'KPI' && <KpiEditor kpis={s.kpis} onChange={(kpis) => update(i, { kpis })} />}
+            {s.kind === 'KPI' && <KpiEditor kpis={s.kpis} library={library} onChange={(kpis) => update(i, { kpis })} />}
           </li>
         ))}
       </ol>
@@ -136,25 +142,56 @@ function GroupsEditor({ groups, onChange, onRemove }) {
   );
 }
 
-function KpiEditor({ kpis, onChange }) {
+function KpiLibrary({ library, onChange, onRemove }) {
+  const set = (i, patch) => onChange(library.map((k, j) => (j === i ? { ...k, ...patch } : k)));
+  const add = () => {
+    let key = 'new-kpi'; let n = 2;
+    while (library.some((k) => k.key === key)) key = `new-kpi-${n++}`;
+    onChange([...library, { key, name: 'New KPI', unit: '%', target: 100, direction: 'HIGHER', amberThreshold: 90, isNew: true }]);
+  };
+  return (
+    <div className="tpl-card">
+      <div className="row"><strong>KPI library</strong><button className="btn" onClick={add}>Add KPI</button></div>
+      <p className="hint">Define each KPI once. KPI Sections pick from this list, and a KPI keeps one trend history wherever it is placed.</p>
+      <div className="table-wrap"><table>
+        <thead><tr><th>KPI</th><th>Key</th><th>Unit</th><th>Better when</th><th>Target</th><th>Amber from</th><th><span className="sr">Remove</span></th></tr></thead>
+        <tbody>{library.map((k, i) => (
+          <tr key={i}>
+            <td><input aria-label="KPI name" value={k.name} onChange={(e) => set(i, { name: e.target.value })} /></td>
+            <td>{k.isNew ? <input aria-label="KPI key" size={12} value={k.key} onChange={(e) => set(i, { key: slug(e.target.value) })} /> : <code>{k.key}</code>}</td>
+            <td><input aria-label="Unit" size={4} value={k.unit} onChange={(e) => set(i, { unit: e.target.value })} /></td>
+            <td><select aria-label="Better when" value={k.direction} onChange={(e) => set(i, { direction: e.target.value })}><option value="HIGHER">Higher</option><option value="LOWER">Lower</option></select></td>
+            <td><input aria-label="Target" type="number" step="any" value={k.target} onChange={(e) => set(i, { target: e.target.value })} /></td>
+            <td><input aria-label="Amber threshold" type="number" step="any" value={k.amberThreshold} onChange={(e) => set(i, { amberThreshold: e.target.value })} /></td>
+            <td><button className="btn" onClick={() => { onRemove(k.key); onChange(library.filter((_, j) => j !== i)); }}>Remove</button></td>
+          </tr>
+        ))}</tbody>
+      </table></div>
+    </div>
+  );
+}
+
+/** A KPI Section's placements: which library KPIs it shows, and each one's Required flag and Visibility. */
+function KpiEditor({ kpis, library, onChange }) {
   const set = (i, patch) => onChange(kpis.map((k, j) => (j === i ? { ...k, ...patch } : k)));
+  const name = (key) => library.find((l) => l.key === key)?.name || key;
+  const unplaced = library.filter((l) => !kpis.some((k) => k.key === l.key));
   return (
     <div className="table-wrap"><table>
-      <thead><tr><th>KPI</th><th>Unit</th><th>Better when</th><th>Target</th><th>Amber from</th><th>Required</th><th>Visibility</th><th><span className="sr">Remove</span></th></tr></thead>
+      <thead><tr><th>KPI</th><th>Required</th><th>Visibility</th><th><span className="sr">Remove</span></th></tr></thead>
       <tbody>{kpis.map((k, i) => (
         <tr key={k.key}>
-          <td><input aria-label="KPI name" value={k.name} onChange={(e) => set(i, { name: e.target.value })} /></td>
-          <td><input aria-label="Unit" size={4} value={k.unit} onChange={(e) => set(i, { unit: e.target.value })} /></td>
-          <td><select aria-label="Better when" value={k.direction} onChange={(e) => set(i, { direction: e.target.value })}><option value="HIGHER">Higher</option><option value="LOWER">Lower</option></select></td>
-          <td><input aria-label="Target" type="number" step="any" value={k.target} onChange={(e) => set(i, { target: e.target.value })} /></td>
-          <td><input aria-label="Amber threshold" type="number" step="any" value={k.amberThreshold} onChange={(e) => set(i, { amberThreshold: e.target.value })} /></td>
+          <td>{name(k.key)}</td>
           <td><input aria-label="Required" type="checkbox" checked={k.required} onChange={(e) => set(i, { required: e.target.checked })} /></td>
           <td><select aria-label="Visibility" value={k.visibility || 'SHOWN'} onChange={(e) => set(i, { visibility: e.target.value })}>
             {Object.entries(VISIBILITY).map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select></td>
           <td><button className="btn" onClick={() => onChange(kpis.filter((_, j) => j !== i))}>Remove</button></td>
         </tr>
       ))}</tbody>
-      <tfoot><tr><td colSpan={8}><button className="btn" onClick={() => onChange([...kpis, { key: `kpi-${Date.now() % 100000}`, name: 'New KPI', unit: '%', target: 100, direction: 'HIGHER', amberThreshold: 90, required: false }])}>Add KPI</button></td></tr></tfoot>
+      {unplaced.length > 0 && <tfoot><tr><td colSpan={4}>
+        <select aria-label="Add a KPI from the library" value="" onChange={(e) => e.target.value && onChange([...kpis, { key: e.target.value, required: false, visibility: 'SHOWN' }])}>
+          <option value="">Add a KPI from the library…</option>{unplaced.map((l) => <option key={l.key} value={l.key}>{l.name}</option>)}</select>
+      </td></tr></tfoot>}
     </table></div>
   );
 }

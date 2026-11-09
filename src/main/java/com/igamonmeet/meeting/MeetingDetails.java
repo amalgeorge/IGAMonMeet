@@ -60,9 +60,7 @@ public class MeetingDetails {
             List<KpiView> kpis = List.of();
             if (s.getKind() == SectionKind.KPI) {
                 JsonNode values = read(s.getContentJson()).path("values");
-                JsonNode prevValues = previous == null ? null : previous.getSections().stream()
-                        .filter(p -> p.getSectionKey().equals(s.getSectionKey())).findFirst()
-                        .map(p -> read(p.getContentJson()).path("values")).orElse(null);
+                JsonNode prevValues = previous == null ? null : previousValues(previous, s.getSectionKey());
                 kpis = kpiDefs.stream().map(k -> KpiView.of(k, values, prevValues)).collect(Collectors.toList());
             }
             return new SectionView(s.getId(), s.getSectionKey(), s.getName(), s.getTeamTag(),
@@ -85,7 +83,17 @@ public class MeetingDetails {
         return new Detail(row(m), canEdit, required, filled, sections, items);
     }
 
-    private JsonNode read(String content) {
+    /** Last month's KPI values from every KPI Section, this Section's winning, so a moved KPI keeps its history (spec-v2 §2.1). */
+    private JsonNode previousValues(Meeting previous, String sectionKey) {
+        com.fasterxml.jackson.databind.node.ObjectNode merged = json.createObjectNode();
+        previous.getSections().stream().filter(p -> p.getKind() == SectionKind.KPI && !p.getSectionKey().equals(sectionKey))
+                .forEach(p -> read(p.getContentJson()).path("values").fields().forEachRemaining(e -> merged.set(e.getKey(), e.getValue())));
+        previous.getSections().stream().filter(p -> p.getSectionKey().equals(sectionKey))
+                .forEach(p -> read(p.getContentJson()).path("values").fields().forEachRemaining(e -> merged.set(e.getKey(), e.getValue())));
+        return merged;
+    }
+
+        private JsonNode read(String content) {
         try {
             return content == null ? json.createObjectNode() : json.readTree(content);
         } catch (Exception e) {

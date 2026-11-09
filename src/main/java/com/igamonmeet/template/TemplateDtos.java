@@ -62,13 +62,24 @@ public final class TemplateDtos {
         public boolean dividerOrDefault() { return divider == null || divider; }
     }
 
+    /** A KPI definition in the library; Sections place KPIs from it by key. */
+    public record LibraryKpi(
+            @NotBlank @Pattern(regexp = "[a-z0-9-]{1,60}") String key,
+            @NotBlank @Size(max = 200) String name,
+            @NotNull @Size(max = 20) String unit,
+            @NotNull BigDecimal target,
+            @NotNull Direction direction,
+            @NotNull BigDecimal amberThreshold) {
+    }
+
     /** What an Admin publishes: the full edited Template, based on the version they started from. */
-    public record Draft(int basedOnVersion, @Size(max = 500) String note, @NotEmpty List<@Valid Section> sections, List<@Valid Group> groups) {
+    public record Draft(int basedOnVersion, @Size(max = 500) String note, @NotEmpty List<@Valid Section> sections, List<@Valid Group> groups,
+                        List<@Valid LibraryKpi> kpiLibrary) {
 
         public List<Group> groupsOrEmpty() { return groups == null ? List.of() : groups; }
     }
 
-    public record Version(int versionNo, String createdBy, Instant createdAt, String note, List<Section> sections, List<Group> groups) {
+    public record Version(int versionNo, String createdBy, Instant createdAt, String note, List<Section> sections, List<Group> groups, List<LibraryKpi> kpiLibrary) {
     }
 
     public record VersionSummary(int versionNo, String createdBy, Instant createdAt, String note, int sectionCount) {
@@ -77,7 +88,9 @@ public final class TemplateDtos {
     static Version of(TemplateVersion v) {
         return new Version(v.getVersionNo(), v.getCreatedBy(), v.getCreatedAt(), v.getNote(),
                 v.getSections().stream().map(TemplateDtos::of).collect(Collectors.toList()),
-                v.getGroups().stream().map(g -> new Group(g.getGroupKey(), g.getName(), g.getVisibility(), g.isDivider())).collect(Collectors.toList()));
+                v.getGroups().stream().map(g -> new Group(g.getGroupKey(), g.getName(), g.getVisibility(), g.isDivider())).collect(Collectors.toList()),
+                v.getKpiLibrary().stream().map(d -> new LibraryKpi(d.getKpiKey(), d.getName(), d.getUnit(), d.getTarget(), d.getDirection(),
+                        d.getAmberThreshold())).collect(Collectors.toList()));
     }
 
     static Section of(TemplateSection s) {

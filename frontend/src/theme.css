@@ -145,3 +145,13 @@ tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
 
 .notes-view { background: #fafafa; border-left: 3px solid #d0d0d3; padding: 8px 12px; border-radius: 4px; font-size: 14px; white-space: pre-line; }
 .presenter-notes { font-size: 20px; line-height: 1.5; white-space: pre-line; }
+
+.export { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 0 0 1px rgba(0,0,0,.06); display: flex; flex-direction: column; gap: 12px; }
+.export fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.export legend { width: 100%; margin-bottom: 4px; }
+.print-page { width: 100%; break-after: page; }
+@media print {
+  @page { size: 13.333in 7.5in; margin: 0; }
+  body { background: #fff; }
+  .print-page { width: 13.333in; }
+}

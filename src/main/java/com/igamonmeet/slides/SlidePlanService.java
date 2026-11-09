@@ -56,6 +56,12 @@ public class SlidePlanService {
 
     @Transactional(readOnly = true)
     public Plan plan(long meetingId) {
+        return plan(meetingId, null);
+    }
+
+    /** Plan with only the given Sections (null = all), so dividers and numbering still fit the export. */
+    @Transactional(readOnly = true)
+    public Plan plan(long meetingId, java.util.Set<String> include) {
         Detail d = details.detail(meetingId, true);
         Meeting m = meetings.findById(meetingId).orElseThrow();
         JsonNode theme = read(house.currentTheme());
@@ -70,6 +76,9 @@ public class SlidePlanService {
 
         List<SectionInput> sections = new ArrayList<>();
         for (SectionView s : d.sections()) {
+            if (include != null && !include.contains(s.key())) {
+                continue;
+            }
             Series series = s.kind() == SectionKind.CHART && s.chartKpiKey() != null ? series(m, s.chartKpiKey(), kpiDefs.get(s.chartKpiKey())) : null;
             sections.add(new SectionInput(s.key(), s.name(), s.teamTag(), s.kind(), s.layout(), s.overflowRule(), s.required(),
                     s.filled(), s.columns(), read(s.contentJson()), s.kpis(), series));

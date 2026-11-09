@@ -8,6 +8,7 @@ import { motion, useReducedMotion } from 'motion/react';
 const PT = 100 / 960; // cqw per point on a 960 pt wide slide
 const pt = (n) => `${(n * PT).toFixed(3)}cqw`;
 const STATUS = { ON_TARGET: ['On target', '#E3F3E9', '#17643A'], BELOW_TARGET: ['Below target', '#FFF3DC', '#7A4500'], OFF_TARGET: ['Off target', '#FDECEE', '#9E0B23'] };
+const ROW_FILL = { ON_TARGET: '#E3F3E9', BELOW_TARGET: '#FFF3DC', OFF_TARGET: '#FDECEE' };
 const RED_LAYOUTS = ['IAM_TITLE', 'IAM_SECTION', 'IAM_CLOSING'];
 
 export function buildSteps(slide) {
@@ -112,13 +113,14 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
         <div style={content}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: pt(d.fontSize || 14), tableLayout: 'fixed' }}>
             <colgroup>{(d.colWidths || []).map((w, i) => <col key={i} style={{ width: `${w}%` }} />)}</colgroup>
-            <thead><tr>{d.head.map((h) => <th key={h} style={{ textAlign: 'left', fontSize: pt(12), color: muted, background: soft, padding: `${pt(5.75)} ${pt(10.8)}`, border: `${pt(1)} solid #E3E3E3` }}>{h}</th>)}</tr></thead>
+            <thead><tr>{d.head.map((h, j) => <th key={h} style={{ textAlign: d.align?.[j] || 'left', fontSize: pt(12), color: muted, background: soft, padding: `${pt(5.75)} ${pt(10.8)}`, border: `${pt(1)} solid #E3E3E3` }}>{h}</th>)}</tr></thead>
             <tbody>{d.rows.map((r, i) => {
-              const flag = d.rowFlags?.[i];
+              const flag = d.rowFlags?.[i] || '';
+              const fill = flag.startsWith('status:') ? ROW_FILL[flag.slice(7)] : flag === 'total' ? soft : d.banded && i % 2 === 1 ? '#F7F7F7' : undefined;
               return (
-                <tr key={i} style={{ color: flag === 'closed' ? muted : ink, textDecoration: flag === 'closed' ? 'line-through' : 'none' }}>
-                  {r.map((cell, j) => <td key={j} style={{ padding: `${pt(5.75)} ${pt(10.8)}`, border: `${pt(1)} solid #E3E3E3`, verticalAlign: 'top', overflowWrap: 'anywhere',
-                    fontWeight: flag === 'overdue' && j === r.length - 1 ? 700 : 400, color: flag === 'overdue' && j === r.length - 1 ? '#9E0B23' : undefined }}>{cell}</td>)}
+                <tr key={i} style={{ color: flag === 'closed' ? muted : ink, textDecoration: flag === 'closed' ? 'line-through' : 'none', background: fill }}>
+                  {r.map((cell, j) => <td key={j} style={{ padding: `${pt(5.75)} ${pt(10.8)}`, border: `${pt(1)} solid #E3E3E3`, verticalAlign: 'top', overflowWrap: 'anywhere', textAlign: d.align?.[j] || 'left',
+                    fontWeight: (flag === 'overdue' && j === r.length - 1) || flag === 'total' ? 700 : 400, color: flag === 'overdue' && j === r.length - 1 ? '#9E0B23' : undefined }}>{cell}</td>)}
                 </tr>
               );
             })}</tbody>

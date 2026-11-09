@@ -82,7 +82,8 @@ public class SlidePlanService {
             Series series = s.kind() == SectionKind.CHART && s.chartKpiKey() != null ? series(m, s.chartKpiKey(), kpiDefs.get(s.chartKpiKey())) : null;
             sections.add(new SectionInput(s.key(), s.name(), s.teamTag(), s.kind(), s.layout(), s.overflowRule(), s.required(),
                     s.filled(), s.columns(), read(s.contentJson()), s.kpis(), series,
-                    s.groupKey() == null ? null : new PlanModel.SectionGroup(s.groupKey(), s.groupName(), s.groupDivider()), s.kpiLayout()));
+                    s.groupKey() == null ? null : new PlanModel.SectionGroup(s.groupKey(), s.groupName(), s.groupDivider()), s.kpiLayout(),
+                    s.tableStyle() == null ? null : readStyle(s.tableStyle())));
         }
         List<ActionRow> actions = new ArrayList<>();
         for (ActionView a : d.actionItems()) {
@@ -112,6 +113,14 @@ public class SlidePlanService {
         Collections.reverse(labels);
         Collections.reverse(values);
         return new Series(labels, values, def == null ? null : def.target(), def == null ? "" : def.unit());
+    }
+
+    private JsonNode readStyle(String s) {
+        try {
+            return json.readTree(s);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static void box(JsonNode theme, String layout, String placeholder, double w, double h, Map<String, Box> out) {

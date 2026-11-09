@@ -60,6 +60,7 @@ public class TemplateSection {
 
     private String groupKey;
     private String kpiLayout;
+    private String tableStyle;
 
     @OneToMany(mappedBy = "section", cascade = CascadeType.PERSIST)
     @OrderBy("sortOrder")
@@ -104,6 +105,8 @@ public class TemplateSection {
     void setGroupKey(String groupKey) { this.groupKey = groupKey; }
     public String getKpiLayout() { return kpiLayout; }
     void setKpiLayout(String kpiLayout) { this.kpiLayout = kpiLayout; }
+    public String getTableStyle() { return tableStyle; }
+    void setTableStyle(String tableStyle) { this.tableStyle = tableStyle; }
 
     void setVisibility(Visibility visibility, boolean onSlides) {
         this.visibility = visibility;

@@ -182,6 +182,24 @@ class SlidePlannerTest {
     }
 
     @Test
+    void tableStyleSetsWidthsAlignmentStatusColoursTotalAndBands() throws Exception {
+        ObjectNode c = JSON.createObjectNode();
+        ArrayNode rs = c.putArray("rows");
+        rs.addArray().add("Vendor A").add("On track").add("1,200");
+        rs.addArray().add("Vendor B").add("Blocked").add("300");
+        rs.addArray().add("Vendor C").add("Something else").add("");
+        JsonNode style = JSON.readTree("{\"widths\":[2,1,1],\"align\":[\"left\",\"center\",\"right\"],\"statusColumn\":1,\"total\":true,\"banded\":true}");
+        SectionInput t = new SectionInput("costs", "Vendor costs", TeamTag.OPERATIONS, SectionKind.TABLE, "IAM_TABLE", OverflowRule.CONTINUE,
+                true, true, List.of("Vendor", "Status", "Cost"), c, List.of(), null, null, null, style);
+        Slide sl = of(planner.plan(input(List.of(t), List.of())), "costs").get(0);
+        assertThat(sl.data().get("rowFlags")).isEqualTo(List.of("status:ON_TARGET", "status:OFF_TARGET", "", "total"));
+        assertThat(((List<?>) sl.data().get("rows")).get(3)).isEqualTo(List.of("Total", "", "1500"));
+        assertThat(((List<?>) sl.data().get("colWidths")).get(0)).isEqualTo(50.0);
+        assertThat(sl.data().get("align")).isEqualTo(List.of("left", "center", "right"));
+        assertThat(sl.data().get("banded")).isEqualTo(true);
+    }
+
+    @Test
     void speakerNotesGoOnTheFirstSlideOnly() {
         SectionInput t = table("roadmap", TeamTag.ENGINEERING, OverflowRule.CONTINUE, 40);
         ((ObjectNode) t.content()).put("notes", "Explain the JML slip.");

@@ -73,6 +73,8 @@ final class SectionContent {
                                 check(r.isArray() && r.size() == cols.size(), "Each table row needs exactly " + cols.size() + " cells.");
                                 r.forEach(cell -> check(cell.isTextual() && cell.asText().length() <= 500, "Table cells must be text of up to 500 characters."));
                             });
+                            String styleProblem = com.igamonmeet.slides.TableStyle.problem(b.get("style"), cols.size());
+                            check(styleProblem == null, styleProblem);
                         }
                         default -> check(false, "Unknown block type '" + type + "'.");
                     }

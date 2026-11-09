@@ -128,7 +128,7 @@ public class SectionEditor {
         Set<String> keys = new LinkedHashSet<>();
         templates.version(m.getTemplateVersionNo()).getSections().stream()
                 .filter(t -> t.getSectionKey().equals(sectionKey))
-                .forEach(t -> t.getKpis().forEach(k -> keys.add(k.getKpiKey())));
+                .forEach(t -> t.getShownKpis().forEach(k -> keys.add(k.getKpiKey())));
         return keys;
     }
 

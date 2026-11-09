@@ -50,6 +50,8 @@ public class MeetingSection {
     private String chartKpiKey;
     private int sortOrder;
 
+    private boolean onSlides = true;
+
     /** Section content as JSON; its shape depends on the kind (ticket 09). */
     @Column(name = "content_json")
     private String contentJson;
@@ -99,4 +101,7 @@ public class MeetingSection {
     public String getUpdatedBy() { return updatedBy; }
     public Instant getUpdatedAt() { return updatedAt; }
     public long getVersion() { return version; }
+    public boolean isOnSlides() { return onSlides; }
+
+    void setOnSlides(boolean onSlides) { this.onSlides = onSlides; }
 }

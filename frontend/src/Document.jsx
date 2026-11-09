@@ -68,7 +68,7 @@ export default function MeetingDocument({ id, me, onBack }) {
           {doc.sections.map((s) => (
             <a key={s.id} href={`#sec-${s.id}`} className="outline-item">
               <span className={`dot ${s.filled ? 'done' : ''}`} aria-hidden="true">{s.filled ? '✓' : ''}</span>
-              {s.name}{s.required ? '' : <span className="hint"> · optional</span>}
+              {s.name}{s.required ? '' : <span className="hint"> · optional</span>}{s.onSlides === false && <span className="hint"> · not on slides</span>}
             </a>
           ))}
         </nav>

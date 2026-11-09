@@ -53,7 +53,7 @@ public class MeetingDetails {
                 .collect(Collectors.toMap(TemplateSection::getSectionKey, t -> t));
         Meeting previous = meetings.findFirstByDeletedAtIsNullAndMeetingDateLessThanOrderByMeetingDateDesc(m.getMeetingDate()).orElse(null);
         List<SectionView> sections = m.getSections().stream().map(s -> {
-            List<TemplateKpi> kpiDefs = defs.containsKey(s.getSectionKey()) ? defs.get(s.getSectionKey()).getKpis() : List.of();
+            List<TemplateKpi> kpiDefs = defs.containsKey(s.getSectionKey()) ? defs.get(s.getSectionKey()).getShownKpis() : List.of();
             Set<String> requiredKpis = kpiDefs.stream().filter(TemplateKpi::isRequired).map(TemplateKpi::getKpiKey).collect(Collectors.toSet());
             List<KpiView> kpis = List.of();
             if (s.getKind() == SectionKind.KPI) {
@@ -68,7 +68,7 @@ public class MeetingDetails {
                     s.getColumnsSpec() == null ? List.of() : Arrays.asList(s.getColumnsSpec().split("\\|")),
                     s.getChartKpiKey(), s.getContentJson(), s.getUpdatedBy(), s.getUpdatedAt(), s.getVersion(),
                     locks.findById(s.getId()).filter(l -> l.isLiveAt(now)).map(SectionLock::getUsername).orElse(null),
-                    SectionContent.filled(s.getKind(), s.getContentJson(), openItems, requiredKpis, json), kpis);
+                    SectionContent.filled(s.getKind(), s.getContentJson(), openItems, requiredKpis, json), kpis, s.isOnSlides());
         }).collect(Collectors.toList());
         List<ActionView> items = actionsAndComments.ordered(id).stream()
                 .map(a -> new ActionView(a.getId(), a.getTitle(), a.getOwner(), a.getTeamTag(), a.getDueDate(), a.getStatus(), a.getOriginMeetingId(),

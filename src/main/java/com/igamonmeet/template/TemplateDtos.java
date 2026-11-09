@@ -25,7 +25,10 @@ public final class TemplateDtos {
             @NotNull BigDecimal target,
             @NotNull Direction direction,
             @NotNull BigDecimal amberThreshold,
-            boolean required) {
+            boolean required,
+            Visibility visibility) {
+
+        public Visibility visibilityOrDefault() { return visibility == null ? Visibility.SHOWN : visibility; }
     }
 
     public record Section(
@@ -38,7 +41,13 @@ public final class TemplateDtos {
             boolean required,
             List<@NotBlank @Size(max = 100) String> columns,
             String chartKpiKey,
-            List<@Valid Kpi> kpis) {
+            List<@Valid Kpi> kpis,
+            Visibility visibility,
+            Boolean onSlides) {
+
+        public Visibility visibilityOrDefault() { return visibility == null ? Visibility.SHOWN : visibility; }
+
+        public boolean onSlidesOrDefault() { return onSlides == null || onSlides; }
     }
 
     /** What an Admin publishes: the full edited Template, based on the version they started from. */
@@ -59,9 +68,9 @@ public final class TemplateDtos {
     static Section of(TemplateSection s) {
         List<String> cols = s.getColumnsSpec() == null ? List.of() : Arrays.asList(s.getColumnsSpec().split("\\|"));
         List<Kpi> kpis = s.getKpis().stream()
-                .map(k -> new Kpi(k.getKpiKey(), k.getName(), k.getUnit(), k.getTarget(), k.getDirection(), k.getAmberThreshold(), k.isRequired()))
+                .map(k -> new Kpi(k.getKpiKey(), k.getName(), k.getUnit(), k.getTarget(), k.getDirection(), k.getAmberThreshold(), k.isRequired(), k.getVisibility()))
                 .collect(Collectors.toList());
         return new Section(s.getSectionKey(), s.getName(), s.getTeamTag(), s.getKind(), s.getLayout(), s.getOverflowRule(),
-                s.isRequired(), cols, s.getChartKpiKey(), kpis);
+                s.isRequired(), cols, s.getChartKpiKey(), kpis, s.getVisibility(), s.isOnSlides());
     }
 }

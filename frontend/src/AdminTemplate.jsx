@@ -64,8 +64,12 @@ export default function AdminTemplate() {
                 {Object.entries(TEAMS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
               <label className="field"><span>When content overflows</span><select value={s.overflowRule} onChange={(e) => update(i, { overflowRule: e.target.value })}>
                 {Object.entries(OVERFLOW).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+              <label className="field"><span>Visibility</span><select value={s.visibility || 'SHOWN'} onChange={(e) => update(i, { visibility: e.target.value })}>
+                {Object.entries(VISIBILITY).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
               <label className="check"><input type="checkbox" checked={s.required} onChange={(e) => update(i, { required: e.target.checked })} /> Required</label>
+              <label className="check"><input type="checkbox" checked={s.onSlides !== false} onChange={(e) => update(i, { onSlides: e.target.checked })} /> On slides</label>
             </div>
+            {(s.visibility || 'SHOWN') !== 'SHOWN' && <p className="hint">{VISIBILITY_HINT[s.visibility]}</p>}
             {s.kind === 'TABLE' && (
               <label className="field"><span>Columns (comma-separated)</span>
                 <input value={s.columns.join(', ')} onChange={(e) => update(i, { columns: e.target.value.split(',').map((c) => c.trim()).filter(Boolean) })} /></label>
@@ -96,11 +100,17 @@ export default function AdminTemplate() {
   );
 }
 
+const VISIBILITY = { SHOWN: 'Shown', AVAILABLE: 'Available', RETIRED: 'Retired' };
+const VISIBILITY_HINT = {
+  AVAILABLE: 'Hidden in new Meetings until an editor switches it on for that Meeting.',
+  RETIRED: 'Hidden from new Meetings. Past Meetings and trend history are kept.',
+};
+
 function KpiEditor({ kpis, onChange }) {
   const set = (i, patch) => onChange(kpis.map((k, j) => (j === i ? { ...k, ...patch } : k)));
   return (
     <div className="table-wrap"><table>
-      <thead><tr><th>KPI</th><th>Unit</th><th>Better when</th><th>Target</th><th>Amber from</th><th>Required</th><th><span className="sr">Remove</span></th></tr></thead>
+      <thead><tr><th>KPI</th><th>Unit</th><th>Better when</th><th>Target</th><th>Amber from</th><th>Required</th><th>Visibility</th><th><span className="sr">Remove</span></th></tr></thead>
       <tbody>{kpis.map((k, i) => (
         <tr key={k.key}>
           <td><input aria-label="KPI name" value={k.name} onChange={(e) => set(i, { name: e.target.value })} /></td>
@@ -109,10 +119,12 @@ function KpiEditor({ kpis, onChange }) {
           <td><input aria-label="Target" type="number" step="any" value={k.target} onChange={(e) => set(i, { target: e.target.value })} /></td>
           <td><input aria-label="Amber threshold" type="number" step="any" value={k.amberThreshold} onChange={(e) => set(i, { amberThreshold: e.target.value })} /></td>
           <td><input aria-label="Required" type="checkbox" checked={k.required} onChange={(e) => set(i, { required: e.target.checked })} /></td>
+          <td><select aria-label="Visibility" value={k.visibility || 'SHOWN'} onChange={(e) => set(i, { visibility: e.target.value })}>
+            {Object.entries(VISIBILITY).map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select></td>
           <td><button className="btn" onClick={() => onChange(kpis.filter((_, j) => j !== i))}>Remove</button></td>
         </tr>
       ))}</tbody>
-      <tfoot><tr><td colSpan={7}><button className="btn" onClick={() => onChange([...kpis, { key: `kpi-${Date.now() % 100000}`, name: 'New KPI', unit: '%', target: 100, direction: 'HIGHER', amberThreshold: 90, required: false }])}>Add KPI</button></td></tr></tfoot>
+      <tfoot><tr><td colSpan={8}><button className="btn" onClick={() => onChange([...kpis, { key: `kpi-${Date.now() % 100000}`, name: 'New KPI', unit: '%', target: 100, direction: 'HIGHER', amberThreshold: 90, required: false }])}>Add KPI</button></td></tr></tfoot>
     </table></div>
   );
 }

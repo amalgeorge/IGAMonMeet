@@ -76,8 +76,8 @@ public class SlidePlanService {
 
         List<SectionInput> sections = new ArrayList<>();
         for (SectionView s : d.sections()) {
-            if (include != null && !include.contains(s.key())) {
-                continue;
+            if (!s.onSlides() || (include != null && !include.contains(s.key()))) {
+                continue; // Admin keeps some Sections in the Document and Dashboard views only (spec-v2 §1.2).
             }
             Series series = s.kind() == SectionKind.CHART && s.chartKpiKey() != null ? series(m, s.chartKpiKey(), kpiDefs.get(s.chartKpiKey())) : null;
             sections.add(new SectionInput(s.key(), s.name(), s.teamTag(), s.kind(), s.layout(), s.overflowRule(), s.required(),

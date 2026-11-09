@@ -9,6 +9,14 @@ const PT = 100 / 960; // cqw per point on a 960 pt wide slide
 const pt = (n) => `${(n * PT).toFixed(3)}cqw`;
 const STATUS = { ON_TARGET: ['On target', '#E3F3E9', '#17643A'], BELOW_TARGET: ['Below target', '#FFF3DC', '#7A4500'], OFF_TARGET: ['Off target', '#FDECEE', '#9E0B23'] };
 const ROW_FILL = { ON_TARGET: '#E3F3E9', BELOW_TARGET: '#FFF3DC', OFF_TARGET: '#FDECEE' };
+/** True when dark text reads better than white on this colour. */
+function light(hex) {
+  const h = (hex || '').replace('#', '');
+  if (h.length !== 6) return false;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6;
+}
+
 const RED_LAYOUTS = ['IAM_TITLE', 'IAM_SECTION', 'IAM_CLOSING'];
 
 export function buildSteps(slide) {
@@ -27,6 +35,12 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
   const layoutTheme = theme?.layouts?.[slide.layout] || {};
   const red = RED_LAYOUTS.includes(slide.layout);
   const bg = layoutTheme.background ? `#${layoutTheme.background}` : red ? accent : '#FFFFFF';
+  // Text on a coloured background stays readable whatever colour the Theme picks.
+  const onBg = light(bg) ? ink : '#FFFFFF';
+  const bgImage = layoutTheme.backgroundImage ? { backgroundImage: `url(${layoutTheme.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {};
+  const logo = theme?.logo?.show !== false && theme?.logo?.image
+    ? <img src={theme.logo.image} alt="" style={{ position: 'absolute', right: '4.5%', top: '5%', height: '7%', maxWidth: '18%', objectFit: 'contain' }} /> : null;
+  const statusColor = (s) => theme?.statusColors?.[s] ? `#${theme.statusColors[s]}` : null;
   const ph = (name, fallback) => layoutTheme.placeholders?.[name] || fallback;
   const box = (b) => ({ position: 'absolute', left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` });
   const d = slide.data;
@@ -34,8 +48,8 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
   const reveal = (i) => (reduce ? { initial: false, animate: { opacity: shown(i) ? 1 : 0 } }
     : { initial: false, animate: { opacity: shown(i) ? 1 : 0, y: shown(i) ? 0 : 12 }, transition: { duration: 0.3, ease: [0.2, 0, 0, 1] } });
 
-  const frame = { position: 'relative', width: '100%', aspectRatio: '16 / 9', containerType: 'inline-size', overflow: 'hidden', background: bg,
-    color: red ? '#FFFFFF' : ink, fontFamily: `${theme?.bodyFont || 'Arial'}, Arial, Helvetica, sans-serif`, lineHeight: 1.2 };
+  const frame = { position: 'relative', width: '100%', aspectRatio: '16 / 9', containerType: 'inline-size', overflow: 'hidden', background: bg, ...bgImage,
+    color: red ? onBg : ink, fontFamily: `${theme?.bodyFont || 'Arial'}, Arial, Helvetica, sans-serif`, lineHeight: 1.2 };
   const head = { fontFamily: `${theme?.headFont || 'Arial'}, Arial, Helvetica, sans-serif` };
 
   if (red) {
@@ -48,6 +62,7 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
         {d.meta && <div style={{ ...box(ph('meta', { x: 6.75, y: 60, w: 86, h: 7 })), fontSize: pt(16) }}>{d.meta}</div>}
         {slide.layout === 'IAM_TITLE' && <div style={{ position: 'absolute', left: '6.75%', top: '88%', fontSize: pt(12), fontWeight: 700 }}>IAM Engineering  |  IAM Operations</div>}
         {slide.layout === 'IAM_SECTION' && <div style={{ position: 'absolute', right: '4.5%', top: '92.7%', fontSize: pt(10) }}>{slide.n}</div>}
+        {logo}
       </div>
     );
   }
@@ -55,6 +70,7 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
   const content = { position: 'absolute', left: '4.5%', right: '4.5%', top: '26.7%', bottom: '12%' };
   return (
     <div style={frame} role="img" aria-label={`Slide ${slide.n}: ${d.title}`}>
+      {logo}
       <div style={{ ...box(ph('team', { x: 4.5, y: 6, w: 60, h: 4.7 })), color: accent, fontWeight: 700, fontSize: pt(12), letterSpacing: pt(1.5) }}>{d.team}</div>
       <div style={{ ...box(ph('title', { x: 4.5, y: 11.3, w: 91, h: 11.3 })), ...head, fontWeight: 700, fontSize: pt(32) }}>{d.title}</div>
       <div style={{ position: 'absolute', left: '4.5%', top: '92.7%', fontSize: pt(10), color: muted }}>IAM Monthly Meeting  |  Internal</div>
@@ -90,7 +106,7 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
           {(() => { const per = d.perSlide || 4; const cols = per <= 4 ? per : per / 2; const compact = per > 4; return (
           <div style={{ position: 'absolute', left: '4.5%', right: '4.5%', top: '26.7%', height: compact ? '48%' : '45.3%', display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridAutoRows: '1fr', gap: pt(21.6) }}>
             {d.kpis.map((k, i) => {
-              const st = STATUS[k.status];
+              const st = STATUS[k.status] && statusColor(k.status) ? [STATUS[k.status][0], `${statusColor(k.status)}22`, statusColor(k.status)] : STATUS[k.status];
               return (
                 <motion.div key={k.key} {...reveal(i)} style={{ background: soft, borderRadius: pt(6), padding: pt(compact ? 10 : 18), display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                   <div style={{ fontSize: pt(compact ? 11 : 14), color: muted, minHeight: compact ? 0 : pt(40) }}>{k.name}{k.subtitle && !compact && <div style={{ fontSize: pt(11) }}>{k.subtitle}</div>}</div>

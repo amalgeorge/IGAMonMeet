@@ -12,10 +12,11 @@ import { AdminQueue, AdminUsers } from './AdminUsers.jsx';
 import AdminSettings from './AdminSettings.jsx';
 import AdminTemplate from './AdminTemplate.jsx';
 import AdminHouseTemplate from './AdminHouseTemplate.jsx';
+import AdminThemes from './AdminThemes.jsx';
 import Meetings from './Meetings.jsx';
 import MeetingDocument from './Document.jsx';
 
-const ADMIN_VIEWS = { meetings: 'Meetings', queue: 'Admin queue', users: 'Users', template: 'Template', house: 'House template', audit: 'Audit log', settings: 'Settings' };
+const ADMIN_VIEWS = { meetings: 'Meetings', queue: 'Admin queue', users: 'Users', template: 'Template', house: 'House template', themes: 'Themes', audit: 'Audit log', settings: 'Settings' };
 
 export default function App() {
   const [me, setMe] = useState(undefined);
@@ -62,6 +63,7 @@ export default function App() {
       {me.role === 'ADMIN' && view === 'users' && <AdminUsers />}
       {me.role === 'ADMIN' && view === 'template' && <AdminTemplate />}
       {me.role === 'ADMIN' && view === 'house' && <AdminHouseTemplate />}
+      {me.role === 'ADMIN' && view === 'themes' && <AdminThemes />}
       {me.role === 'ADMIN' && view === 'audit' && <AuditLog />}
       {me.role === 'ADMIN' && view === 'settings' && <AdminSettings onChange={loadFeatures} />}
     </main>

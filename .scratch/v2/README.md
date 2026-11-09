@@ -15,6 +15,6 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 27 | Rich content blocks | 24, 25, 26 | Done |
 | 28 | Table blocks | 27 | Done |
 | 29 | Table styling | 28 | Done |
-| 30 | Theme editor | 29 | |
+| 30 | Theme editor | 29 | Done |
 | 31 | Meeting Theme choice and versions | 30 | |
 | 32 | Theme in PPTX and PDF export | 31 | |

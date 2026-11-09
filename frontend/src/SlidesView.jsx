@@ -11,7 +11,8 @@ export function useDeck(meetingId) {
   const [theme, setTheme] = useState(null);
   useEffect(() => {
     api(`/api/meetings/${meetingId}/slides`).then(setPlan);
-    api('/api/house-template/theme').then(setTheme).catch(() => setTheme({}));
+    // House template with the Meeting's Theme applied (spec-v2 §4.1).
+    api(`/api/meetings/${meetingId}/theme`).then(setTheme).catch(() => api('/api/house-template/theme').then(setTheme).catch(() => setTheme({})));
   }, [meetingId]);
   return { plan, theme };
 }

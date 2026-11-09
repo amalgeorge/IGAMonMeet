@@ -29,8 +29,11 @@ public class MeetingService {
     private final TemplateService templates;
     private final AuditLog audit;
     private final MeetingTime time;
+    private final com.igamonmeet.theme.ThemeService themes;
 
-    public MeetingService(MeetingRepository meetings, ActionItemRepository actions, TemplateService templates, AuditLog audit, MeetingTime time) {
+    public MeetingService(MeetingRepository meetings, ActionItemRepository actions, TemplateService templates, AuditLog audit, MeetingTime time,
+                          com.igamonmeet.theme.ThemeService themes) {
+        this.themes = themes;
         this.meetings = meetings;
         this.actions = actions;
         this.templates = templates;
@@ -49,6 +52,7 @@ public class MeetingService {
         TemplateVersion template = templates.current();
         String name = title == null || title.isBlank() ? "IAM Monthly Meeting · " + MONTH_NAME.format(month) : title.trim();
         Meeting m = new Meeting(key, meetingDate, name, template.getVersionNo(), admin, now);
+        m.useTheme(themes.defaultTheme().id(), null); // the default Theme for new Meetings (spec-v2 §4.1)
         int order = 0;
         for (TemplateSection s : template.getSections()) {
             if (template.effectiveVisibility(s) != Visibility.SHOWN) {

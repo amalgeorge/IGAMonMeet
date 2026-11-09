@@ -29,6 +29,8 @@ public class Meeting {
     private LocalDate meetingDate;
     private String title;
     private int templateVersionNo;
+    private Long themeId;
+    private Integer themeVersionNo;
     private String createdBy;
     private Instant createdAt;
     private Instant updatedAt;
@@ -78,6 +80,14 @@ public class Meeting {
     public LocalDate getMeetingDate() { return meetingDate; }
     public String getTitle() { return title; }
     public int getTemplateVersionNo() { return templateVersionNo; }
+    public Long getThemeId() { return themeId; }
+    public Integer getThemeVersionNo() { return themeVersionNo; }
+
+    /** {@code versionNo} null: follow the Theme by the Preparing/Held rule (ADR 0008); set: pinned. */
+    public void useTheme(Long themeId, Integer versionNo) {
+        this.themeId = themeId;
+        this.themeVersionNo = versionNo;
+    }
     public String getCreatedBy() { return createdBy; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

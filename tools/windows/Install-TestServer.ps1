@@ -195,6 +195,8 @@ Ok 'HTTPS on port 8443 (self-signed certificate), HTTP connector removed'
 @echo off
 rem Written by Install-TestServer.ps1. TEST settings: trustServerCertificate=true accepts SQL Express's self-signed certificate.
 set "JAVA_HOME=$JavaHome"
+rem A machine-wide JRE_HOME (e.g. from another Java install) would override JAVA_HOME in catalina.bat.
+set "JRE_HOME="
 set "DB_URL=jdbc:sqlserver://localhost:1433;databaseName=igamonmeet;encrypt=true;trustServerCertificate=true"
 set "DB_USER=igamonmeet"
 set "DB_PASSWORD=$DbPassword"

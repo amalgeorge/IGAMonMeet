@@ -27,3 +27,6 @@ Terms are in [CONTEXT.md](../../CONTEXT.md).
 | Q21 | Data migration | KPIs move into the KPI library with keys unchanged (trend history continues); Text Sections become rich content with one paragraph block; Flyway, no visible change. |
 | Q22 | Theme choice | Admin any time; any editor while the Meeting is Preparing. |
 | Q23 | PPTX and Themes | Export writes Theme colours and fonts into the PowerPoint theme and backgrounds into title/divider/content layouts. Import maps PowerPoint tables into table blocks. House template check adds the divider layout. |
+| Q24 | Build order | 1 Visibility and Section groups; 2 KPI library, value types, display fields, tiles per slide; 3 rich content, table blocks, table styling; 4 Themes with export and import. CI green before the next step. |
+
+Grilling complete. Next: /to-spec (docs/spec-v2.md), then /to-tickets (.scratch/v2/issues/).

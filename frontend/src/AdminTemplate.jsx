@@ -133,17 +133,23 @@ function GroupsEditor({ groups, onChange, onRemove }) {
   return (
     <div className="tpl-card">
       <div className="row"><strong>Section groups</strong><button className="btn" onClick={add}>Add group</button></div>
-      <p className="hint">A group gathers neighbouring Sections under one heading, with an optional divider slide. Sections of a group must be next to each other.</p>
+      <p className="hint">A group gathers neighbouring Sections under one heading, with an optional divider slide. Sections of a group must be next to each other.
+        Visibility applies to the whole group: <strong>Shown</strong> puts it in every new Meeting; <strong>Available</strong> keeps it and its Sections out until an editor adds them under Available items in that Meeting; <strong>Retired</strong> hides it from new Meetings.</p>
       {groups.length > 0 && <div className="table-wrap"><table>
         <thead><tr><th>Group</th><th>Visibility</th><th>Divider slide</th><th><span className="sr">Remove</span></th></tr></thead>
-        <tbody>{groups.map((g, i) => (
+        <tbody>{groups.flatMap((g, i) => [
           <tr key={g.key}>
             <td><input aria-label="Group name" value={g.name} onChange={(e) => set(i, { name: e.target.value })} /></td>
             <td><select aria-label="Group visibility" value={g.visibility || 'SHOWN'} onChange={(e) => set(i, { visibility: e.target.value })}>
               {Object.entries(VISIBILITY).map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select></td>
             <td><input aria-label="Divider slide" type="checkbox" checked={g.divider !== false} onChange={(e) => set(i, { divider: e.target.checked })} /></td>
             <td><button className="btn" onClick={() => { onRemove(g.key); onChange(groups.filter((_, j) => j !== i)); }}>Remove</button></td>
-          </tr>))}</tbody>
+          </tr>,
+          (g.visibility || 'SHOWN') !== 'SHOWN' && <tr key={`${g.key}-hint`} className="hint-row"><td colSpan={4} className="hint">
+            {g.name}: {g.visibility === 'AVAILABLE'
+              ? 'not in new Meetings. Its heading and divider slide appear once an editor adds one of its Sections in that Meeting (Document view → Available items).'
+              : VISIBILITY_HINT.RETIRED}</td></tr>,
+        ])}</tbody>
       </table></div>}
     </div>
   );

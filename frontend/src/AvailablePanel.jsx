@@ -25,7 +25,8 @@ export default function AvailablePanel({ meetingId, sections, canEdit, onChange 
       {cat.open && nothing && <p className="hint">Nothing else is available for this Meeting.</p>}
       <ul>
         {cat.sections.map((s) => (
-          <li key={s.key}><span>{s.name}</span><button className="btn" onClick={() => call('POST', `sections/${s.key}`)}>Add</button></li>
+          <li key={s.key}><span>{s.name}{s.groupName && <span className="hint"> · in group {s.groupName}</span>}</span>
+            <button className="btn" onClick={() => call('POST', `sections/${s.key}`)}>Add</button></li>
         ))}
         {cat.kpis.map((k) => (
           <li key={`${k.sectionKey}.${k.key}`}><span>{k.name} <span className="hint">· KPI in {nameOf(k.sectionKey)}</span></span>

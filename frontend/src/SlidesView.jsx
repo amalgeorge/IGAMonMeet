@@ -6,14 +6,14 @@ import SlideRenderer, { buildSteps } from './SlideRenderer.jsx';
 const TRANSITIONS = { fade: 'Fade', push: 'Push', none: 'None' };
 const store = { get: (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* per-viewer only */ } } };
 
-export function useDeck(meetingId) {
+export function useDeck(meetingId, themeKey = 0) {
   const [plan, setPlan] = useState(null);
   const [theme, setTheme] = useState(null);
   useEffect(() => {
     api(`/api/meetings/${meetingId}/slides`).then(setPlan);
     // House template with the Meeting's Theme applied (spec-v2 §4.1).
     api(`/api/meetings/${meetingId}/theme`).then(setTheme).catch(() => api('/api/house-template/theme').then(setTheme).catch(() => setTheme({})));
-  }, [meetingId]);
+  }, [meetingId, themeKey]);
   return { plan, theme };
 }
 
@@ -74,7 +74,8 @@ function Stage({ slide, theme, total, step, blank, transition }) {
 }
 
 export default function SlidesView({ meetingId }) {
-  const { plan, theme } = useDeck(meetingId);
+  const [themeKey, setThemeKey] = useState(0);
+  const { plan, theme } = useDeck(meetingId, themeKey);
   const slides = plan?.slides || [];
   const [current, setCurrent] = useState(0);
   const [mode, setMode] = useState('edit');
@@ -144,6 +145,7 @@ export default function SlidesView({ meetingId }) {
   return (
     <div className="slides-view">
       <div className="ribbon" role="toolbar" aria-label="Slide tools">
+        <ThemePicker meetingId={meetingId} onChange={() => setThemeKey((k) => k + 1)} />
         <span className="hint">{slides.length} slides · built from the Document view · font {plan.font}</span>
         <label className="field"><span>Transition</span>
           <select value={transition} onChange={(e) => pickTransition(e.target.value)}>{Object.entries(TRANSITIONS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
@@ -231,5 +233,27 @@ export function AudienceWindow({ meetingId }) {
     <div className="show idle" onClick={() => channel.current.postMessage({ type: 'key', key: 'next' })} role="presentation">
       <Stage slide={s} theme={theme} total={plan.slides.length} step={state.pos.step} blank={state.pos.blank} transition={state.transition} />
     </div>
+  );
+}
+
+/** The Meeting's Theme (spec-v2 §4.2): Admin any time, editors while Preparing. Held Meetings keep the version they were presented with. */
+function ThemePicker({ meetingId, onChange }) {
+  const [c, setC] = useState(null);
+  const [error, setError] = useState('');
+  useEffect(() => { api(`/api/meetings/${meetingId}/theme-choice`).then(setC).catch(() => setC(null)); }, [meetingId]);
+  if (!c) return null;
+  const choose = (themeId) => {
+    setError('');
+    api(`/api/meetings/${meetingId}/theme-choice`, { method: 'PUT', json: { themeId } }).then((n) => { setC(n); onChange(); }).catch((e) => setError(e.message));
+  };
+  return (
+    <span className="theme-pick">
+      <label>Theme{' '}
+        <select value={c.themeId} disabled={!c.canChange} onChange={(e) => choose(Number(e.target.value))}>
+          {c.themes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select></label>
+      {c.frozen && <span className="hint" title="Held Meetings keep the Theme version in use on the Meeting date."> v{c.versionNo} · kept as presented</span>}
+      {error && <span className="error" role="alert"> {error}</span>}
+    </span>
   );
 }

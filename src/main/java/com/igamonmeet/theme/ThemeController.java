@@ -32,10 +32,15 @@ public class ThemeController {
 
     private final ThemeService themes;
     private final HouseTemplateService house;
+    private final MeetingThemes meetingThemes;
 
-    public ThemeController(ThemeService themes, HouseTemplateService house) {
+    public record ChooseTheme(long themeId) {
+    }
+
+    public ThemeController(ThemeService themes, HouseTemplateService house, MeetingThemes meetingThemes) {
         this.themes = themes;
         this.house = house;
+        this.meetingThemes = meetingThemes;
     }
 
     @GetMapping("/api/themes")
@@ -43,10 +48,24 @@ public class ThemeController {
         return themes.list();
     }
 
-    /** Merged House template + Theme for in-app slides. Meetings use the default Theme until ticket 31. */
+    /** Merged House template + the Meeting's Theme version (ADR 0008) for in-app slides. */
     @GetMapping(value = "/api/meetings/{id}/theme", produces = MediaType.APPLICATION_JSON_VALUE)
     public String meetingTheme(@PathVariable long id) {
-        return themes.merged(house.currentTheme(), themes.defaultTheme().settings());
+        return themes.merged(house.currentTheme(), meetingThemes.settings(id));
+    }
+
+    @GetMapping("/api/meetings/{id}/theme-choice")
+    public MeetingThemes.Choice choice(@PathVariable long id, Authentication auth) {
+        return meetingThemes.choice(id, isAdmin(auth));
+    }
+
+    @PutMapping("/api/meetings/{id}/theme-choice")
+    public MeetingThemes.Choice choose(@PathVariable long id, @RequestBody ChooseTheme r, Authentication auth) {
+        return meetingThemes.choose(id, r.themeId(), auth.getName(), isAdmin(auth));
+    }
+
+    private static boolean isAdmin(Authentication auth) {
+        return auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 
     @GetMapping("/api/theme-images/{id}")

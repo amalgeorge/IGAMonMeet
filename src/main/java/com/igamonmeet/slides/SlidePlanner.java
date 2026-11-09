@@ -150,7 +150,7 @@ public class SlidePlanner {
             case TWO_COLUMN -> twoColumn(s, in, team, main, appendix);
             case KPI -> kpis(s, in, team, main, appendix);
             case CHART -> chart(s, team, main);
-            case TABLE -> table(s, in, team, s.columns(), rows(s.content()), null, main, appendix, s.layout());
+            case TABLE -> table(s, in, team, s.columns(), rows(s.content()), null, main, appendix, s.layout(), TableStyle.of(s.tableStyle()));
             case ACTION_ITEMS -> {
                 List<List<String>> rows = new ArrayList<>();
                 List<String> flags = new ArrayList<>();
@@ -158,7 +158,7 @@ public class SlidePlanner {
                     rows.add(List.of(a.title(), a.owner(), a.team(), a.due()));
                     flags.add(a.closed() ? "closed" : a.overdue() ? "overdue" : "");
                 }
-                table(s, in, team, List.of("Action", "Owner", "Team", "Due"), rows, flags, main, appendix, s.layout());
+                table(s, in, team, List.of("Action", "Owner", "Team", "Due"), rows, flags, main, appendix, s.layout(), TableStyle.NONE);
             }
             default -> main.add(new Draft(s.layout(), s.key(), data("team", team, "title", s.name()), false));
         }
@@ -218,7 +218,7 @@ public class SlidePlanner {
             List<List<String>> rows = new ArrayList<>();
             b.path("rows").forEach(r -> rows.add(cells(r)));
             if (!rows.isEmpty()) {
-                table(s, in, team, head, rows, null, main, appendix, "IAM_TABLE");
+                table(s, in, team, head, rows, null, main, appendix, "IAM_TABLE", TableStyle.of(b.path("style")));
             }
         }
         textRun(s, in, team, linesOf(run), main, appendix);
@@ -351,7 +351,7 @@ public class SlidePlanner {
                         k.statusLabel() == null ? "" : k.statusLabel()));
             }
             int first = main.size();
-            table(s, in, team, List.of("KPI", "This month", "Target", "Status"), rows, null, main, appendix, "IAM_TABLE");
+            table(s, in, team, List.of("KPI", "This month", "Target", "Status"), rows, null, main, appendix, "IAM_TABLE", TableStyle.NONE);
             if (first < main.size()) {
                 main.get(first).data().put("kpis", all); // descriptions reach the speaker notes; table slides ignore the tiles
                 if (!commentary.isBlank()) main.get(first).data().put("note", commentary);
@@ -383,13 +383,34 @@ public class SlidePlanner {
     // ---- tables ----
 
     private void table(SectionInput s, Input in, String team, List<String> head, List<List<String>> rows, List<String> flags,
-                       List<Draft> main, List<Draft> appendix, String layout) {
+                       List<Draft> main, List<Draft> appendix, String layout, TableStyle style) {
         double width = in.slideWidth() * 0.91;
         int n = Math.max(head.size(), 1);
         double[] cols = new double[n];
+        boolean sized = style.widths() != null && style.widths().size() == n;
+        double share = sized ? style.widths().stream().mapToDouble(Double::doubleValue).sum() : 0;
         for (int i = 0; i < n; i++) {
-            cols[i] = n == 1 ? width : i == 0 ? width * 0.45 : width * 0.55 / (n - 1);
+            cols[i] = sized ? width * style.widths().get(i) / share
+                    : n == 1 ? width : i == 0 ? width * 0.45 : width * 0.55 / (n - 1);
         }
+        // Status colours and the total row are row flags, like "overdue" on Action items (spec-v2 §3.3).
+        if (style.statusColumn() != null || style.total()) {
+            List<String> styled = new ArrayList<>();
+            for (int i = 0; i < rows.size(); i++) {
+                String f = flags == null ? "" : flags.get(i);
+                String st = style.statusColumn() == null || style.statusColumn() >= rows.get(i).size() ? null
+                        : TableStyle.statusOf(rows.get(i).get(style.statusColumn()));
+                styled.add(f.isEmpty() && st != null ? "status:" + st : f);
+            }
+            List<List<String>> all = new ArrayList<>(rows);
+            if (style.total() && !rows.isEmpty()) {
+                all.add(TableStyle.totalRow(head, rows));
+                styled.add("total");
+            }
+            rows = all;
+            flags = styled;
+        }
+        final List<List<String>> tableRows = rows;
         double headH = TABLE_HEAD_PT * 1.2 + CELL_PAD_Y;
         double cap = in.slideHeight() * (CONTENT_BOTTOM - CONTENT_TOP) - headH;
         List<Integer> idx = new ArrayList<>();
@@ -398,7 +419,7 @@ public class SlidePlanner {
         }
         ToDoubleFunction<Integer> rowH = i -> {
             double h = 0;
-            List<String> r = rows.get(i);
+            List<String> r = tableRows.get(i);
             for (int c = 0; c < n && c < r.size(); c++) {
                 h = Math.max(h, measure.height(r.get(c), TABLE_PT, false, cols[c] - CELL_PAD_X));
             }
@@ -428,6 +449,8 @@ public class SlidePlanner {
             }
             Map<String, Object> d = data("team", team, "title", toAppendix ? "Appendix: " + s.name() : s.name(),
                     "head", head, "rows", pageRows, "rowFlags", pageFlags, "colWidths", widthsPct(cols, width), "fontSize", TABLE_PT);
+            if (style.align() != null) d.put("align", style.align());
+            if (style.banded()) d.put("banded", true);
             if (s.rule() == OverflowRule.APPENDIX && p == 0 && pages.size() > 1) {
                 int more = rows.size() - pages.get(0).size();
                 d.put("note", "+" + more + " more in the appendix");

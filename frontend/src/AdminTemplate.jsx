@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
+import TableStyleEditor from './TableStyleEditor.jsx';
 import { api } from './api.js';
 
 const KINDS = { TEXT: 'IAM_SUMMARY', SUMMARY: 'IAM_SUMMARY', KPI: 'IAM_KPI', CHART: 'IAM_CHART', TABLE: 'IAM_TABLE', TWO_COLUMN: 'IAM_TWO_COLUMN', ACTION_ITEMS: 'IAM_TABLE' };
@@ -82,8 +83,9 @@ export default function AdminTemplate() {
             {(s.visibility || 'SHOWN') !== 'SHOWN' && <p className="hint">{VISIBILITY_HINT[s.visibility]}</p>}
             {s.kind === 'TABLE' && (
               <label className="field"><span>Columns (comma-separated)</span>
-                <input value={s.columns.join(', ')} onChange={(e) => update(i, { columns: e.target.value.split(',').map((c) => c.trim()).filter(Boolean) })} /></label>
+                <input value={s.columns.join(', ')} onChange={(e) => update(i, { columns: e.target.value.split(',').map((c) => c.trim()).filter(Boolean), tableStyle: null })} /></label>
             )}
+            {s.kind === 'TABLE' && s.columns.length > 0 && <TableStyleEditor key={s.columns.join('|')} columns={s.columns} value={s.tableStyle} onChange={(tableStyle) => update(i, { tableStyle })} />}
             {s.kind === 'CHART' && (
               <label className="field"><span>KPI shown</span><select value={s.chartKpiKey || ''} onChange={(e) => update(i, { chartKpiKey: e.target.value })}>
                 <option value="">Choose a KPI</option>{allKpis.map((k) => <option key={k.key} value={k.key}>{k.name}</option>)}</select></label>

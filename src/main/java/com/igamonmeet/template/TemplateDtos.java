@@ -45,7 +45,8 @@ public final class TemplateDtos {
             Visibility visibility,
             Boolean onSlides,
             String groupKey,
-            @Pattern(regexp = "2|3|4|6|8|TABLE") String kpiLayout) {
+            @Pattern(regexp = "2|3|4|6|8|TABLE") String kpiLayout,
+            com.fasterxml.jackson.databind.JsonNode tableStyle) {
 
         public Visibility visibilityOrDefault() { return visibility == null ? Visibility.SHOWN : visibility; }
 
@@ -107,12 +108,23 @@ public final class TemplateDtos {
                         d.getDecimals())).collect(Collectors.toList()));
     }
 
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON = new com.fasterxml.jackson.databind.ObjectMapper();
+
+    static com.fasterxml.jackson.databind.JsonNode readJson(String s) {
+        try {
+            return s == null ? null : JSON.readTree(s);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     static Section of(TemplateSection s) {
         List<String> cols = s.getColumnsSpec() == null ? List.of() : Arrays.asList(s.getColumnsSpec().split("\\|"));
         List<Kpi> kpis = s.getKpis().stream()
                 .map(k -> new Kpi(k.getKpiKey(), k.getName(), k.getUnit(), k.getTarget(), k.getDirection(), k.getAmberThreshold(), k.isRequired(), k.getVisibility()))
                 .collect(Collectors.toList());
         return new Section(s.getSectionKey(), s.getName(), s.getTeamTag(), s.getKind(), s.getLayout(), s.getOverflowRule(),
-                s.isRequired(), cols, s.getChartKpiKey(), kpis, s.getVisibility(), s.isOnSlides(), s.getGroupKey(), s.getKpiLayout());
+                s.isRequired(), cols, s.getChartKpiKey(), kpis, s.getVisibility(), s.isOnSlides(), s.getGroupKey(), s.getKpiLayout(),
+                readJson(s.getTableStyle()));
     }
 }

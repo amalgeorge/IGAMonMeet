@@ -93,7 +93,7 @@ public class PptxWriter {
                     text(slide, "team", "APPENDIX");
                     text(slide, "title", "Comments" + (pages > 1 ? " (" + (p + 1) + " of " + pages + ")" : ""));
                     table(slide, List.of("Section", "Comment", "Status"), options.commentRows().subList(p * perSlide,
-                            Math.min(options.commentRows().size(), (p + 1) * perSlide)), List.of(20.0, 62.0, 18.0), null, w, h);
+                            Math.min(options.commentRows().size(), (p + 1) * perSlide)), List.of(20.0, 62.0, 18.0), null, null, false, w, h);
                     stamp(slide, options.footerStamp(), w, h);
                 }
             }
@@ -164,7 +164,7 @@ public class PptxWriter {
             }
             case "IAM_TABLE" -> {
                 table(slide, (List<String>) d.get("head"), (List<List<String>>) d.get("rows"), (List<Double>) d.get("colWidths"),
-                        (List<String>) d.get("rowFlags"), w, h);
+                        (List<String>) d.get("rowFlags"), (List<String>) d.get("align"), Boolean.TRUE.equals(d.get("banded")), w, h);
                 if (d.get("note") instanceof String note) {
                     box(slide, note, 0.045 * w, 0.84 * h, 0.91 * w, 20, 12, false, MUTED);
                 }
@@ -307,14 +307,24 @@ public class PptxWriter {
         }
     }
 
-    private static void table(XSLFSlide slide, List<String> head, List<List<String>> rows, List<Double> widths, List<String> flags, double w, double h) {
+    /** Row fills for status-coloured rows (spec-v2 §3.3); the text stays dark for contrast. */
+    private static final Map<String, Color> ROW_FILL = Map.of("ON_TARGET", new Color(0xE3, 0xF3, 0xE9), "BELOW_TARGET", new Color(0xFF, 0xF3, 0xDC),
+            "OFF_TARGET", new Color(0xFD, 0xEC, 0xEE));
+    private static final Color BAND = new Color(0xF7, 0xF7, 0xF7);
+
+    private static void table(XSLFSlide slide, List<String> head, List<List<String>> rows, List<Double> widths, List<String> flags,
+                              List<String> align, boolean banded, double w, double h) {
         XSLFTable t = slide.createTable();
         double x = 0.045 * w;
         double tw = 0.91 * w;
         t.setAnchor(new Rectangle2D.Double(x, 0.267 * h, tw, 0.55 * h));
         XSLFTableRow hr = t.addRow();
-        for (String c : head) {
-            cell(hr.addCell(), c, 12, true, MUTED, SOFT);
+        for (int c = 0; c < head.size(); c++) {
+            XSLFTableCell hc = hr.addCell();
+            cell(hc, head.get(c), 12, true, MUTED, SOFT);
+            if (align != null && c < align.size() && !"left".equals(align.get(c))) {
+                hc.getTextParagraphs().get(0).setTextAlign("center".equals(align.get(c)) ? TextAlign.CENTER : TextAlign.RIGHT);
+            }
         }
         for (int r = 0; r < rows.size(); r++) {
             XSLFTableRow tr = t.addRow();
@@ -324,7 +334,13 @@ public class PptxWriter {
                 boolean late = "overdue".equals(flag) && c == head.size() - 1;
                 Color color = "closed".equals(flag) ? MUTED : late ? new Color(0x9E, 0x0B, 0x23) : INK;
                 XSLFTableCell cell = tr.addCell();
-                cell(cell, c < row.size() ? row.get(c) : "", 14, late, color, null);
+                boolean total = "total".equals(flag);
+                Color fill = flag.startsWith("status:") ? ROW_FILL.get(flag.substring(7)) : total ? SOFT : banded && r % 2 == 1 ? BAND : null;
+                cell(cell, c < row.size() ? row.get(c) : "", 14, late || total, color, fill);
+                if (align != null && c < align.size()) {
+                    cell.getTextParagraphs().get(0).setTextAlign("center".equals(align.get(c)) ? TextAlign.CENTER
+                            : "right".equals(align.get(c)) ? TextAlign.RIGHT : TextAlign.LEFT);
+                }
                 if ("closed".equals(flag)) {
                     cell.getTextParagraphs().get(0).getTextRuns().get(0).setStrikethrough(true);
                 }

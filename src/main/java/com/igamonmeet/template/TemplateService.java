@@ -69,6 +69,7 @@ public class TemplateService {
                     s.required(), cols, s.kind() == SectionKind.CHART ? s.chartKpiKey() : null, ++order);
             ts.setVisibility(s.visibilityOrDefault(), s.onSlidesOrDefault());
             ts.setGroupKey(s.groupKey() == null || s.groupKey().isBlank() ? null : s.groupKey());
+            ts.setTableStyle(s.kind() == SectionKind.TABLE && s.tableStyle() != null && !s.tableStyle().isNull() ? s.tableStyle().toString() : null);
             ts.setKpiLayout(s.kind() == SectionKind.KPI && s.kpiLayout() != null && !"4".equals(s.kpiLayout()) ? s.kpiLayout() : null);
             int k = 0;
             if (s.kind() == SectionKind.KPI) {
@@ -152,6 +153,8 @@ public class TemplateService {
             if (s.kind() == SectionKind.TABLE) {
                 check(s.columns() != null && !s.columns().isEmpty(), "Table section '" + s.name() + "' needs at least one column.");
                 s.columns().forEach(c -> check(!c.contains("|"), "Column names cannot contain '|'."));
+                String styleProblem = com.igamonmeet.slides.TableStyle.problem(s.tableStyle(), s.columns().size());
+                check(styleProblem == null, "Table section '" + s.name() + "': " + styleProblem);
             }
             if (s.kind() == SectionKind.KPI) {
                 check(s.kpis() != null && !s.kpis().isEmpty(), "KPI section '" + s.name() + "' needs at least one KPI.");

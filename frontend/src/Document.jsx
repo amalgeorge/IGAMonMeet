@@ -9,6 +9,7 @@ import HistoryPanel from './HistoryPanel.jsx';
 import DashboardPanel from './DashboardPanel.jsx';
 import AvailablePanel from './AvailablePanel.jsx';
 import { STATUS_LABELS } from './labels.js';
+import TableStyleEditor from './TableStyleEditor.jsx';
 
 const TEAM = { ENGINEERING: 'Engineering', OPERATIONS: 'Operations', SHARED: 'Shared' };
 const LABEL = { PREPARING: 'Preparing', HELD: 'Held' };
@@ -325,7 +326,7 @@ function TableBlockEditor({ block, onChange }) {
     const next = text.split(',').map((c) => c.trim()).filter(Boolean).slice(0, 8);
     if (!next.length) return;
     // Keep existing cells by position; new columns start empty, removed ones drop their cells.
-    onChange({ columns: next, rows: (block.rows || []).map((r) => next.map((_, j) => r[j] ?? '')) });
+    onChange({ columns: next, rows: (block.rows || []).map((r) => next.map((_, j) => r[j] ?? '')), style: next.length === cols.length ? block.style : null });
   };
   return (
     <div>
@@ -333,6 +334,7 @@ function TableBlockEditor({ block, onChange }) {
         <input value={draft} onChange={(e) => setColumns(e.target.value)} /></label>
       {cols.length > 8 && <p className="error">Only the first 8 columns are kept.</p>}
       <TableEditor columns={cols} rows={block.rows || []} onChange={(rows) => onChange({ rows })} />
+      <TableStyleEditor key={cols.join('|')} columns={cols} value={block.style} onChange={(style) => onChange({ style })} />
     </div>
   );
 }

@@ -8,7 +8,7 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 35 | Column editor, commas, 12 columns | none | Done |
 | 36 | CSV import for tables | 35 | Done |
 | 37 | SITREP replaces Incidents | 35 | Done |
-| 38 | Rich text in every Section | 37 | |
+| 38 | Rich text in every Section | 37 | Done |
 | 39 | New Programme Sections | 38 | |
 | 40 | Section group visibility fix and hints | none | |
 | 41 | Drag-and-drop ordering of Sections and KPIs | 40 | |

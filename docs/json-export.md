@@ -69,6 +69,11 @@ Each block has a `type`.
 7. **`columns`** — `{ "left": { "heading", "items": [] }, "right": { "heading", "items": [] } }`. Two lists side by side.
 8. **`actionItems`** — `{ "items": [{ "title", "owner", "team", "due", "status", "overdue", "carriedForward" }] }`. `due` is an ISO date or null; `status` is `OPEN` or `CLOSED`.
 
+9. **`richText`** — `{ "blocks": [...] }`. Formatted text (spec-v3 §2), last block of a Section:
+   - `{ "type": "p", "runs": [Run] }` a paragraph
+   - `{ "type": "ul" | "ol", "items": [{ "runs": [Run], "items": [{ "runs": [Run] }] }] }` a bulleted or numbered list, one sub-level
+   - Run: `{ "text", "b"?: true, "i"?: true, "href"?: "https://…" }`
+
 ## 5. Converting to Word
 
 `tools/json-to-word/json_to_docx.py` is a ready converter:

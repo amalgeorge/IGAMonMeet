@@ -9,6 +9,7 @@ import com.igamonmeet.slides.PlanModel.Plan;
 import com.igamonmeet.slides.PlanModel.SectionInput;
 import com.igamonmeet.slides.PlanModel.Slide;
 import com.igamonmeet.template.OverflowRule;
+import com.igamonmeet.template.SectionKind;
 import com.igamonmeet.template.TeamTag;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -162,6 +163,10 @@ public class SlidePlanner {
             }
             default -> main.add(new Draft(s.layout(), s.key(), data("team", team, "title", s.name()), false));
         }
+        // Formatted text (spec-v3 §2): Text Sections flow it with their blocks; other kinds continue on text slides.
+        if (s.kind() != SectionKind.TEXT && !RichText.isEmpty(s.content().path("rich"))) {
+            textRun(s, in, team, RichText.lines(s.content().path("rich")), main, appendix, "IAM_SUMMARY");
+        }
     }
 
     // ---- lists (summary, two-column) ----
@@ -194,6 +199,7 @@ public class SlidePlanner {
                 default -> { }
             }
         }
+        lines.addAll(RichText.lines(content.path("rich")));
         return lines;
     }
 
@@ -202,7 +208,7 @@ public class SlidePlanner {
         boolean hasTable = false;
         for (JsonNode b : blocks) hasTable |= "table".equals(b.path("type").asText());
         if (!hasTable) {
-            textRun(s, in, team, textLines(s.content()), main, appendix);
+            textRun(s, in, team, textLines(s.content()), main, appendix, s.layout());
             return;
         }
         // Text runs go on IAM_SUMMARY slides; each table block gets IAM_TABLE slides of its own, in block order (spec-v2 §3.2).
@@ -212,7 +218,7 @@ public class SlidePlanner {
                 run.add(b);
                 continue;
             }
-            textRun(s, in, team, linesOf(run), main, appendix);
+            textRun(s, in, team, linesOf(run), main, appendix, s.layout());
             run.removeAll();
             List<String> head = cells(b.path("columns"));
             List<List<String>> rows = new ArrayList<>();
@@ -221,13 +227,15 @@ public class SlidePlanner {
                 table(s, in, team, head, rows, null, main, appendix, "IAM_TABLE", TableStyle.of(b.path("style")));
             }
         }
-        textRun(s, in, team, linesOf(run), main, appendix);
+        List<String> tail = new ArrayList<>(linesOf(run));
+        tail.addAll(RichText.lines(s.content().path("rich")));
+        textRun(s, in, team, tail, main, appendix, s.layout());
     }
 
     private static List<String> linesOf(com.fasterxml.jackson.databind.node.ArrayNode blocks) {
         com.fasterxml.jackson.databind.node.ObjectNode c = com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();
         c.set("blocks", blocks.deepCopy());
-        return textLines(c);
+        return textLines(c); // no "rich" here: the caller adds it after the last run
     }
 
     /** Every cell as text, blanks kept so columns stay aligned. */
@@ -237,7 +245,7 @@ public class SlidePlanner {
         return out;
     }
 
-    private void textRun(SectionInput s, Input in, String team, List<String> lines, List<Draft> main, List<Draft> appendix) {
+    private void textRun(SectionInput s, Input in, String team, List<String> lines, List<Draft> main, List<Draft> appendix, String layout) {
         if (lines.isEmpty()) {
             return;
         }
@@ -246,12 +254,9 @@ public class SlidePlanner {
         Fitted f = fitList(lines, SUMMARY_PT, box, 24, 12, s.rule());
         emit(s, team, f, (page, first) -> {
             List<Map<String, Object>> blocks = new ArrayList<>();
-            for (String l : page) {
-                boolean li = !l.isEmpty() && l.charAt(0) == BULLET;
-                blocks.add(data("type", li ? "li" : "p", "text", li ? l.substring(1) : l));
-            }
+            for (String l : page) blocks.add(lineBlock(l));
             return data("blocks", blocks, "fontSize", f.size(), "wide", true);
-        }, main, appendix);
+        }, main, appendix, layout);
     }
 
     private void twoColumn(SectionInput s, Input in, String team, List<Draft> main, List<Draft> appendix) {
@@ -291,7 +296,7 @@ public class SlidePlanner {
     private Fitted fitList(List<String> items, float base, Box box, double indent, double gap, OverflowRule rule) {
         Fitted last = null;
         for (float size : sizes(base, rule)) {
-            last = new Fitted(size, paginate(items, t -> measure.height(t, size, false, box.w() - indent) + gap, box.h()));
+            last = new Fitted(size, paginate(items, t -> measure.height(RichText.strip(t), size, false, box.w() - indent) + gap, box.h()));
             if (last.pages().size() <= 1) {
                 return last;
             }
@@ -304,6 +309,10 @@ public class SlidePlanner {
     }
 
     private void emit(SectionInput s, String team, Fitted f, PageData pd, List<Draft> main, List<Draft> appendix) {
+        emit(s, team, f, pd, main, appendix, s.layout());
+    }
+
+    private void emit(SectionInput s, String team, Fitted f, PageData pd, List<Draft> main, List<Draft> appendix, String layout) {
         List<List<String>> pages = f.pages().isEmpty() ? List.of(List.of()) : f.pages();
         for (int p = 0; p < pages.size(); p++) {
             boolean toAppendix = s.rule() == OverflowRule.APPENDIX && p > 0;
@@ -313,8 +322,36 @@ public class SlidePlanner {
             if (s.rule() == OverflowRule.APPENDIX && p == 0 && pages.size() > 1) {
                 d.put("note", "Continued in the appendix.");
             }
-            (toAppendix ? appendix : main).add(new Draft(s.layout(), s.key(), d, toAppendix));
+            (toAppendix ? appendix : main).add(new Draft(layout, s.key(), d, toAppendix));
         }
+    }
+
+    /**
+     * One text line as a slide block: "p", "li" (bullet) or "oli" (numbered, with "num"), "level" 0 or 1 for sub-items.
+     * "text" keeps the inline marks of {@link RichText}; renderers turn them into bold, italic and links.
+     */
+    static Map<String, Object> lineBlock(String l) {
+        String type = "p";
+        String num = null;
+        int i = 0;
+        if (!l.isEmpty() && l.charAt(0) == RichText.BULLET) {
+            type = "li";
+            i = 1;
+        } else if (!l.isEmpty() && l.charAt(0) == RichText.NUMBER) {
+            int end = l.indexOf(RichText.NUMBER_END);
+            type = "oli";
+            num = l.substring(1, end);
+            i = end + 1;
+        }
+        int level = 0;
+        if (i < l.length() && l.charAt(i) == RichText.SUB) {
+            level = 1;
+            i++;
+        }
+        Map<String, Object> b = data("type", type, "text", l.substring(i));
+        if (level > 0) b.put("level", level);
+        if (num != null) b.put("num", num);
+        return b;
     }
 
     /** Text sizes to try: the base size, then (only for SHRINK_TO_FIT) smaller steps down to 14 pt. */
@@ -343,7 +380,8 @@ public class SlidePlanner {
 
     private void kpis(SectionInput s, Input in, String team, List<Draft> main, List<Draft> appendix) {
         List<KpiView> all = s.kpis();
-        String commentary = s.content().path("commentary").asText("");
+        // Formatted text replaces the old commentary box (spec-v3 §2); it continues on its own text slides.
+        String commentary = RichText.isEmpty(s.content().path("rich")) ? s.content().path("commentary").asText("") : "";
         if ("TABLE".equals(s.kpiLayout())) {
             List<List<String>> rows = new ArrayList<>();
             for (KpiView k : all) {
@@ -377,7 +415,7 @@ public class SlidePlanner {
         main.add(new Draft(s.layout(), s.key(), data("team", team, "title", s.name(),
                 "labels", labels.subList(from, labels.size()), "values", values.subList(from, values.size()),
                 "target", series == null ? null : series.target(), "unit", series == null ? "" : series.unit(),
-                "commentary", texts(s.content().path("commentary"))), false));
+                "commentary", RichText.isEmpty(s.content().path("rich")) ? texts(s.content().path("commentary")) : List.of()), false));
     }
 
     // ---- tables ----

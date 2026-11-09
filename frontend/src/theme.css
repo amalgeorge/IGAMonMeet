@@ -223,3 +223,13 @@ tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
 .csv-preview { border: 1px solid var(--line, #e5e5e5); border-radius: 8px; padding: 12px 16px; margin: 8px 0; background: var(--card, #fff); max-width: 100%; }
 .csv-preview h4 { margin: 0 0 6px; }
 .csv-preview .table-wrap { max-height: 280px; overflow: auto; }
+
+/* Formatted text (spec-v3 §2). */
+.rich { margin: 12px 0; }
+.rich-label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.rich-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.rich-bar .btn { min-width: 36px; padding: 4px 8px; }
+.rich-area { min-height: 96px; border: 1px solid var(--line, #d0d0d0); border-radius: 8px; padding: 8px 12px; background: var(--card, #fff); line-height: 1.5; }
+.rich-area:focus { outline: 2px solid var(--red, #C8102E); outline-offset: 1px; }
+.rich-area p, .rich-view p { margin: 0 0 8px; }
+.rich-area ul, .rich-area ol, .rich-view ul, .rich-view ol { margin: 0 0 8px; padding-left: 24px; }

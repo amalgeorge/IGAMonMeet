@@ -1,8 +1,8 @@
 import { Fragment, useEffect, useState } from 'react';
 import { api } from './api.js';
 
-const KINDS = { SUMMARY: 'IAM_SUMMARY', KPI: 'IAM_KPI', CHART: 'IAM_CHART', TABLE: 'IAM_TABLE', TWO_COLUMN: 'IAM_TWO_COLUMN', ACTION_ITEMS: 'IAM_TABLE' };
-const KIND_LABEL = { SUMMARY: 'Summary', KPI: 'KPIs', CHART: 'KPI trend chart', TABLE: 'Table', TWO_COLUMN: 'Two columns', ACTION_ITEMS: 'Action items' };
+const KINDS = { TEXT: 'IAM_SUMMARY', SUMMARY: 'IAM_SUMMARY', KPI: 'IAM_KPI', CHART: 'IAM_CHART', TABLE: 'IAM_TABLE', TWO_COLUMN: 'IAM_TWO_COLUMN', ACTION_ITEMS: 'IAM_TABLE' };
+const KIND_LABEL = { TEXT: 'Text', SUMMARY: 'Summary', KPI: 'KPIs', CHART: 'KPI trend chart', TABLE: 'Table', TWO_COLUMN: 'Two columns', ACTION_ITEMS: 'Action items' };
 const TEAMS = { ENGINEERING: 'Engineering', OPERATIONS: 'Operations', SHARED: 'Shared' };
 const OVERFLOW = { CONTINUE: 'Continue on new slides', SHRINK_TO_FIT: 'Shrink, then continue', APPENDIX: 'First rows + appendix' };
 const fmt = new Intl.DateTimeFormat('en-SG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Singapore' });
@@ -31,7 +31,7 @@ export default function AdminTemplate() {
     const name = `New ${KIND_LABEL[kind].toLowerCase()}`;
     let key = slug(name); let n = 2;
     while (sections.some((s) => s.key === key)) key = `${slug(name)}-${n++}`;
-    setSections([...sections, { key, name, teamTag: 'SHARED', kind, layout: KINDS[kind], overflowRule: kind === 'SUMMARY' || kind === 'TWO_COLUMN' ? 'SHRINK_TO_FIT' : 'CONTINUE',
+    setSections([...sections, { key, name, teamTag: 'SHARED', kind, layout: KINDS[kind], overflowRule: kind === 'SUMMARY' || kind === 'TWO_COLUMN' || kind === 'TEXT' ? 'SHRINK_TO_FIT' : 'CONTINUE',
       required: false, columns: kind === 'TABLE' ? ['Item', 'Owner', 'Status'] : [], chartKpiKey: null,
       kpis: kind === 'KPI' && library.length ? [{ key: library[0].key, required: false, visibility: 'SHOWN' }] : [] }]);
   };

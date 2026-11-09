@@ -14,7 +14,7 @@ const TEAM = { ENGINEERING: 'Engineering', OPERATIONS: 'Operations', SHARED: 'Sh
 const LABEL = { PREPARING: 'Preparing', HELD: 'Held' };
 const dateFmt = new Intl.DateTimeFormat('en-SG', { dateStyle: 'medium', timeZone: 'Asia/Singapore' });
 const timeFmt = new Intl.DateTimeFormat('en-SG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Singapore' });
-const EMPTY = { SUMMARY: { points: [''], stats: [] }, KPI: { values: {}, commentary: '' }, CHART: { commentary: [''] }, TABLE: { rows: [] }, TWO_COLUMN: { leftHead: 'Risks', left: [''], rightHead: 'Decisions needed', right: [''] } };
+const EMPTY = { TEXT: { blocks: [{ type: 'paragraph', text: '' }] }, SUMMARY: { points: [''], stats: [] }, KPI: { values: {}, commentary: '' }, CHART: { commentary: [''] }, TABLE: { rows: [] }, TWO_COLUMN: { leftHead: 'Risks', left: [''], rightHead: 'Decisions needed', right: [''] } };
 const notesOf = (s) => { try { return s.contentJson ? JSON.parse(s.contentJson).notes : ''; } catch { return ''; } };
 const parse = (s) => (s.contentJson ? JSON.parse(s.contentJson) : structuredClone(EMPTY[s.kind] || {}));
 
@@ -156,6 +156,7 @@ function SectionEditor({ meetingId, section }) {
 function KindEditor({ section, value, onChange }) {
   const set = (patch) => onChange({ ...value, ...patch });
   switch (section.kind) {
+    case 'TEXT': return <BlocksEditor blocks={value.blocks || []} onChange={(blocks) => set({ blocks })} />;
     case 'SUMMARY': return <ListEditor label="Key point" items={value.points || []} onChange={(points) => set({ points })} numbered />;
     case 'CHART': return <ListEditor label="Commentary line" items={value.commentary || []} onChange={(commentary) => set({ commentary })} />;
     case 'TWO_COLUMN': return (
@@ -282,6 +283,43 @@ function KpiTiles({ kpis, commentary }) {
   );
 }
 
+/** A Text Section's blocks in order: paragraphs and bullet lists (spec-v2 §3.1). Table blocks follow in ticket 28. */
+function BlocksEditor({ blocks, onChange }) {
+  const set = (i, patch) => onChange(blocks.map((b, j) => (j === i ? { ...b, ...patch } : b)));
+  const move = (i, d) => { const a = [...blocks]; [a[i], a[i + d]] = [a[i + d], a[i]]; onChange(a); };
+  return (
+    <div className="blocks">
+      {blocks.map((b, i) => (
+        <div key={i} className="block">
+          <div className="row">
+            <span className="hint">{b.type === 'bullets' ? 'Bullet list' : 'Paragraph'}</span>
+            <span>
+              <button className="btn" disabled={i === 0} aria-label={`Move block ${i + 1} up`} onClick={() => move(i, -1)}>↑</button>{' '}
+              <button className="btn" disabled={i === blocks.length - 1} aria-label={`Move block ${i + 1} down`} onClick={() => move(i, 1)}>↓</button>{' '}
+              <button className="btn" aria-label={`Remove block ${i + 1}`} onClick={() => onChange(blocks.filter((_, j) => j !== i))}>Remove</button>
+            </span>
+          </div>
+          {b.type === 'bullets'
+            ? <ListEditor label="Bullet" items={b.items || []} onChange={(items) => set(i, { items })} />
+            : <textarea aria-label={`Paragraph ${i + 1}`} rows={3} maxLength={5000} value={b.text || ''} onChange={(e) => set(i, { text: e.target.value })} />}
+        </div>
+      ))}
+      <div className="row">
+        <span>
+          <button className="btn" onClick={() => onChange([...blocks, { type: 'paragraph', text: '' }])}>Add paragraph</button>{' '}
+          <button className="btn" onClick={() => onChange([...blocks, { type: 'bullets', items: [''] }])}>Add bullet list</button>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function BlocksView({ blocks }) {
+  return <div>{blocks.map((b, i) => (b.type === 'bullets'
+    ? <ul key={i}>{(b.items || []).filter(Boolean).map((t, j) => <li key={j}>{t}</li>)}</ul>
+    : b.text ? <p key={i}>{b.text}</p> : null))}</div>;
+}
+
 function ListEditor({ label, items, onChange, numbered }) {
   const list = items.length ? items : [''];
   return (
@@ -317,6 +355,7 @@ function SectionView({ section }) {
   const c = section.contentJson ? JSON.parse(section.contentJson) : null;
   if (!c) return <p className="hint">Not filled in yet.</p>;
   switch (section.kind) {
+    case 'TEXT': return <BlocksView blocks={c.blocks || (c.text ? [{ type: 'paragraph', text: c.text }] : [])} />;
     case 'SUMMARY': return <ol>{(c.points || []).filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}</ol>;
     case 'CHART': return <div>{(c.commentary || []).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)}</div>;
     case 'TWO_COLUMN': return (

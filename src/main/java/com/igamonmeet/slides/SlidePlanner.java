@@ -146,6 +146,7 @@ public class SlidePlanner {
         }
         switch (s.kind()) {
             case SUMMARY -> summary(s, in, team, main, appendix);
+            case TEXT -> text(s, in, team, main, appendix);
             case TWO_COLUMN -> twoColumn(s, in, team, main, appendix);
             case KPI -> kpis(s, in, team, main, appendix);
             case CHART -> chart(s, team, main);
@@ -172,6 +173,43 @@ public class SlidePlanner {
         List<Object> stats = new ArrayList<>();
         s.content().path("stats").forEach(st -> stats.add(data("value", st.path("value").asText(), "label", st.path("label").asText())));
         emit(s, team, f, (page, first) -> data("points", page, "fontSize", f.size(), "stats", first ? stats : List.of()), main, appendix);
+    }
+
+    private static final char BULLET = '\u0001';
+
+    /** The blocks of a Text Section as lines; a bullet item is marked so the slide can show it as a list item. */
+    static List<String> textLines(JsonNode content) {
+        List<String> lines = new ArrayList<>();
+        if (content.path("text").isTextual() && !content.has("blocks")) {
+            lines.add(content.get("text").asText()); // plain text from before rich content: one paragraph
+        }
+        for (JsonNode b : content.path("blocks")) {
+            switch (b.path("type").asText()) {
+                case "paragraph" -> {
+                    if (!b.path("text").asText("").isBlank()) lines.add(b.path("text").asText());
+                }
+                case "bullets" -> b.path("items").forEach(i -> {
+                    if (!i.asText("").isBlank()) lines.add(BULLET + i.asText());
+                });
+                default -> { }
+            }
+        }
+        return lines;
+    }
+
+    private void text(SectionInput s, Input in, String team, List<Draft> main, List<Draft> appendix) {
+        List<String> lines = textLines(s.content());
+        // Text Sections use the whole content width of the IAM_SUMMARY layout (no stat tiles).
+        Box box = new Box(in.slideWidth() * 0.91, in.boxes().getOrDefault("IAM_SUMMARY", new Box(0, in.slideHeight() * 0.6133)).h());
+        Fitted f = fitList(lines, SUMMARY_PT, box, 24, 12, s.rule());
+        emit(s, team, f, (page, first) -> {
+            List<Map<String, Object>> blocks = new ArrayList<>();
+            for (String l : page) {
+                boolean li = !l.isEmpty() && l.charAt(0) == BULLET;
+                blocks.add(data("type", li ? "li" : "p", "text", li ? l.substring(1) : l));
+            }
+            return data("blocks", blocks, "fontSize", f.size(), "wide", true);
+        }, main, appendix);
     }
 
     private void twoColumn(SectionInput s, Input in, String team, List<Draft> main, List<Draft> appendix) {

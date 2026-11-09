@@ -36,7 +36,7 @@ Builds on [v1](spec.md). Vocabulary follows [CONTEXT.md](../CONTEXT.md). Decisio
 
 ## 3. Rich content and tables
 
-1. **Rich content** (Q10). Text Sections hold an ordered list of blocks: paragraph, bullet list, table. Existing text becomes one paragraph block (Q21).
+1. **Rich content** (Q10). A new Section kind, **Text**, holds an ordered list of blocks: paragraph, bullet list, table. It uses the `IAM_SUMMARY` layout at full content width. v1 had no plain-text kind, so there is nothing to migrate; content saved as a single `text` string is read as one paragraph block (Q21). Summary and Two-column Sections keep their own editors.
 2. **Table blocks.** The editor sets the columns; up to 8 columns; any number of rows. Rows continue onto further slides with the header repeated, never split.
 3. **Table styling** (Q11). For TABLE Sections (Admin, in the Template) and table blocks (editor):
    - column width as a share of the table width

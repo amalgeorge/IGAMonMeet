@@ -12,7 +12,7 @@ const RED_LAYOUTS = ['IAM_TITLE', 'IAM_SECTION', 'IAM_CLOSING'];
 
 export function buildSteps(slide) {
   if (slide.layout === 'IAM_KPI') return (slide.data.kpis || []).length;
-  if (slide.layout === 'IAM_SUMMARY') return (slide.data.points || []).length;
+  if (slide.layout === 'IAM_SUMMARY') return (slide.data.blocks || slide.data.points || []).length;
   return 0;
 }
 
@@ -61,7 +61,15 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
 
       {d.empty && <div style={{ ...content, fontSize: pt(18), color: muted }}>{d.empty}</div>}
 
-      {!d.empty && slide.layout === 'IAM_SUMMARY' && (
+      {!d.empty && slide.layout === 'IAM_SUMMARY' && d.blocks && (
+        <div style={{ ...box(ph('body', { x: 4.5, y: 26.7, w: 54.75, h: 61.3 })), left: '4.5%', width: '91%', fontSize: pt(d.fontSize || 18), display: 'flex', flexDirection: 'column', gap: pt(12) }}>
+          {d.blocks.map((b, i) => (b.type === 'li'
+            ? <motion.div key={i} {...reveal(i)} style={{ display: 'flex', gap: pt(12), paddingLeft: pt(8) }}><span aria-hidden="true">•</span><span>{b.text}</span></motion.div>
+            : <motion.p key={i} {...reveal(i)} style={{ margin: 0 }}>{b.text}</motion.p>))}
+        </div>
+      )}
+
+      {!d.empty && slide.layout === 'IAM_SUMMARY' && !d.blocks && (
         <>
           <ol style={{ ...box(ph('body', { x: 4.5, y: 26.7, w: 54.75, h: 61.3 })), margin: 0, paddingLeft: pt(24), fontSize: pt(d.fontSize || 18), display: 'flex', flexDirection: 'column', gap: pt(14) }}>
             {d.points.map((p, i) => <motion.li key={i} {...reveal(i)}>{p}</motion.li>)}

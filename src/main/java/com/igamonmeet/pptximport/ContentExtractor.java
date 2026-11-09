@@ -35,6 +35,11 @@ public class ContentExtractor {
                 slides.forEach(s -> body(s).forEach(points::add));
                 c.putArray("stats");
             }
+            case TEXT -> {
+                // Each body paragraph becomes a paragraph block (the reader does not keep bullet formatting).
+                ArrayNode blocks = c.putArray("blocks");
+                slides.forEach(s -> body(s).forEach(t -> blocks.addObject().put("type", "paragraph").put("text", t)));
+            }
             case TABLE -> {
                 ArrayNode rows = c.putArray("rows");
                 for (RawSlide s : slides) {

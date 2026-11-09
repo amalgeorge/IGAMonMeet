@@ -86,12 +86,18 @@ public class PptxWriter {
             double w = ppt.getPageSize().getWidth();
             double h = ppt.getPageSize().getHeight();
             List<Slide> slides = new ArrayList<>(plan.slides());
+            List<XSLFSlide> created = new ArrayList<>();
+            List<Object[]> links = new ArrayList<>(); // {XSLFTextRun, Integer slide number}: resolved once every slide exists
             for (Slide s : slides) {
                 XSLFSlide slide = ppt.createSlide(layout(ppt, s.layout()));
+                created.add(slide);
                 if (theme != null) {
                     background(ppt, slide, theme, ThemeSpec.kindOf(s.layout()), w, h);
                 }
-                fill(ppt, slide, s, w, h, status);
+                fill(ppt, slide, s, w, h, status, links);
+                if (s.data().get("agendaTarget") instanceof Integer a) {
+                    backLink(slide, a, links, w, h);
+                }
                 if (theme != null && theme.showLogo() && theme.logo() != null) {
                     logo(ppt, slide, theme.logo(), w, h);
                 }
@@ -99,6 +105,12 @@ public class PptxWriter {
                     notes(ppt, slide, n);
                 }
                 stamp(slide, options.footerStamp(), w, h);
+            }
+            for (Object[] l : links) {
+                int n = (Integer) l[1];
+                if (n >= 1 && n <= created.size()) {
+                    ((XSLFTextRun) l[0]).createHyperlink().linkToSlide(created.get(n - 1));
+                }
             }
             if (options.commentRows() != null && !options.commentRows().isEmpty()) {
                 int perSlide = 8;
@@ -227,7 +239,8 @@ public class PptxWriter {
     }
 
     @SuppressWarnings("unchecked")
-    private void fill(XMLSlideShow ppt, XSLFSlide slide, Slide s, double w, double h, Map<String, Color[]> status) throws IOException {
+    private void fill(XMLSlideShow ppt, XSLFSlide slide, Slide s, double w, double h, Map<String, Color[]> status,
+                      List<Object[]> links) throws IOException {
         Map<String, Object> d = s.data();
         for (String key : List.of("title", "subtitle", "meta", "team", "leftHead", "rightHead")) {
             if (d.get(key) instanceof String v) {
@@ -239,8 +252,18 @@ public class PptxWriter {
             return;
         }
         switch (s.layout()) {
-            case "IAM_SECTION", "IAM_CLOSING" -> text(slide, "body", String.valueOf(d.getOrDefault("body", "")));
+            case "IAM_SECTION", "IAM_CLOSING" -> {
+                if (d.get("links") instanceof List<?> l && !l.isEmpty()) {
+                    linkList(slide, (List<Map<String, Object>>) l, links, 20);
+                } else {
+                    text(slide, "body", String.valueOf(d.getOrDefault("body", "")));
+                }
+            }
             case "IAM_SUMMARY" -> {
+                if (d.get("agenda") instanceof List<?> entries) {
+                    linkList(slide, (List<Map<String, Object>>) entries, links, 20);
+                    break;
+                }
                 if (d.containsKey("blocks")) {
                     blocks(slide, (List<Map<String, Object>>) d.get("blocks"), ((Number) d.get("fontSize")).doubleValue(), w);
                     break;
@@ -291,6 +314,47 @@ public class PptxWriter {
             }
         }
         return null;
+    }
+
+    // ---- agenda and slide links (spec-v3 §5) ----
+
+    /** One paragraph per entry in the body placeholder; entries with a "target" become links to that slide. */
+    private static void linkList(XSLFSlide slide, List<Map<String, Object>> entries, List<Object[]> links, double size) {
+        XSLFTextShape t = placeholder(slide, "body");
+        if (t == null) {
+            return;
+        }
+        t.clearText();
+        for (Map<String, Object> e : entries) {
+            XSLFTextParagraph p = t.addNewTextParagraph();
+            int level = e.get("level") instanceof Number n ? n.intValue() : 0;
+            p.setBullet(false);
+            p.setIndentLevel(0);
+            p.setIndent(0.0);
+            p.setLeftMargin(24.0 * level);
+            p.setSpaceAfter(6.0);
+            XSLFTextRun r = p.addNewTextRun();
+            r.setText(String.valueOf(e.get("text")));
+            r.setFontSize(level == 0 ? size : size - 2);
+            r.setBold(level == 0 && e.containsKey("level"));
+            if (e.get("target") instanceof Integer target) {
+                links.add(new Object[] {r, target});
+            }
+        }
+    }
+
+    /** "↩ Agenda" at the bottom centre of a content slide, linked to the agenda slide. */
+    private static void backLink(XSLFSlide slide, int agenda, List<Object[]> links, double w, double h) {
+        XSLFTextBox box = slide.createTextBox();
+        box.setAnchor(new Rectangle2D.Double(0.425 * w, 0.915 * h, 0.15 * w, 0.05 * h)); // bottom centre: footer and page number sit left and right
+        box.clearText();
+        XSLFTextParagraph para = box.addNewTextParagraph();
+        para.setTextAlign(TextAlign.CENTER);
+        XSLFTextRun r = para.addNewTextRun();
+        r.setText("\u21A9 Agenda");
+        r.setFontSize(10.0);
+        r.setFontColor(MUTED);
+        links.add(new Object[] {r, agenda});
     }
 
     private static void text(XSLFSlide slide, String name, String value) {

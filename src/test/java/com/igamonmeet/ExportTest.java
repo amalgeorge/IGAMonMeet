@@ -108,8 +108,9 @@ class ExportTest {
     void exportCanBeLimitedToSomeSections() throws Exception {
         long m = meetingWithContent("2039-05", "2039-05-26");
         try (XMLSlideShow ppt = export(m, "{\"sections\":[\"summary\"],\"notes\":false,\"comments\":false,\"versionStamp\":false}")) {
-            assertThat(ppt.getSlides()).extracting(s -> s.getSlideLayout().getName()).containsExactly("IAM_TITLE", "IAM_SUMMARY", "IAM_CLOSING");
-            for (XSLFShape shape : ppt.getSlides().get(1).getShapes()) {
+            // Title, agenda (spec-v3 §5), the Summary Section, closing.
+            assertThat(ppt.getSlides()).extracting(s -> s.getSlideLayout().getName()).containsExactly("IAM_TITLE", "IAM_SUMMARY", "IAM_SUMMARY", "IAM_CLOSING");
+            for (XSLFShape shape : ppt.getSlides().get(2).getShapes()) {
                 assertThat(shape).isNotInstanceOf(XSLFGraphicFrame.class);
             }
         }

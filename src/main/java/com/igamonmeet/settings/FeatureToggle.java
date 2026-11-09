@@ -8,5 +8,7 @@ public enum FeatureToggle {
     /** "Forgot password?" sends a reset request to the Admin queue. */
     FORGOT_PASSWORD,
     /** Count of waiting items on the Admin queue tab. */
-    QUEUE_BADGE
+    QUEUE_BADGE,
+    /** An agenda slide after the title slide, with links between slides (docs/spec-v3.md §5). */
+    AGENDA_SLIDE
 }

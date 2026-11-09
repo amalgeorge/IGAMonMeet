@@ -46,7 +46,7 @@ Added once to the Template (start-up upgrade) as Available, in a new Available g
 1. An agenda slide follows the title slide, listing groups and Sections in order. Past about 12 entries it continues on a second agenda slide.
 2. Each agenda entry links to the Section's first slide. Every content slide has "↩ Agenda". Group divider slides list and link their Sections.
 3. Links work in the Slides view (click to jump) and in the exported PPTX (internal slide hyperlinks).
-4. Admin can switch the agenda slide off in the Template; the links go with it.
+4. Admin can switch the agenda slide off in Admin Settings ("Agenda slide and slide links"); the links go with it. A Settings switch rather than a Template field: it applies to every Meeting's deck at once and needs no Template version.
 
 ## 6. Layout editor (Q9)
 

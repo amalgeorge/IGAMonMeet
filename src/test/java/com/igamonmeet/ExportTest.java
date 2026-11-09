@@ -86,7 +86,8 @@ class ExportTest {
             assertThat(slides.get(0).getSlideLayout().getName()).isEqualTo("IAM_TITLE");
             assertThat(texts(slides.get(0))).contains("April 2039");
 
-            XSLFSlide summary = slides.stream().filter(s -> s.getSlideLayout().getName().equals("IAM_SUMMARY")).findFirst().orElseThrow();
+            XSLFSlide summary = slides.stream().filter(s -> s.getSlideLayout().getName().equals("IAM_SUMMARY") && !texts(s).contains("Agenda |"))
+                    .findFirst().orElseThrow(); // the first IAM_SUMMARY slide is the agenda (spec-v3 §5)
             assertThat(texts(summary)).contains("Leaver removal above 99%").contains("House template v");
             XSLFNotes notes = ppt.getNotesSlide(summary);
             assertThat(notes.getShapes().stream().filter(x -> x instanceof XSLFTextShape).map(x -> ((XSLFTextShape) x).getText()).toList())

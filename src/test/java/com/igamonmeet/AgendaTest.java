@@ -30,7 +30,7 @@ class AgendaTest {
 
     private long meeting() throws Exception {
         return json.readTree(mvc.perform(post("/api/admin/meetings").with(csrf()).with(user("ag-admin").roles("ADMIN"))
-                .contentType(MediaType.APPLICATION_JSON).content("{\"month\":\"2035-01\",\"meetingDate\":\"2035-01-18\"}"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"month\":\"2061-01\",\"meetingDate\":\"2061-01-20\"}"))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
     }
 
@@ -92,7 +92,7 @@ class AgendaTest {
 
     private long meeting2() throws Exception {
         return json.readTree(mvc.perform(post("/api/admin/meetings").with(csrf()).with(user("ag-admin").roles("ADMIN"))
-                .contentType(MediaType.APPLICATION_JSON).content("{\"month\":\"2035-02\",\"meetingDate\":\"2035-02-15\"}"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"month\":\"2061-02\",\"meetingDate\":\"2061-02-17\"}"))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
     }
 }

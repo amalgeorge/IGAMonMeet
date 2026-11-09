@@ -65,7 +65,11 @@ public class PptxWriter {
             "OFF_TARGET", new Color[] {new Color(0xFD, 0xEC, 0xEE), new Color(0x9E, 0x0B, 0x23)});
     private static final Map<String, String> STATUS_LABEL = Map.of("ON_TARGET", "On target", "BELOW_TARGET", "Below target", "OFF_TARGET", "Off target");
 
-    public record Options(boolean notes, String footerStamp, List<List<String>> commentRows) {
+    public record Options(boolean notes, String footerStamp, List<List<String>> commentRows, ThemeSpec theme) {
+
+        public Options(boolean notes, String footerStamp, List<List<String>> commentRows) {
+            this(notes, footerStamp, commentRows, null);
+        }
     }
 
     public byte[] write(byte[] houseTemplate, Plan plan, Options options) throws IOException {
@@ -74,12 +78,23 @@ public class PptxWriter {
                 ppt.removeSlide(0);
             }
             removeOrphanedChartParts(ppt);
+            ThemeSpec theme = options.theme();
+            if (theme != null) {
+                applyTheme(ppt, theme);
+            }
+            Map<String, Color[]> status = statusColors(theme);
             double w = ppt.getPageSize().getWidth();
             double h = ppt.getPageSize().getHeight();
             List<Slide> slides = new ArrayList<>(plan.slides());
             for (Slide s : slides) {
                 XSLFSlide slide = ppt.createSlide(layout(ppt, s.layout()));
-                fill(ppt, slide, s, w, h);
+                if (theme != null) {
+                    background(ppt, slide, theme, ThemeSpec.kindOf(s.layout()), w, h);
+                }
+                fill(ppt, slide, s, w, h, status);
+                if (theme != null && theme.showLogo() && theme.logo() != null) {
+                    logo(ppt, slide, theme.logo(), w, h);
+                }
                 if (options.notes() && s.data().get("notes") instanceof String n && !n.isBlank()) {
                     notes(ppt, slide, n);
                 }
@@ -90,6 +105,9 @@ public class PptxWriter {
                 int pages = (options.commentRows().size() + perSlide - 1) / perSlide;
                 for (int p = 0; p < pages; p++) {
                     XSLFSlide slide = ppt.createSlide(layout(ppt, "IAM_TABLE"));
+                    if (theme != null) {
+                        background(ppt, slide, theme, "content", w, h);
+                    }
                     text(slide, "team", "APPENDIX");
                     text(slide, "title", "Comments" + (pages > 1 ? " (" + (p + 1) + " of " + pages + ")" : ""));
                     table(slide, List.of("Section", "Comment", "Status"), options.commentRows().subList(p * perSlide,
@@ -116,13 +134,100 @@ public class PptxWriter {
         }
     }
 
+    // ---- Theme (docs/spec-v2.md §4.4) ----
+
+    /** Theme colours and fonts go into every master's PowerPoint theme, so the deck stays editable in PowerPoint. */
+    private static void applyTheme(XMLSlideShow ppt, ThemeSpec t) {
+        for (var master : ppt.getSlideMasters()) {
+            var theme = master.getTheme();
+            if (theme == null) continue;
+            var el = theme.getXmlObject().getThemeElements();
+            var cs = el.getClrScheme();
+            srgb(cs.getAccent1(), t.primary());
+            srgb(cs.getAccent2(), t.accent());
+            srgb(cs.getDk1(), t.text());
+            srgb(cs.getLt1(), t.background());
+            var fonts = el.getFontScheme();
+            if (t.headFont() != null) fonts.getMajorFont().getLatin().setTypeface(t.headFont());
+            if (t.bodyFont() != null) fonts.getMinorFont().getLatin().setTypeface(t.bodyFont());
+        }
+    }
+
+    private static void srgb(org.openxmlformats.schemas.drawingml.x2006.main.CTColor c, String hex) {
+        if (c == null || hex == null) return;
+        if (c.isSetSysClr()) c.unsetSysClr();
+        if (c.isSetSchemeClr()) c.unsetSchemeClr();
+        if (!c.isSetSrgbClr()) c.addNewSrgbClr();
+        c.getSrgbClr().setVal(bytes(hex));
+    }
+
+    /** The slide's own background colour, plus a full-slide picture behind everything when the Theme has one. */
+    private static void background(XMLSlideShow ppt, XSLFSlide slide, ThemeSpec t, String kind, double w, double h) {
+        ThemeSpec.Background b = t.backgrounds() == null ? null : t.backgrounds().get(kind);
+        if (b == null) return;
+        if (b.color() != null) {
+            var cSld = slide.getXmlObject().getCSld();
+            if (cSld.isSetBg()) cSld.unsetBg();
+            var pr = cSld.addNewBg().addNewBgPr();
+            pr.addNewSolidFill().addNewSrgbClr().setVal(bytes(b.color()));
+            pr.addNewEffectLst();
+        }
+        if (b.image() != null) {
+            var pic = slide.createPicture(ppt.addPicture(b.image().bytes(), type(b.image())));
+            pic.setAnchor(new Rectangle2D.Double(0, 0, w, h));
+            sendToBack(slide, pic);
+        }
+    }
+
+    private static void logo(XMLSlideShow ppt, XSLFSlide slide, ThemeSpec.Image img, double w, double h) {
+        var data = ppt.addPicture(img.bytes(), type(img));
+        java.awt.Dimension size = data.getImageDimension();
+        double lh = 0.07 * h;
+        double lw = size != null && size.getHeight() > 0 ? Math.min(0.18 * w, lh * size.getWidth() / size.getHeight()) : lh;
+        slide.createPicture(data).setAnchor(new Rectangle2D.Double(w * 0.955 - lw, 0.05 * h, lw, lh));
+    }
+
+    /** Moves a shape to the bottom of the slide's shape tree so text and tiles sit on top of it. */
+    private static void sendToBack(XSLFSlide slide, XSLFShape shape) {
+        var tree = slide.getXmlObject().getCSld().getSpTree();
+        try (var target = tree.newCursor(); var moving = shape.getXmlObject().newCursor()) {
+            target.toFirstChild();        // p:nvGrpSpPr
+            target.toNextSibling();       // p:grpSpPr
+            if (target.toNextSibling()) { // first shape
+                moving.moveXml(target);
+            }
+        }
+    }
+
+    private static org.apache.poi.sl.usermodel.PictureData.PictureType type(ThemeSpec.Image img) {
+        return "image/png".equals(img.contentType()) ? org.apache.poi.sl.usermodel.PictureData.PictureType.PNG
+                : org.apache.poi.sl.usermodel.PictureData.PictureType.JPEG;
+    }
+
+    /** KPI pill colours: the Theme's status colour as text on a light tint of itself; House colours otherwise. */
+    private static Map<String, Color[]> statusColors(ThemeSpec t) {
+        if (t == null || t.statusColors() == null) return STATUS;
+        Map<String, Color[]> out = new java.util.HashMap<>(STATUS);
+        t.statusColors().forEach((k, hex) -> {
+            if (hex == null || !hex.matches("[0-9A-Fa-f]{6}")) return;
+            Color c = new Color(Integer.parseInt(hex, 16));
+            out.put(k, new Color[] {new Color(255 - (255 - c.getRed()) / 8, 255 - (255 - c.getGreen()) / 8, 255 - (255 - c.getBlue()) / 8), c});
+        });
+        return out;
+    }
+
+    private static byte[] bytes(String hex) {
+        int v = Integer.parseInt(hex, 16);
+        return new byte[] {(byte) (v >> 16), (byte) (v >> 8), (byte) v};
+    }
+
     private static XSLFSlideLayout layout(XMLSlideShow ppt, String name) {
         return ppt.getSlideMasters().stream().map(m -> m.getLayout(name)).filter(l -> l != null).findFirst()
                 .orElseThrow(() -> new IllegalStateException("House template has no layout " + name));
     }
 
     @SuppressWarnings("unchecked")
-    private void fill(XMLSlideShow ppt, XSLFSlide slide, Slide s, double w, double h) throws IOException {
+    private void fill(XMLSlideShow ppt, XSLFSlide slide, Slide s, double w, double h, Map<String, Color[]> status) throws IOException {
         Map<String, Object> d = s.data();
         for (String key : List.of("title", "subtitle", "meta", "team", "leftHead", "rightHead")) {
             if (d.get(key) instanceof String v) {
@@ -155,7 +260,7 @@ public class PptxWriter {
                 list(slide, "right", (List<String>) d.get("right"), size, false);
             }
             case "IAM_KPI" -> {
-                kpis(slide, (List<KpiView>) d.get("kpis"), d.get("perSlide") instanceof Integer n ? n : 4, w, h);
+                kpis(slide, (List<KpiView>) d.get("kpis"), d.get("perSlide") instanceof Integer n ? n : 4, w, h, status);
                 text(slide, "body", String.valueOf(d.getOrDefault("body", "")));
             }
             case "IAM_CHART" -> {
@@ -264,7 +369,7 @@ public class PptxWriter {
     }
 
     /** Tiles in one row (2 to 4 per slide) or two rows (6 or 8), compact in two rows (spec-v2 §2.5). */
-    private static void kpis(XSLFSlide slide, List<KpiView> kpis, int perSlide, double w, double h) {
+    private static void kpis(XSLFSlide slide, List<KpiView> kpis, int perSlide, double w, double h, Map<String, Color[]> status) {
         double gap = 21.6;
         int cols = perSlide <= 4 ? perSlide : perSlide / 2;
         boolean compact = perSlide > 4;
@@ -286,7 +391,7 @@ public class PptxWriter {
             }
             box(slide, target, x + 14, y + (compact ? 70 : 120), tw - 28, compact ? 20 : 40, compact ? 10 : 12, false, MUTED);
             if (k.status() != null) {
-                Color[] c = STATUS.get(k.status().name());
+                Color[] c = status.get(k.status().name());
                 XSLFAutoShape pill = slide.createAutoShape();
                 pill.setShapeType(ShapeType.ROUND_RECT);
                 pill.setAnchor(new Rectangle2D.Double(x + 14, y + th - (compact ? 30 : 44), compact ? 92 : 110, compact ? 20 : 26));

@@ -9,6 +9,10 @@ import com.igamonmeet.meeting.MeetingService;
 import com.igamonmeet.meeting.MeetingTime;
 import com.igamonmeet.slides.PlanModel.Plan;
 import com.igamonmeet.slides.SlidePlanService;
+import com.igamonmeet.theme.MeetingThemes;
+import com.igamonmeet.theme.ThemeService;
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.HashMap;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -38,9 +42,11 @@ public class ExportService {
     private final CommentRepository comments;
     private final MeetingTime time;
     private final AuditLog audit;
+    private final MeetingThemes meetingThemes;
+    private final ThemeService themes;
 
     public ExportService(SlidePlanService plans, HouseTemplateService house, PptxWriter writer, MeetingService meetings,
-                         CommentRepository comments, MeetingTime time, AuditLog audit) {
+                         CommentRepository comments, MeetingTime time, AuditLog audit, MeetingThemes meetingThemes, ThemeService themes) {
         this.plans = plans;
         this.house = house;
         this.writer = writer;
@@ -48,6 +54,8 @@ public class ExportService {
         this.comments = comments;
         this.time = time;
         this.audit = audit;
+        this.meetingThemes = meetingThemes;
+        this.themes = themes;
     }
 
     @Transactional(readOnly = true)
@@ -74,9 +82,50 @@ public class ExportService {
                         c.isResolved() ? "Resolved" : "Open"));
             }
         }
-        byte[] bytes = writer.write(house.file(houseVersion), plan, new PptxWriter.Options(r.notes(), stamp, commentRows));
+        byte[] bytes = writer.write(house.file(houseVersion), plan, new PptxWriter.Options(r.notes(), stamp, commentRows, theme(meetingId)));
         audit.record("EXPORTED", "Meeting", meetingId, "PPTX, " + plan.slides().size() + " slides, House template v" + houseVersion);
         String name = m.getTitle().replaceAll("[^A-Za-z0-9 ._-]+", " ").trim().replaceAll("\\s+", "_") + ".pptx";
         return new File(name, bytes);
+    }
+
+    /** The Meeting's Theme (pinned, held-by-date or latest; ADR 0008) in the shape the PPTX writer needs. */
+    private ThemeSpec theme(long meetingId) {
+        JsonNode t = meetingThemes.settings(meetingId);
+        if (t == null || t.isEmpty()) {
+            return null;
+        }
+        JsonNode c = t.path("colors");
+        Map<String, String> status = new HashMap<>();
+        status.put("ON_TARGET", hex(c, "onTarget"));
+        status.put("BELOW_TARGET", hex(c, "belowTarget"));
+        status.put("OFF_TARGET", hex(c, "offTarget"));
+        status.values().removeIf(v -> v == null);
+        Map<String, ThemeSpec.Background> backgrounds = new HashMap<>();
+        for (String kind : List.of("title", "divider", "content")) {
+            JsonNode b = t.path("backgrounds").path(kind);
+            if (!b.isMissingNode()) {
+                backgrounds.put(kind, new ThemeSpec.Background(hex(b, "color"), image(b.path("imageId"))));
+            }
+        }
+        return new ThemeSpec(hex(c, "primary"), hex(c, "accent"), hex(c, "text"), hex(c, "background"), status,
+                t.path("fonts").path("heading").asText(null), t.path("fonts").path("body").asText(null), backgrounds,
+                image(t.path("logo").path("imageId")), t.path("logo").path("show").asBoolean(true));
+    }
+
+    private static String hex(JsonNode n, String key) {
+        String v = n.path(key).asText(null);
+        return v != null && v.matches("[0-9A-Fa-f]{6}") ? v.toUpperCase() : null;
+    }
+
+    private ThemeSpec.Image image(JsonNode id) {
+        if (id == null || !id.canConvertToLong()) {
+            return null;
+        }
+        try {
+            var img = themes.image(id.asLong());
+            return new ThemeSpec.Image(img.getContent(), img.getContentType());
+        } catch (RuntimeException gone) {
+            return null;
+        }
     }
 }

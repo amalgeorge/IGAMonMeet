@@ -68,6 +68,7 @@ function Sql([string] $query, [string] $db = 'master') {
 
 # ---------------------------------------------------------------------------
 Step 'Checking prerequisites'
+Refresh-Path   # pick up programs installed after this console opened (e.g. by an earlier run)
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
   throw 'Run this script from PowerShell started with "Run as administrator".'
@@ -210,6 +211,9 @@ Ok 'setenv.bat written (readable by Administrators only)'
 Step 'Application WAR'
 if (-not $WarPath) {
   Winget-Install 'GitHub.cli'
+  if (-not (Get-Command gh -ErrorAction SilentlyContinue) -and (Test-Path 'C:\Program Files\GitHub CLI\gh.exe')) {
+    $env:Path += ';C:\Program Files\GitHub CLI'
+  }
   Native { gh auth status } *> $null
   if ($LASTEXITCODE -ne 0) {
     Write-Host '    Sign in to GitHub once (a browser opens) so the CI build can be downloaded.'

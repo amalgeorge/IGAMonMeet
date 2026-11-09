@@ -9,7 +9,7 @@ Terms are in [CONTEXT.md](../../CONTEXT.md).
 | Q3 | Tables on slides | Table block inside a Section's rich content, plus richer table styling. No free-form slide editing (ADR 0004 stands). |
 | Q4 | Theme scope | Several named Themes kept by Admin; each Meeting picks one; one Theme is the default for new Meetings. |
 | Q5 | Fonts | Safe list (Arial, Calibri, Segoe UI, Cambria, Georgia, Verdana) plus brand fonts installed on the server. |
-| Q6 | KPI list | KPI library (one Admin list; Sections pick from it; one trend history per KPI). Open: who adds, see Q15. |
+| Q6 | KPI list | KPI library (one Admin list; Sections pick from it; one trend history per KPI). See Q15. |
 | Q7 | Section groups | One level; optional; divider slide (Admin can switch off per group); collapsible in outline with progress; Dashboard groups tiles; import skips dividers. |
 | Q8 | KPI value types | Number, Percentage, Count, Duration, Currency, Text status. All optional: Admin picks per KPI, Number by default. |
 | Q9 | KPI display fields | Subtitle, description (speaker notes + Dashboard tooltip), decimal places. Status labels renamed globally by Admin. |
@@ -18,3 +18,7 @@ Terms are in [CONTEXT.md](../../CONTEXT.md).
 | Q12 | Theme contents | Overrides House template: colours (incl. status colours), heading and body font, title/divider/content backgrounds (colour or 16:9 PNG/JPG up to 5 MB), logo on/off or replacement, preview. |
 | Q13 | Theme changes | Live until Held: Preparing Meetings follow the latest Theme version; frozen at their version from the Meeting date. |
 | Q14 | Import styling | Content only; the file's styling is ignored. |
+| Q15 | Who adds | Admin adds Sections and KPIs in the Template only. Editors switch on, for one Meeting, items Admin marked Available. |
+| Q16 | Visibility | Each Section, Section group and KPI is Shown, Available or Retired (nothing deleted; history kept). Admin can also keep a Section off the slides while it stays in Document and Dashboard. |
+| Q17 | KPI tiles per slide | Admin picks per KPI Section: 2, 3, 4, 6 or 8 tiles, or a table layout. Default 4. |
+| Q18 | Order | Template order only; editors cannot reorder within a Meeting. |

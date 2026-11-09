@@ -27,6 +27,10 @@ _Avoid_: Page, slide, block
 An optional, Admin-defined heading in the Template that gathers several Sections under one title (for example "Operations review"). A Section belongs to at most one Section group.
 _Avoid_: Category, chapter
 
+**Visibility**:
+How the Template offers a Section, Section group or KPI: Shown (in every new Meeting), Available (hidden until an editor switches it on for one Meeting) or Retired (hidden from new Meetings, history kept).
+_Avoid_: Enabled, active, deleted
+
 **Section lock**:
 A short-lived claim one User holds while editing a Section, so another User sees it is being edited.
 

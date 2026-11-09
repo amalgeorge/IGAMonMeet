@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import com.igamonmeet.meeting.SitrepUpgrade;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -31,6 +32,7 @@ class RichContentTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
+    @Autowired SitrepUpgrade sitrep;
 
     private ObjectNode currentAsDraft() throws Exception {
         JsonNode cur = json.readTree(mvc.perform(get("/api/templates/current").with(user("anyone").roles("END_USER")))
@@ -178,6 +180,7 @@ class RichContentTest {
 
     @Test
     void tableStylesMustFitTheirColumns() throws Exception {
+        sitrep.upgrade(); // other tests may have published a Template without SITREP
         ObjectNode bad = currentAsDraft();
         ObjectNode incidents = section(bad, "sitrep");
         incidents.putObject("tableStyle").putArray("widths").add(1).add(2);

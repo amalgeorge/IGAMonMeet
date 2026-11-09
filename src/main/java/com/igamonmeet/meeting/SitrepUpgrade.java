@@ -59,12 +59,16 @@ public class SitrepUpgrade implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         if (settings.flag(FLAG)) return;
-        tx.executeWithoutResult(status -> upgrade());
+        upgrade();
         log.info("SITREP upgrade done");
     }
 
-    /** Public for tests; normally called once at start-up. */
+    /** Normally called once at start-up; public so tests can put SITREP back after other tests replace the Template. */
     public void upgrade() {
+        tx.executeWithoutResult(status -> doUpgrade());
+    }
+
+    private void doUpgrade() {
         TemplateVersion current = templates.current();
         boolean hasSitrep = current.getSections().stream().anyMatch(s -> s.getSectionKey().equals(KEY));
         Optional<TemplateSection> incidents = current.getSections().stream().filter(s -> s.getSectionKey().equals("incidents")).findFirst();

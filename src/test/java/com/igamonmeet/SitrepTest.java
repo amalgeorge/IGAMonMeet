@@ -58,6 +58,7 @@ class SitrepTest {
 
     @Test
     void templateHasSitrepInsteadOfIncidents() throws Exception {
+        upgrade.upgrade(); // other tests may have published a Template without it
         List<String> keys = new ArrayList<>();
         JsonNode sitrep = null;
         for (JsonNode s : current().get("sections")) {
@@ -78,6 +79,7 @@ class SitrepTest {
 
     @Test
     void countsAreWholeNumbersAndSlidesGetATotalAndAlert() throws Exception {
+        upgrade.upgrade();
         long m = meeting("2034-02", "2034-02-16");
         JsonNode s = section(detail(m), "sitrep");
         save(m, s, "{\"rows\":[[\"Incident\",\"3\",\"2\",\"1.5\",\"0\"]]}").andExpect(status().isBadRequest());
@@ -96,6 +98,7 @@ class SitrepTest {
     @Test
     void preparingMeetingsMoveFromIncidentsToSitrep() throws Exception {
         // Put an Incidents Section back in the Template, make a Meeting from it, then run the upgrade again.
+        upgrade.upgrade();
         JsonNode cur = current();
         ObjectNode draft = json.createObjectNode();
         draft.put("basedOnVersion", cur.get("versionNo").asInt());

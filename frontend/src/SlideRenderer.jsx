@@ -33,6 +33,15 @@ export function markedText(text) {
   return out;
 }
 
+/** A link to another slide: a button when the view can jump (onGo), plain text otherwise. */
+function SlideLink({ target, onGo, children }) {
+  if (!onGo || !target) return <span>{children}</span>;
+  return (
+    <button type="button" className="slide-link" onClick={(e) => { e.stopPropagation(); onGo(target); }}
+      style={{ all: 'unset', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '0.15em' }}>{children}</button>
+  );
+}
+
 function light(hex) {
   const h = (hex || '').replace('#', '');
   if (h.length !== 6) return false;
@@ -48,7 +57,8 @@ export function buildSteps(slide) {
   return 0;
 }
 
-export default function SlideRenderer({ slide, theme, total, step = Infinity }) {
+/** onGo(n): jump to slide n when an agenda entry, divider link or "↩ Agenda" is clicked (spec-v3 §5); omitted in thumbnails. */
+export default function SlideRenderer({ slide, theme, total, step = Infinity, onGo }) {
   const reduce = useReducedMotion();
   const c = theme?.colors || {};
   const accent = `#${c.accent1 || 'C8102E'}`;
@@ -81,7 +91,10 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
     return (
       <div style={frame} role="img" aria-label={`Slide ${slide.n}: ${d.title}`}>
         <div style={{ ...box(title), ...head, display: 'flex', alignItems: 'flex-end', fontWeight: 700, fontSize: pt(slide.layout === 'IAM_TITLE' ? 48 : 44) }}>{d.title}</div>
-        <div style={{ ...box(sub), fontSize: pt(slide.layout === 'IAM_TITLE' ? 24 : 20) }}>{d.subtitle || d.body}</div>
+        {d.links?.length
+          ? <div style={{ ...box(sub), height: 'auto', fontSize: pt(18), display: 'flex', flexWrap: 'wrap', gap: `${pt(6)} ${pt(18)}` }}>
+              {d.links.map((l, i) => <SlideLink key={i} target={l.target} onGo={onGo}>{l.text}</SlideLink>)}</div>
+          : <div style={{ ...box(sub), fontSize: pt(slide.layout === 'IAM_TITLE' ? 24 : 20) }}>{d.subtitle || d.body}</div>}
         {d.meta && <div style={{ ...box(ph('meta', { x: 6.75, y: 60, w: 86, h: 7 })), fontSize: pt(16) }}>{d.meta}</div>}
         {slide.layout === 'IAM_TITLE' && <div style={{ position: 'absolute', left: '6.75%', top: '88%', fontSize: pt(12), fontWeight: 700 }}>IAM Engineering  |  IAM Operations</div>}
         {slide.layout === 'IAM_SECTION' && <div style={{ position: 'absolute', right: '4.5%', top: '92.7%', fontSize: pt(10) }}>{slide.n}</div>}
@@ -98,6 +111,16 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
       <div style={{ ...box(ph('title', { x: 4.5, y: 11.3, w: 91, h: 11.3 })), ...head, fontWeight: 700, fontSize: pt(32) }}>{d.title}</div>
       <div style={{ position: 'absolute', left: '4.5%', top: '92.7%', fontSize: pt(10), color: muted }}>IAM Monthly Meeting  |  Internal</div>
       <div style={{ position: 'absolute', right: '4.5%', top: '92.7%', fontSize: pt(10), color: muted }}>{slide.n}{total ? ` / ${total}` : ''}</div>
+
+      {d.agendaTarget && <div style={{ position: 'absolute', left: '42.5%', width: '15%', top: '92.7%', textAlign: 'center', fontSize: pt(10), color: muted }}>
+        <SlideLink target={d.agendaTarget} onGo={onGo}>↩ Agenda</SlideLink></div>}
+      {d.agenda && (
+        <ol style={{ ...content, listStyle: 'none', margin: 0, padding: 0, fontSize: pt(20), display: 'flex', flexDirection: 'column', gap: pt(6) }}>
+          {d.agenda.map((e, i) => (
+            <li key={i} style={{ paddingLeft: pt(28 * (e.level || 0)), fontWeight: e.level ? 400 : 700, fontSize: e.level ? pt(18) : undefined }}>
+              <SlideLink target={e.target} onGo={onGo}>{e.text}</SlideLink></li>))}
+        </ol>
+      )}
 
       {d.empty && <div style={{ ...content, fontSize: pt(18), color: muted }}>{d.empty}</div>}
 

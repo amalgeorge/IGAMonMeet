@@ -44,6 +44,9 @@ public class SlideMatcher {
         if (SKIP_LAYOUTS.contains(s.layout()) || s.n() == 1 && !s.layout().startsWith("IAM_")) {
             return new Suggestion(s.n(), s.title(), s.layout(), null, 1.0, "Title, divider or closing slide");
         }
+        if (title != null && title.matches("(?i)agenda( \\(\\d+ of \\d+\\))?")) {
+            return new Suggestion(s.n(), s.title(), s.layout(), null, 1.0, "Agenda slide");
+        }
         if (s.texts().contains("Not provided yet.")) {
             return new Suggestion(s.n(), s.title(), s.layout(), null, 1.0, "Empty in the source deck");
         }

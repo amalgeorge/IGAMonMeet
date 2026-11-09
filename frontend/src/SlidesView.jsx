@@ -54,7 +54,7 @@ function useShowKeys(active, { next, prev, go, setPos, end, count }) {
   }, [active, next, prev, go, setPos, end, count]);
 }
 
-function Stage({ slide, theme, total, step, blank, transition }) {
+function Stage({ slide, theme, total, step, blank, transition, onGo }) {
   const reduce = useReducedMotion();
   const kind = reduce || transition === 'none' ? 'fade' : transition;
   const variants = kind === 'push'
@@ -65,7 +65,7 @@ function Stage({ slide, theme, total, step, blank, transition }) {
     <div className="stage">
       <AnimatePresence initial={false} mode="popLayout">
         <motion.div key={slide.n} className="stage-slide" variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration, ease: [0.2, 0, 0, 1] }}>
-          <SlideRenderer slide={slide} theme={theme} total={total} step={step} />
+          <SlideRenderer slide={slide} theme={theme} total={total} step={step} onGo={onGo} />
         </motion.div>
       </AnimatePresence>
       {blank && <div className="blank" style={{ background: blank === 'w' ? '#fff' : '#000' }} aria-label={blank === 'w' ? 'White screen' : 'Black screen'} />}
@@ -147,7 +147,7 @@ export default function SlidesView({ meetingId }) {
     const s = slides[show.pos.idx];
     return (
       <div className={`show ${idle ? 'idle' : ''}`} onClick={show.next} role="presentation">
-        <Stage slide={s} theme={theme} total={slides.length} step={show.pos.step} blank={show.pos.blank} transition={transition} />
+        <Stage slide={s} theme={theme} total={slides.length} step={show.pos.step} blank={show.pos.blank} transition={transition} onGo={(n) => show.go(n - 1)} />
         <div className="show-ctl" onClick={(e) => e.stopPropagation()}>
           <button onClick={show.prev} aria-label="Previous">‹</button><span className="tnum">{show.pos.idx + 1} / {slides.length}</span><button onClick={show.next} aria-label="Next">›</button>
           <button onClick={end}>End show</button>
@@ -183,7 +183,7 @@ export default function SlidesView({ meetingId }) {
           ))}
         </nav>
         <div className="canvas-area">
-          <div className="canvas-slide"><SlideRenderer slide={slide} theme={theme} total={slides.length} /></div>
+          <div className="canvas-slide"><SlideRenderer slide={slide} theme={theme} total={slides.length} onGo={(n) => setCurrent(Math.max(0, Math.min(slides.length - 1, n - 1)))} /></div>
           <div className="row center">
             <button className="btn" disabled={current === 0} onClick={() => setCurrent(current - 1)} aria-label="Previous slide">‹</button>
             <span className="tnum">Slide {current + 1} of {slides.length}</span>
@@ -215,7 +215,7 @@ function Presenter({ slides, theme, show, transition, onEnd }) {
       </div>
       <div className="presenter-body">
         <div className="presenter-main">
-          <Stage slide={s} theme={theme} total={slides.length} step={show.pos.step} blank={show.pos.blank} transition={transition} />
+          <Stage slide={s} theme={theme} total={slides.length} step={show.pos.step} blank={show.pos.blank} transition={transition} onGo={(n) => show.go(n - 1)} />
           <div className="row"><button className="ctl" onClick={show.prev}>‹ Previous</button><button className="ctl" onClick={show.next}>Next ›</button></div>
         </div>
         <div className="presenter-side">

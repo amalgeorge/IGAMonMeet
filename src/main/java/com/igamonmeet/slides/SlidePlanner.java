@@ -84,7 +84,9 @@ public class SlidePlanner {
                     for (int j = i; j < shown.size() && shown.get(j).group() != null && groupKey.equals(shown.get(j).group().key()); j++) {
                         names.add(shown.get(j).name());
                     }
-                    main.add(new Draft("IAM_SECTION", null, data("title", s.group().name(), "body", String.join(", ", names)), false));
+                    Map<String, Object> div = data("title", s.group().name(), "body", String.join(", ", names), "dividerKey", "group:" + groupKey);
+                    div.put("linkKeys", sectionKeysFrom(shown, i, j -> shown.get(j).group() != null && groupKey.equals(shown.get(j).group().key())));
+                    main.add(new Draft("IAM_SECTION", null, div, false));
                 }
                 lastGroup = groupKey;
                 lastTeam = null;
@@ -93,7 +95,10 @@ public class SlidePlanner {
                 for (int j = i; j < shown.size() && shown.get(j).team() == s.team() && shown.get(j).group() == null; j++) {
                     names.add(shown.get(j).name());
                 }
-                main.add(new Draft("IAM_SECTION", null, data("title", teamName(s.team()), "body", String.join(", ", names)), false));
+                Map<String, Object> div = data("title", teamName(s.team()), "body", String.join(", ", names));
+                TeamTag team = s.team();
+                div.put("linkKeys", sectionKeysFrom(shown, i, j -> shown.get(j).team() == team && shown.get(j).group() == null));
+                main.add(new Draft("IAM_SECTION", null, div, false));
             }
             if (groupKey == null) {
                 lastGroup = null;
@@ -113,6 +118,9 @@ public class SlidePlanner {
         main.add(new Draft("IAM_CLOSING", null, data("title", "Thank you",
                 "body", open == 0 ? "No open action items." : open + " open action item" + (open == 1 ? "" : "s") + " carried to next month."), false));
 
+        if (in.agenda()) {
+            main.addAll(1, agenda(shown));
+        }
         List<Draft> all = new ArrayList<>(main);
         all.addAll(appendix);
         Map<String, Integer> perSection = new LinkedHashMap<>();
@@ -136,7 +144,78 @@ public class SlidePlanner {
             kpiDescriptions(d.data());
             slides.add(new Slide(i + 1, d.layout(), d.sectionKey(), part, continuation, d.appendix(), d.data()));
         }
+        if (in.agenda()) {
+            link(slides);
+        }
         return new Plan(slides, perSection, measure.family());
+    }
+
+    // ---- agenda and links (spec-v3 §5) ----
+
+    static final int AGENDA_PER_SLIDE = 12;
+
+    private interface Member {
+        boolean test(int j);
+    }
+
+    /** Keys of the run of Sections starting at i for which {@code member} holds. */
+    private static List<String> sectionKeysFrom(List<SectionInput> shown, int i, Member member) {
+        List<String> keys = new ArrayList<>();
+        for (int j = i; j < shown.size() && member.test(j); j++) keys.add(shown.get(j).key());
+        return keys;
+    }
+
+    /** Agenda entries in Section order: a group heading (level 0) before its Sections (level 1); ungrouped Sections at level 0. */
+    private List<Draft> agenda(List<SectionInput> shown) {
+        List<Map<String, Object>> entries = new ArrayList<>();
+        String lastGroup = null;
+        for (SectionInput s : shown) {
+            String g = s.group() == null ? null : s.group().key();
+            if (g != null && !g.equals(lastGroup)) {
+                entries.add(data("text", s.group().name(), "level", 0, "key", s.group().divider() ? "group:" + g : s.key()));
+            }
+            lastGroup = g;
+            entries.add(data("text", s.name(), "level", g == null ? 0 : 1, "key", s.key()));
+        }
+        List<Draft> out = new ArrayList<>();
+        int pages = Math.max(1, (entries.size() + AGENDA_PER_SLIDE - 1) / AGENDA_PER_SLIDE);
+        for (int p = 0; p < pages; p++) {
+            List<Map<String, Object>> page = entries.subList(p * AGENDA_PER_SLIDE, Math.min(entries.size(), (p + 1) * AGENDA_PER_SLIDE));
+            out.add(new Draft("IAM_SUMMARY", null, data("title", pages > 1 ? "Agenda (" + (p + 1) + " of " + pages + ")" : "Agenda",
+                    "agenda", new ArrayList<>(page), "isAgenda", true), false));
+        }
+        return out;
+    }
+
+    /** Resolves link keys to slide numbers: agenda entries, divider lists, and "↩ Agenda" on every content slide. */
+    private static void link(List<Slide> slides) {
+        Map<String, Integer> first = new LinkedHashMap<>();
+        Integer agendaN = null;
+        for (Slide s : slides) {
+            if (s.sectionKey() != null && !s.appendix()) first.putIfAbsent(s.sectionKey(), s.n());
+            if (s.data().get("dividerKey") instanceof String k) first.putIfAbsent(k, s.n());
+            if (agendaN == null && Boolean.TRUE.equals(s.data().get("isAgenda"))) agendaN = s.n();
+        }
+        for (Slide s : slides) {
+            if (s.data().get("agenda") instanceof List<?> entries) {
+                for (Object o : entries) {
+                    @SuppressWarnings("unchecked") Map<String, Object> e = (Map<String, Object>) o;
+                    Integer t = first.get(String.valueOf(e.get("key")));
+                    if (t != null) e.put("target", t);
+                }
+            }
+            if (s.data().get("linkKeys") instanceof List<?> keys) {
+                List<Map<String, Object>> links = new ArrayList<>();
+                for (Object k : keys) {
+                    Integer t = first.get(String.valueOf(k));
+                    String name = slides.stream().filter(x -> String.valueOf(k).equals(x.sectionKey())).findFirst()
+                            .map(x -> String.valueOf(x.data().get("title")).replaceAll(" \\(\\d+ of \\d+\\)$", "")).orElse(String.valueOf(k));
+                    if (t != null) links.add(data("text", name, "target", t));
+                }
+                s.data().put("links", links);
+            }
+            if (agendaN != null && s.sectionKey() != null) s.data().put("agendaTarget", agendaN);
+        }
     }
 
     private void section(SectionInput s, Input in, List<Draft> main, List<Draft> appendix) {

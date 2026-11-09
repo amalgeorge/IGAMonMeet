@@ -51,8 +51,14 @@ public final class PlanModel {
     public record Box(double w, double h) {
     }
 
+    /** agenda: add the agenda slide and slide links (docs/spec-v3.md §5). */
     public record Input(String title, String monthLabel, String dateLabel, List<SectionInput> sections, List<ActionRow> actions,
-                        double slideWidth, double slideHeight, Map<String, Box> boxes) {
+                        double slideWidth, double slideHeight, Map<String, Box> boxes, boolean agenda) {
+
+        public Input(String title, String monthLabel, String dateLabel, List<SectionInput> sections, List<ActionRow> actions,
+                     double slideWidth, double slideHeight, Map<String, Box> boxes) {
+            this(title, monthLabel, dateLabel, sections, actions, slideWidth, slideHeight, boxes, false);
+        }
     }
 
     /** {@code data} is layout-specific; see SlidePlanner for each shape. */

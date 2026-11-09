@@ -6,7 +6,8 @@ const TOGGLES = [
   ['SELF_REGISTRATION', 'Self-registration', 'People can create an account from the sign-in screen.'],
   ['REGISTRATION_APPROVAL', 'Approval step', 'New accounts wait for an Admin to approve them.'],
   ['FORGOT_PASSWORD', 'Forgot password requests', '"Forgot password?" sends a request to the Admin queue.'],
-  ['QUEUE_BADGE', 'Admin queue badge', 'Shows how many items are waiting on the Admin queue tab.']
+  ['QUEUE_BADGE', 'Admin queue badge', 'Shows how many items are waiting on the Admin queue tab.'],
+  ['AGENDA_SLIDE', 'Agenda slide and slide links', 'Adds a clickable agenda after the title slide, "↩ Agenda" on every content slide and links on divider slides, in the app and in PowerPoint.']
 ];
 
 /** Admin renames the three KPI statuses for everyone (spec-v2 §2.4). */

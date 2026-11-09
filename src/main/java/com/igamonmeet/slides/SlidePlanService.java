@@ -45,8 +45,11 @@ public class SlidePlanService {
     private final HouseTemplateService house;
     private final SlidePlanner planner;
     private final ObjectMapper json;
+    private final com.igamonmeet.settings.Settings settings;
 
-    public SlidePlanService(MeetingDetails details, MeetingRepository meetings, HouseTemplateService house, SlidePlanner planner, ObjectMapper json) {
+    public SlidePlanService(MeetingDetails details, MeetingRepository meetings, HouseTemplateService house, SlidePlanner planner, ObjectMapper json,
+                            com.igamonmeet.settings.Settings settings) {
+        this.settings = settings;
         this.details = details;
         this.meetings = meetings;
         this.house = house;
@@ -92,7 +95,7 @@ public class SlidePlanService {
                     a.overdue(), "CLOSED".equals(a.status())));
         }
         Input in = new Input(m.getTitle(), MONTH.format(YearMonth.parse(m.getMonth())), LONG_DATE.format(m.getMeetingDate()),
-                sections, actions, w, h, boxes);
+                sections, actions, w, h, boxes, settings.isOn(com.igamonmeet.settings.FeatureToggle.AGENDA_SLIDE));
         return planner.plan(in);
     }
 

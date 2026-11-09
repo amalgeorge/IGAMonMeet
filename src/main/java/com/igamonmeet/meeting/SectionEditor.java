@@ -28,9 +28,12 @@ public class SectionEditor {
     private final AuditLog audit;
     private final ObjectMapper json;
     private final TemplateService templates;
+    private final SectionDefs sectionDefs;
 
     public SectionEditor(MeetingService meetings, MeetingSectionRepository sections, SectionLockRepository locks,
-                         MeetingTime time, AuditLog audit, ObjectMapper json, TemplateService templates) {
+                         MeetingTime time, AuditLog audit, ObjectMapper json, TemplateService templates,
+                         SectionDefs sectionDefs) {
+        this.sectionDefs = sectionDefs;
         this.templates = templates;
         this.meetings = meetings;
         this.sections = sections;
@@ -126,9 +129,9 @@ public class SectionEditor {
     /** KPI keys the Meeting's own Template version defines for this Section. */
     Set<String> kpiKeys(Meeting m, String sectionKey) {
         Set<String> keys = new LinkedHashSet<>();
-        templates.version(m.getTemplateVersionNo()).getSections().stream()
-                .filter(t -> t.getSectionKey().equals(sectionKey))
-                .forEach(t -> t.getShownKpis().forEach(k -> keys.add(k.getKpiKey())));
+        SectionDefs.Lookup lookup = sectionDefs.lookup();
+        m.getSections().stream().filter(s -> s.getSectionKey().equals(sectionKey))
+                .forEach(s -> lookup.kpis(m, s).forEach(k -> keys.add(k.getKpiKey())));
         return keys;
     }
 

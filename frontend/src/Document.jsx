@@ -7,6 +7,7 @@ import ExportPanel from './ExportPanel.jsx';
 import ImportPanel from './ImportPanel.jsx';
 import HistoryPanel from './HistoryPanel.jsx';
 import DashboardPanel from './DashboardPanel.jsx';
+import AvailablePanel from './AvailablePanel.jsx';
 
 const TEAM = { ENGINEERING: 'Engineering', OPERATIONS: 'Operations', SHARED: 'Shared' };
 const LABEL = { PREPARING: 'Preparing', HELD: 'Held' };
@@ -71,6 +72,7 @@ export default function MeetingDocument({ id, me, onBack }) {
               {s.name}{s.required ? '' : <span className="hint"> · optional</span>}{s.onSlides === false && <span className="hint"> · not on slides</span>}
             </a>
           ))}
+          <AvailablePanel meetingId={id} sections={doc.sections} canEdit={doc.canEdit} onChange={load} />
         </nav>
         <div className="doc-body">
           {doc.sections.map((s) => (

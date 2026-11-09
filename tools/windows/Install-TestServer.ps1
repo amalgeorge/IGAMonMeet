@@ -140,16 +140,34 @@ ALTER ROLE db_owner ADD MEMBER igamonmeet;
 Ok 'Database ready; login igamonmeet owns only this database'
 
 # ---------------------------------------------------------------------------
+# A Tomcat left running would keep ports 8443/8005: the new one then fails to bind and exits, while the old one
+# answers the health check and undeploys the app when the WAR is replaced. Stop it, and kill it if it lingers.
+function Stop-Tomcat($TomcatDir) {
+  $listening = { Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 8443, 8005 } }
+  if (-not (& $listening)) { return }
+  Write-Host '    Stopping running Tomcat...'
+  $env:JAVA_HOME = $JavaHome
+  $env:JRE_HOME = $null
+  if (Test-Path "$TomcatDir\bin\shutdown.bat") { Native { & "$TomcatDir\bin\shutdown.bat" } *> $null }
+  for ($i = 0; $i -lt 20 -and (& $listening); $i++) { Start-Sleep -Seconds 1 }
+  $left = & $listening
+  if ($left) {
+    $left | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object {
+      $p = Get-Process -Id $_ -ErrorAction SilentlyContinue
+      Write-Host "    Tomcat did not stop; ending process $_ ($($p.ProcessName))"
+      Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Seconds 3
+  }
+  if (& $listening) { throw 'Ports 8443/8005 are still in use. Close the program using them and run the installer again.' }
+  Ok 'No Tomcat running'
+}
+
 Step 'Tomcat 9'
 $Tomcat = Join-Path $InstallRoot 'tomcat'
 if (Test-Path "$Tomcat\bin\catalina.bat") {
   Ok "Tomcat already in $Tomcat"
-  if (Test-NetConnection -ComputerName localhost -Port 8443 -InformationLevel Quiet -WarningAction SilentlyContinue) {
-    Write-Host '    Stopping running Tomcat...'
-    $env:JAVA_HOME = $JavaHome
-    Native { & "$Tomcat\bin\shutdown.bat" } *> $null
-    Start-Sleep -Seconds 8
-  }
+  Stop-Tomcat $Tomcat
 } else {
   $index = (Invoke-WebRequest 'https://dlcdn.apache.org/tomcat/tomcat-9/' -UseBasicParsing).Content
   $version = [regex]::Matches($index, 'v(9\.0\.\d+)/') | ForEach-Object { [version]$_.Groups[1].Value } |
@@ -236,6 +254,7 @@ Ok 'Deployed to webapps\igamonmeet.war'
 
 # ---------------------------------------------------------------------------
 Step 'Starting Tomcat'
+Stop-Tomcat $Tomcat
 Start-Process -FilePath "$Tomcat\bin\startup.bat" -WorkingDirectory "$Tomcat\bin"
 Write-Host '    Waiting for the app (first start runs the database migrations)...'
 $up = $false
@@ -243,6 +262,9 @@ for ($i = 0; $i -lt 60; $i++) {
   Start-Sleep -Seconds 5
   $health = Native { curl.exe -k -s "$BaseUrl/api/health" 2>$null }
   if ($health -match '"UP"') { $up = $true; break }
+  if ($i -ge 3 -and -not (Get-NetTCPConnection -State Listen -LocalPort 8443 -ErrorAction SilentlyContinue)) {
+    throw "Tomcat exited during start. Check $Tomcat\logs\catalina.*.log."
+  }
 }
 if (-not $up) { throw "App did not report UP. Check $Tomcat\logs\catalina.*.log and localhost.*.log." }
 Ok "$BaseUrl/api/health is UP"

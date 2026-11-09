@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
 import ColumnsEditor from './ColumnsEditor.jsx';
+import LayoutEditor from './LayoutEditor.jsx';
 import { moveItem, useDragSort } from './dragSort.js';
 import TableStyleEditor from './TableStyleEditor.jsx';
 import { api } from './api.js';
@@ -30,6 +31,7 @@ export default function AdminTemplate() {
   const update = (i, patch) => setSections(sections.map((s, j) => (j === i ? { ...s, ...patch } : s)));
   const move = (i, d) => { const a = [...sections]; [a[i], a[i + d]] = [a[i + d], a[i]]; setSections(a); };
   const dragSection = useDragSort(sections, setSections);
+  const [layoutFor, setLayoutFor] = useState(null);
   const remove = (i) => setSections(sections.filter((_, j) => j !== i));
   const add = (kind) => {
     const name = `New ${KIND_LABEL[kind].toLowerCase()}`;
@@ -60,6 +62,8 @@ export default function AdminTemplate() {
       <GroupsEditor groups={groups} onChange={setGroups} onRemove={(key) => setSections(sections.map((s) => (s.groupKey === key ? { ...s, groupKey: null } : s)))} />
       <KpiLibrary library={library} onChange={setLibrary} onRemove={(key) => setSections(sections.map((s) => ({ ...s, kpis: (s.kpis || []).filter((k) => k.key !== key) })))} />
       <p className="hint">Drag a Section by its handle (⠿) to reorder, or use ↑ and ↓.</p>
+      {layoutFor != null && sections[layoutFor] && <LayoutEditor section={sections[layoutFor]}
+        onSave={(slideLayout) => update(layoutFor, { slideLayout })} onClose={() => setLayoutFor(null)} />}
       <ol className="tpl-list">
         {sections.map((s, i) => (
           <li key={s.key} className="tpl-card" {...dragSection(i)}>
@@ -68,6 +72,7 @@ export default function AdminTemplate() {
               <span className="actions">
                 <button className="btn" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`Move ${s.name} up`}>↑</button>{' '}
                 <button className="btn" disabled={i === sections.length - 1} onClick={() => move(i, 1)} aria-label={`Move ${s.name} down`}>↓</button>{' '}
+                <button className="btn" onClick={() => setLayoutFor(i)}>Layout{s.slideLayout ? ' ✓' : ''}</button>{' '}
                 <button className="btn" onClick={() => remove(i)}>Remove</button>
               </span>
             </div>

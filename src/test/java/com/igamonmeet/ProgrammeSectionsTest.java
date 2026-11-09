@@ -52,6 +52,15 @@ class ProgrammeSectionsTest {
         detail.get("sections").forEach(s -> keys.add(s.get("key").asText()));
         assertThat(keys).doesNotContain("access-certifications", "wins");
 
+        JsonNode cat = json.readTree(mvc.perform(get("/api/meetings/" + m + "/available").with(user("ps-admin").roles("ADMIN")))
+                .andReturn().getResponse().getContentAsString());
+        boolean grouped = false;
+        for (JsonNode s : cat.get("sections")) grouped |= "jml".equals(s.get("key").asText()) && "Programme".equals(s.path("groupName").asText());
+        assertThat(grouped).as("catalogue names the group (spec-v3 §4.2)").isTrue();
+        JsonNode before = json.readTree(mvc.perform(get("/api/meetings/" + m + "/slides").with(user("r").roles("END_USER")))
+                .andReturn().getResponse().getContentAsString()).get("slides");
+        for (JsonNode s : before) assertThat(s.path("data").path("title").asText()).isNotEqualTo("Programme");
+
         mvc.perform(post("/api/meetings/" + m + "/available/sections/jml").with(csrf()).with(user("ps-admin").roles("ADMIN")))
                 .andExpect(status().is2xxSuccessful());
         detail = json.readTree(mvc.perform(get("/api/meetings/" + m).with(user("r").roles("END_USER"))).andReturn().getResponse().getContentAsString());
@@ -59,5 +68,11 @@ class ProgrammeSectionsTest {
         for (JsonNode s : detail.get("sections")) if (s.get("key").asText().equals("jml")) jml = s;
         assertThat(jml).isNotNull();
         assertThat(jml.get("groupName").asText()).isEqualTo("Programme");
+        // Once one of its Sections is in, the group's divider slide appears.
+        JsonNode after = json.readTree(mvc.perform(get("/api/meetings/" + m + "/slides").with(user("r").roles("END_USER")))
+                .andReturn().getResponse().getContentAsString()).get("slides");
+        boolean divider = false;
+        for (JsonNode s : after) divider |= "IAM_SECTION".equals(s.path("layout").asText()) && "Programme".equals(s.path("data").path("title").asText());
+        assertThat(divider).isTrue();
     }
 }

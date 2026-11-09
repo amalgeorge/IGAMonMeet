@@ -233,3 +233,11 @@ tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
 .rich-area:focus { outline: 2px solid var(--red, #C8102E); outline-offset: 1px; }
 .rich-area p, .rich-view p { margin: 0 0 8px; }
 .rich-area ul, .rich-area ol, .rich-view ul, .rich-view ol { margin: 0 0 8px; padding-left: 24px; }
+
+/* Section group not in this Meeting (spec-v3 §4.2): greyed placeholder after the thumbnails. */
+.thumb.off { opacity: 0.55; cursor: default; }
+.off-frame { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; aspect-ratio: 16 / 9;
+  border: 1px dashed var(--line, #c8c8c8); background: repeating-linear-gradient(135deg, #f6f6f6 0 8px, #eee 8px 16px); text-align: center; padding: 6px; }
+.off-frame span { font-weight: 700; font-size: 12px; }
+.off-frame small { font-size: 10px; color: var(--muted, #666); }
+.hint-row td { background: var(--soft, #fafafa); }

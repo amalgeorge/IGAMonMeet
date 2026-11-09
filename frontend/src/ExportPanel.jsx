@@ -1,24 +1,27 @@
 import { useState } from 'react';
 import { ensureCsrf, csrfToken } from './api.js';
 
-/** Export options: Sections, speaker notes, comments appendix, export stamp. PDF uses the browser's print to PDF. */
+/**
+ * Export options: Sections, speaker notes, comments appendix, export stamp. PDF uses the browser's print to PDF.
+ * JSON is the document-shaped export for converting to Word (docs/json-export.md).
+ */
 export default function ExportPanel({ meetingId, sections }) {
   const [picked, setPicked] = useState(() => Object.fromEntries(sections.map((s) => [s.key, true])));
   const [opts, setOpts] = useState({ notes: true, comments: false, versionStamp: true });
   const [state, setState] = useState('');
 
-  const download = async () => {
+  const download = async (format = 'pptx') => {
     setState('Building…');
     await ensureCsrf();
     const keys = sections.filter((s) => picked[s.key]).map((s) => s.key);
-    const res = await fetch(`api/meetings/${meetingId}/export/pptx`, {
+    const res = await fetch(`api/meetings/${meetingId}/export/${format}`, {
       method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrfToken() },
       body: JSON.stringify({ sections: keys.length === sections.length ? null : keys, ...opts })
     });
     if (!res.ok) { setState('Export failed. Try again.'); return; }
     const blob = await res.blob();
-    const name = (res.headers.get('Content-Disposition') || '').match(/filename="?([^"]+)"?/)?.[1] || 'meeting.pptx';
+    const name = (res.headers.get('Content-Disposition') || '').match(/filename="?([^"]+)"?/)?.[1] || `meeting.${format}`;
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
     a.click();
     URL.revokeObjectURL(a.href);
@@ -43,7 +46,8 @@ export default function ExportPanel({ meetingId, sections }) {
         <span className="hint" role="status">{state}</span>
         <span>
           <a className="btn" href={`${window.location.pathname}#print/${meetingId}`} target="_blank" rel="noopener">PDF (print view)</a>{' '}
-          <button className="btn pri" onClick={download}>Download .pptx</button>
+          <button className="btn" onClick={() => download('json')} title="Document-shaped JSON, ready to convert to Word">JSON (for Word)</button>{' '}
+          <button className="btn pri" onClick={() => download('pptx')}>Download .pptx</button>
         </span>
       </div>
     </div>

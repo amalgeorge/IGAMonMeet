@@ -97,7 +97,7 @@ public class SlidePlanService {
     }
 
     /** The KPI's value in this and up to 11 earlier Meetings, oldest first; the planner keeps the most recent. */
-    private Series series(Meeting m, String kpiKey, KpiView def) {
+    public Series series(Meeting m, String kpiKey, KpiView def) {
         List<String> labels = new ArrayList<>();
         List<BigDecimal> values = new ArrayList<>();
         for (Meeting past : meetings.findTop12ByDeletedAtIsNullAndMeetingDateLessThanEqualOrderByMeetingDateDesc(m.getMeetingDate())) {

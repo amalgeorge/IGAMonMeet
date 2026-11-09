@@ -73,9 +73,24 @@ function Stage({ slide, theme, total, step, blank, transition, onGo }) {
   );
 }
 
+/**
+ * Section groups that are Available but not added to this Meeting (spec-v3 §4.2): shown greyed after the thumbnails
+ * so an Admin sees why their divider is missing. Never part of the deck or the export.
+ */
+function useMissingGroups(meetingId, plan) {
+  const [cat, setCat] = useState(null);
+  useEffect(() => { api(`/api/meetings/${meetingId}/available`).then(setCat).catch(() => setCat(null)); }, [meetingId, plan]);
+  if (!cat || !plan) return [];
+  const present = new Set(plan.slides.filter((s) => s.layout === 'IAM_SECTION').map((s) => s.data.title));
+  const seen = new Map();
+  cat.sections.forEach((s) => { if (s.groupName && !present.has(s.groupName)) seen.set(s.groupKey, s.groupName); });
+  return [...seen.values()];
+}
+
 export default function SlidesView({ meetingId }) {
   const [themeKey, setThemeKey] = useState(0);
   const { plan, theme } = useDeck(meetingId, themeKey);
+  const missingGroups = useMissingGroups(meetingId, plan);
   const slides = plan?.slides || [];
   const [current, setCurrent] = useState(0);
   const [mode, setMode] = useState('edit');
@@ -160,6 +175,11 @@ export default function SlidesView({ meetingId }) {
             <button key={s.n} className={`thumb ${i === current ? 'on' : ''}`} aria-current={i === current} onClick={() => setCurrent(i)} aria-label={`Slide ${s.n}: ${s.data.title}`}>
               <span className="tnum">{s.n}</span><span className="thumb-frame"><SlideRenderer slide={s} theme={theme} /></span>
             </button>
+          ))}
+          {missingGroups.map((g) => (
+            <div key={g} className="thumb off" aria-label={`Group ${g}: not in this meeting`}>
+              <span className="tnum">–</span><span className="thumb-frame off-frame"><span>{g}</span><small>not in this meeting · add its Sections under Available items</small></span>
+            </div>
           ))}
         </nav>
         <div className="canvas-area">

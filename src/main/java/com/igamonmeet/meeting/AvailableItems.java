@@ -29,7 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AvailableItems {
 
-    public record CatalogueSection(String key, String name, SectionKind kind) {
+    /** groupKey and groupName: the Section group it belongs to in the latest Template, or null (spec-v3 §4.2). */
+    public record CatalogueSection(String key, String name, SectionKind kind, String groupKey, String groupName) {
     }
 
     public record CatalogueKpi(String sectionKey, String key, String name) {
@@ -69,7 +70,8 @@ public class AvailableItems {
         Set<String> visible = m.getSections().stream().filter(s -> !s.isHidden()).map(MeetingSection::getSectionKey).collect(Collectors.toSet());
         List<CatalogueSection> secs = latest.getSections().stream()
                 .filter(t -> latest.effectiveVisibility(t) == Visibility.AVAILABLE && !visible.contains(t.getSectionKey()))
-                .map(t -> new CatalogueSection(t.getSectionKey(), t.getName(), t.getKind()))
+                .map(t -> new CatalogueSection(t.getSectionKey(), t.getName(), t.getKind(), t.getGroupKey(),
+                        latest.group(t.getGroupKey()).map(g -> g.getName()).orElse(null)))
                 .collect(Collectors.toList());
         SectionDefs.Lookup lookup = defs.lookup();
         List<CatalogueKpi> kpis = new ArrayList<>();

@@ -41,6 +41,18 @@ public class SettingsController {
         return settings.statusLabels();
     }
 
+    /** Any signed-in User: the types suggested in the SITREP table. */
+    @GetMapping("/api/sitrep-types")
+    public java.util.List<String> sitrepTypes() {
+        return settings.sitrepTypes();
+    }
+
+    @PutMapping("/api/admin/sitrep-types")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setSitrepTypes(@RequestBody java.util.List<String> types, Authentication auth) {
+        settings.setSitrepTypes(types, auth.getName());
+    }
+
     @PutMapping("/api/admin/status-labels")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void setStatusLabels(@RequestBody Map<String, String> labels, Authentication auth) {

@@ -90,6 +90,22 @@ public class SectionEditor {
         }
         int columns = s.getColumnsSpec() == null ? 0 : s.getColumnsSpec().split("\\|").length;
         SectionContent.validate(s.getKind(), columns, kpiDefs(m, s.getSectionKey()), content);
+        if (s.getKind() == com.igamonmeet.template.SectionKind.TABLE && columns > 0) {
+            // Whole-number columns, e.g. SITREP counts (docs/spec-v3.md §1.3).
+            com.igamonmeet.slides.TableStyle style = sectionDefs.lookup().def(m, s)
+                    .map(d -> com.igamonmeet.slides.TableStyle.of(readStyle(d.getTableStyle())))
+                    .orElse(com.igamonmeet.slides.TableStyle.NONE);
+            java.util.List<java.util.List<String>> rows = new java.util.ArrayList<>();
+            content.path("rows").forEach(r -> {
+                java.util.List<String> row = new java.util.ArrayList<>();
+                r.forEach(c -> row.add(c.asText()));
+                rows.add(row);
+            });
+            String problem = style.cellProblem(java.util.Arrays.asList(s.getColumnsSpec().split("\\|")), rows);
+            if (problem != null) {
+                throw new AccountException(HttpStatus.BAD_REQUEST, "INVALID_CONTENT", problem);
+            }
+        }
         String newJson = content.toString();
         if (newJson.length() > SectionContent.MAX_CHARS) {
             throw new AccountException(HttpStatus.BAD_REQUEST, "TOO_LARGE", "This section is too large to save.");
@@ -154,5 +170,13 @@ public class SectionEditor {
 
     private static AccountException lockedBy(SectionLock lock) {
         return new AccountException(HttpStatus.CONFLICT, "LOCKED", "Being edited by " + lock.getUsername() + ".");
+    }
+
+    private JsonNode readStyle(String style) {
+        try {
+            return style == null ? null : json.readTree(style);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

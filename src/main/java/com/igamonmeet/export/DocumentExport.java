@@ -231,6 +231,17 @@ public class DocumentExport {
             r.forEach(cell -> row.add(cell.asText()));
         });
         TableStyle st = style == null || style.isNull() ? TableStyle.NONE : TableStyle.of(style);
+        if (st.total() && rs.size() > 0) {
+            // The computed total row, as on the slides (TableStyle.totalRow), so converters just bold the last row.
+            List<List<String>> plain = new java.util.ArrayList<>();
+            rs.forEach(r -> {
+                List<String> row = new java.util.ArrayList<>();
+                r.forEach(c -> row.add(c.asText()));
+                plain.add(row);
+            });
+            ArrayNode total = rs.addArray();
+            TableStyle.totalRow(columns, plain).forEach(total::add);
+        }
         b.set("style", json.valueToTree(st));
     }
 

@@ -451,6 +451,7 @@ public class SlidePlanner {
                     "head", head, "rows", pageRows, "rowFlags", pageFlags, "colWidths", widthsPct(cols, width), "fontSize", TABLE_PT);
             if (style.align() != null) d.put("align", style.align());
             if (style.banded()) d.put("banded", true);
+            if (style.alertColumn() != null) d.put("alertColumn", style.alertColumn()); // cells above 0 shown red (spec-v3 §1.3)
             if (s.rule() == OverflowRule.APPENDIX && p == 0 && pages.size() > 1) {
                 int more = rows.size() - pages.get(0).size();
                 d.put("note", "+" + more + " more in the appendix");

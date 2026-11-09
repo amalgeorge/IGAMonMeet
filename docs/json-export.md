@@ -59,7 +59,10 @@ Each block has a `type`.
    - `widths`: column widths in percent, or null for even widths
    - `align`: `left`, `center` or `right` per column, or null
    - `statusColumn`: index of the column whose words (`On track`, `At risk`, `Off track` …) colour the row, or null
-   - `total`: the last row is a total row (bold)
+   - `total`: the last row is the total row the app computed (sums of number columns); show it bold
+   - `wholeNumbers`: columns holding whole numbers only
+   - `alertColumn`: column whose cells above 0 are shown red (SITREP "Above SLA"), or null
+   - `listColumn`: column whose values come from the Admin's SITREP types, or null
    - `banded`: alternate rows shaded
 5. **`kpis`** — `{ "items": [KPI] }`. One per KPI shown in the Section, in order. KPI fields: `key`, `name`, `subtitle`, `description`, `valueType`, `value` (number, text or null), `unit`, `display` (the value as shown on the slide, e.g. `96.4%`), `target`, `targetLine`, `deltaLine`, `status` (`ON_TARGET`, `BELOW_TARGET`, `OFF_TARGET` or null), `statusLabel`, `overridden`, `overrideReason`, `required`. Prefer `display`, `targetLine`, `deltaLine` and `statusLabel` for text; they follow the Admin's labels and formats.
 6. **`chart`** — `{ "kpiKey", "title", "unit", "target", "labels": ["Sep", …], "values": [94.1, …] }`. The KPI's trend, oldest first, up to 12 Meetings. Draw a chart or a one-row table.

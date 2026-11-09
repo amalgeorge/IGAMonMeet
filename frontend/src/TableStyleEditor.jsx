@@ -22,17 +22,26 @@ export default function TableStyleEditor({ columns, value, onChange }) {
             <td key={c}><select aria-label={`Alignment of ${c}`} value={align ? align[i] : 'left'}
               onChange={(e) => { const a = align ? [...align] : columns.map(() => 'left'); a[i] = e.target.value; set({ align: a.every((x) => x === 'left') ? null : a }); }}>
               <option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option></select></td>))}</tr>
+          <tr><td>Whole numbers</td>{columns.map((c, i) => (
+            <td key={c}><input type="checkbox" aria-label={`${c} takes whole numbers`} checked={(v.wholeNumbers || []).includes(i)}
+              onChange={(e) => { const w = new Set(v.wholeNumbers || []); e.target.checked ? w.add(i) : w.delete(i); set({ wholeNumbers: w.size ? [...w].sort((a, b) => a - b) : null }); }} /></td>))}</tr>
         </tbody>
       </table></div>
       <div className="options-row">
         <label className="field"><span>Colour rows by status in</span>
           <select value={v.statusColumn ?? ''} onChange={(e) => set({ statusColumn: e.target.value === '' ? null : Number(e.target.value) })}>
             <option value="">No colouring</option>{columns.map((c, i) => <option key={c} value={i}>{c}</option>)}</select></label>
+        <label className="field"><span>Red when above 0</span>
+          <select value={v.alertColumn ?? ''} onChange={(e) => set({ alertColumn: e.target.value === '' ? null : Number(e.target.value) })}>
+            <option value="">None</option>{columns.map((c, i) => <option key={c} value={i}>{c}</option>)}</select></label>
+        <label className="field"><span>Suggest SITREP types in</span>
+          <select value={v.listColumn ?? ''} onChange={(e) => set({ listColumn: e.target.value === '' ? null : Number(e.target.value) })}>
+            <option value="">None</option>{columns.map((c, i) => <option key={c} value={i}>{c}</option>)}</select></label>
         <label className="check"><input type="checkbox" checked={!!v.total} onChange={(e) => set({ total: e.target.checked })} /> Total row</label>
         <label className="check"><input type="checkbox" checked={!!v.banded} onChange={(e) => set({ banded: e.target.checked })} /> Banded rows</label>
         {widths && <button className="btn" onClick={() => set({ widths: null })}>Reset widths</button>}
       </div>
-      <p className="hint">Status colours: On track / Done / Green, At risk / Amber / Delayed, Off track / Red / Blocked. The total row adds up columns that hold only numbers.</p>
+      <p className="hint">Status colours: On track / Done / Green, At risk / Amber / Delayed, Off track / Red / Blocked. The total row adds up columns that hold only numbers. Whole-number columns refuse anything else when saved.</p>
     </details>
   );
 }

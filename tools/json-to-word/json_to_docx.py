@@ -76,12 +76,23 @@ def table(doc, columns, rows, style=None, status_of=None):
         for i, value in enumerate(row):
             cells[i].text = ""
             p = cells[i].paragraphs[0]
-            p.add_run(str(value)).bold = bool(last)
+            run = p.add_run(str(value))
+            run.bold = bool(last)
+            if style.get("alertColumn") == i and _positive(value):
+                run.bold = True
+                run.font.color.rgb = RGBColor(0x9E, 0x0B, 0x23)
             if i < len(align) and align[i] in ALIGN:
                 p.alignment = ALIGN[align[i]]
             if fill:
                 shade(cells[i], fill)
     doc.add_paragraph()
+
+
+def _positive(value):
+    try:
+        return float(str(value).replace(",", "")) > 0
+    except ValueError:
+        return False
 
 
 def word_status(text):

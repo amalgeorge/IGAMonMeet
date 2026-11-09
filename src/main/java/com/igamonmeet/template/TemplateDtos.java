@@ -108,6 +108,12 @@ public final class TemplateDtos {
                         d.getDecimals())).collect(Collectors.toList()));
     }
 
+    /** A Draft that republishes {@code v} unchanged; callers edit its sections before publishing (one-time upgrades). */
+    public static Draft draftOf(TemplateVersion v, String note) {
+        Version x = of(v);
+        return new Draft(x.versionNo(), note, new java.util.ArrayList<>(x.sections()), x.groups(), x.kpiLibrary());
+    }
+
     private static final com.fasterxml.jackson.databind.ObjectMapper JSON = new com.fasterxml.jackson.databind.ObjectMapper();
 
     static com.fasterxml.jackson.databind.JsonNode readJson(String s) {

@@ -1,3 +1,4 @@
+import { SITREP_TYPES } from './labels.js';
 import CsvImport from './CsvImport.jsx';
 import ColumnsEditor, { remapRows } from './ColumnsEditor.jsx';
 import { useEffect, useRef, useState } from 'react';
@@ -172,7 +173,8 @@ function KindEditor({ section, value, onChange }) {
     );
     case 'TABLE': return (
       <>
-        <TableEditor columns={section.columns} rows={value.rows || []} onChange={(rows) => set({ rows })} />
+        <TableEditor columns={section.columns} rows={value.rows || []} onChange={(rows) => set({ rows })}
+          style={section.tableStyle ? JSON.parse(section.tableStyle) : null} />
         <CsvImport columns={section.columns} rows={value.rows || []} onApply={(_, rows) => set({ rows })} />
       </>
     );
@@ -369,13 +371,18 @@ function ListEditor({ label, items, onChange, numbered }) {
   );
 }
 
-function TableEditor({ columns, rows, onChange }) {
+function TableEditor({ columns, rows, onChange, style }) {
   const setCell = (r, c, v) => onChange(rows.map((row, i) => (i === r ? row.map((x, j) => (j === c ? v : x)) : row)));
+  const whole = new Set(style?.wholeNumbers || []);
+  const listId = style?.listColumn != null ? 'sitrep-types' : undefined;
   return (
-    <div className="table-wrap"><table>
+    <div className="table-wrap">{listId && <datalist id={listId}>{SITREP_TYPES.map((t) => <option key={t} value={t} />)}</datalist>}<table>
       <thead><tr>{columns.map((c) => <th key={c}>{c}</th>)}<th><span className="sr">Remove</span></th></tr></thead>
       <tbody>{rows.map((row, r) => (
-        <tr key={r}>{row.map((cell, c) => <td key={c}><input aria-label={`${columns[c]} row ${r + 1}`} value={cell} onChange={(e) => setCell(r, c, e.target.value)} /></td>)}
+        <tr key={r}>{row.map((cell, c) => <td key={c}><input aria-label={`${columns[c]} row ${r + 1}`} value={cell}
+          list={c === style?.listColumn ? listId : undefined}
+          inputMode={whole.has(c) ? 'numeric' : undefined} pattern={whole.has(c) ? '[0-9]*' : undefined}
+          onChange={(e) => setCell(r, c, whole.has(c) ? e.target.value.replace(/[^0-9]/g, '') : e.target.value)} /></td>)}
           <td><button className="btn" aria-label={`Remove row ${r + 1}`} onClick={() => onChange(rows.filter((_, i) => i !== r))}>×</button></td></tr>
       ))}</tbody>
       <tfoot><tr><td colSpan={columns.length + 1}><button className="btn" onClick={() => onChange([...rows, columns.map(() => '')])}>Add row</button></td></tr></tfoot>

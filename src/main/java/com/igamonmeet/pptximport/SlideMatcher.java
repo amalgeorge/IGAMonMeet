@@ -27,7 +27,7 @@ public class SlideMatcher {
             Map.entry("actions", "action"), Map.entry("todo", "action"), Map.entry("open", "action"),
             Map.entry("risk", "risks"), Map.entry("blockers", "risks"), Map.entry("decision", "decisions"),
             Map.entry("overview", "summary"), Map.entry("highlights", "summary"),
-            Map.entry("incident", "incidents"), Map.entry("problems", "incidents"),
+            Map.entry("incident", "sitrep"), Map.entry("incidents", "sitrep"), Map.entry("problems", "sitrep"),
             Map.entry("release", "releases"), Map.entry("plan", "roadmap"), Map.entry("projects", "roadmap"));
     private static final Set<String> SKIP_LAYOUTS = Set.of("IAM_TITLE", "IAM_SECTION", "IAM_CLOSING");
 

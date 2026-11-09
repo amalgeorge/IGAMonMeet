@@ -111,7 +111,7 @@ public class PptxWriter {
                     text(slide, "team", "APPENDIX");
                     text(slide, "title", "Comments" + (pages > 1 ? " (" + (p + 1) + " of " + pages + ")" : ""));
                     table(slide, List.of("Section", "Comment", "Status"), options.commentRows().subList(p * perSlide,
-                            Math.min(options.commentRows().size(), (p + 1) * perSlide)), List.of(20.0, 62.0, 18.0), null, null, false, w, h);
+                            Math.min(options.commentRows().size(), (p + 1) * perSlide)), List.of(20.0, 62.0, 18.0), null, null, false, w, h, null);
                     stamp(slide, options.footerStamp(), w, h);
                 }
             }
@@ -269,7 +269,8 @@ public class PptxWriter {
             }
             case "IAM_TABLE" -> {
                 table(slide, (List<String>) d.get("head"), (List<List<String>>) d.get("rows"), (List<Double>) d.get("colWidths"),
-                        (List<String>) d.get("rowFlags"), (List<String>) d.get("align"), Boolean.TRUE.equals(d.get("banded")), w, h);
+                        (List<String>) d.get("rowFlags"), (List<String>) d.get("align"), Boolean.TRUE.equals(d.get("banded")), w, h,
+                        d.get("alertColumn") instanceof Integer a ? a : null);
                 if (d.get("note") instanceof String note) {
                     box(slide, note, 0.045 * w, 0.84 * h, 0.91 * w, 20, 12, false, MUTED);
                 }
@@ -418,7 +419,7 @@ public class PptxWriter {
     private static final Color BAND = new Color(0xF7, 0xF7, 0xF7);
 
     private static void table(XSLFSlide slide, List<String> head, List<List<String>> rows, List<Double> widths, List<String> flags,
-                              List<String> align, boolean banded, double w, double h) {
+                              List<String> align, boolean banded, double w, double h, Integer alertColumn) {
         XSLFTable t = slide.createTable();
         double x = 0.045 * w;
         double tw = 0.91 * w;
@@ -437,11 +438,12 @@ public class PptxWriter {
             List<String> row = rows.get(r);
             for (int c = 0; c < head.size(); c++) {
                 boolean late = "overdue".equals(flag) && c == head.size() - 1;
-                Color color = "closed".equals(flag) ? MUTED : late ? new Color(0x9E, 0x0B, 0x23) : INK;
+                boolean alert = alertColumn != null && c == alertColumn && c < row.size() && row.get(c).trim().matches("0*[1-9]\\d*(\\.\\d+)?|0*\\.\\d*[1-9]\\d*");
+                Color color = "closed".equals(flag) ? MUTED : late || alert ? new Color(0x9E, 0x0B, 0x23) : INK;
                 XSLFTableCell cell = tr.addCell();
                 boolean total = "total".equals(flag);
                 Color fill = flag.startsWith("status:") ? ROW_FILL.get(flag.substring(7)) : total ? SOFT : banded && r % 2 == 1 ? BAND : null;
-                cell(cell, c < row.size() ? row.get(c) : "", 14, late || total, color, fill);
+                cell(cell, c < row.size() ? row.get(c) : "", 14, late || total || alert, color, fill);
                 if (align != null && c < align.size()) {
                     cell.getTextParagraphs().get(0).setTextAlign("center".equals(align.get(c)) ? TextAlign.CENTER
                             : "right".equals(align.get(c)) ? TextAlign.RIGHT : TextAlign.LEFT);

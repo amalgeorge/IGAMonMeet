@@ -5,9 +5,9 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
 | 34 | Linux hosting: install script, fonts, headless | none | Done |
-| 35 | Column editor, commas, 12 columns | none | |
-| 36 | CSV import for tables | 35 | |
-| 37 | SITREP replaces Incidents | 35 | |
+| 35 | Column editor, commas, 12 columns | none | Done |
+| 36 | CSV import for tables | 35 | Done |
+| 37 | SITREP replaces Incidents | 35 | Done |
 | 38 | Rich text in every Section | 37 | |
 | 39 | New Programme Sections | 38 | |
 | 40 | Section group visibility fix and hints | none | |

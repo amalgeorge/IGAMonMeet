@@ -22,3 +22,8 @@ Terms are in [CONTEXT.md](../../CONTEXT.md).
 | Q16 | Visibility | Each Section, Section group and KPI is Shown, Available or Retired (nothing deleted; history kept). Admin can also keep a Section off the slides while it stays in Document and Dashboard. |
 | Q17 | KPI tiles per slide | Admin picks per KPI Section: 2, 3, 4, 6 or 8 tiles, or a table layout. Default 4. |
 | Q18 | Order | Template order only; editors cannot reorder within a Meeting. |
+| Q19 | Switching items | Within the Edit window (Admin after). On: appears empty at its Template position. Off: only while empty; with content Admin only, and the content is hidden, not deleted. Audit-logged. |
+| Q20 | Catalogue | Preparing Meetings pick from the latest Template version's Available items; Held Meetings stay as they are. |
+| Q21 | Data migration | KPIs move into the KPI library with keys unchanged (trend history continues); Text Sections become rich content with one paragraph block; Flyway, no visible change. |
+| Q22 | Theme choice | Admin any time; any editor while the Meeting is Preparing. |
+| Q23 | PPTX and Themes | Export writes Theme colours and fonts into the PowerPoint theme and backgrounds into title/divider/content layouts. Import maps PowerPoint tables into table blocks. House template check adds the divider layout. |

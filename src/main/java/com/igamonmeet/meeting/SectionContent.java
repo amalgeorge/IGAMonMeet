@@ -23,7 +23,7 @@ final class SectionContent {
     private SectionContent() {
     }
 
-    static void validate(SectionKind kind, int columnCount, Set<String> kpiKeys, JsonNode c) {
+    static void validate(SectionKind kind, int columnCount, java.util.Map<String, com.igamonmeet.template.TemplateKpi> kpis, JsonNode c) {
         check(c != null && c.isObject(), "Content must be an object.");
         check(!c.has("notes") || c.get("notes").isNull() || (c.get("notes").isTextual() && c.get("notes").asText().length() <= MAX_NOTES),
                 "Speaker notes must be text of up to " + MAX_NOTES + " characters.");
@@ -39,10 +39,11 @@ final class SectionContent {
                 check(!c.has("values") || c.get("values").isObject(), "'values' must be an object keyed by KPI.");
                 check(!c.has("commentary") || c.get("commentary").isTextual(), "'commentary' must be text.");
                 c.path("values").fields().forEachRemaining(e -> {
-                    check(kpiKeys.contains(e.getKey()), "Unknown KPI '" + e.getKey() + "'.");
+                    com.igamonmeet.template.TemplateKpi def = kpis.get(e.getKey());
+                    check(def != null, "Unknown KPI '" + e.getKey() + "'.");
                     JsonNode v = e.getValue();
                     check(v.isObject(), "Each KPI entry must be an object.");
-                    check(!v.hasNonNull("value") || v.get("value").isNumber(), "KPI values must be numbers.");
+                    checkValue(def, v.get("value"));
                     if (v.hasNonNull("override")) {
                         check(isStatus(v.get("override").asText()), "Unknown status override.");
                         check(v.path("reason").isTextual() && !v.get("reason").asText().isBlank() && v.get("reason").asText().length() <= 300,
@@ -85,9 +86,9 @@ final class SectionContent {
                 case KPI -> {
                     boolean any = false;
                     for (JsonNode v : c.path("values")) {
-                        any |= v.path("value").isNumber();
+                        any |= hasValue(v.path("value"));
                     }
-                    boolean allRequired = requiredKpis.stream().allMatch(k -> c.path("values").path(k).path("value").isNumber());
+                    boolean allRequired = requiredKpis.stream().allMatch(k -> hasValue(c.path("values").path(k).path("value")));
                     yield any && allRequired;
                 }
                 case TABLE -> c.path("rows").size() > 0;
@@ -99,6 +100,18 @@ final class SectionContent {
         }
     }
 
+    /** A value must fit its KPI's value type (docs/spec-v2.md §2.2). */
+    private static void checkValue(com.igamonmeet.template.TemplateKpi def, JsonNode value) {
+        if (value == null || value.isNull()) return;
+        switch (def.getValueType()) {
+            case TEXT_STATUS -> check(value.isTextual() && def.getStatusOptions().stream().anyMatch(o -> o.label().equalsIgnoreCase(value.asText().trim())),
+                    "'" + def.getName() + "' must be one of: " + def.getStatusOptions().stream().map(o -> o.label()).collect(java.util.stream.Collectors.joining(", ")) + ".");
+            case COUNT -> check(value.isNumber() && value.decimalValue().stripTrailingZeros().scale() <= 0, "'" + def.getName() + "' must be a whole number.");
+            case DURATION -> check(value.isNumber() && value.decimalValue().signum() >= 0, "'" + def.getName() + "' must be a duration in minutes.");
+            default -> check(value.isNumber(), "KPI values must be numbers.");
+        }
+    }
+
     private static boolean isStatus(String s) {
         for (KpiStatus k : KpiStatus.values()) {
             if (k.name().equals(s)) {
@@ -106,6 +119,10 @@ final class SectionContent {
             }
         }
         return false;
+    }
+
+    private static boolean hasValue(JsonNode v) {
+        return v.isNumber() || (v.isTextual() && !v.asText().isBlank());
     }
 
     private static boolean hasText(JsonNode arr) {

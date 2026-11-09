@@ -37,6 +37,12 @@ public class TemplateKpiDef {
     private BigDecimal amberThreshold;
     private int sortOrder;
 
+    @Enumerated(EnumType.STRING)
+    private ValueType valueType = ValueType.NUMBER;
+
+    private String currency;
+    private String statusOptions;
+
     protected TemplateKpiDef() {
     }
 
@@ -58,4 +64,14 @@ public class TemplateKpiDef {
     public BigDecimal getTarget() { return target; }
     public Direction getDirection() { return direction; }
     public BigDecimal getAmberThreshold() { return amberThreshold; }
+
+    public ValueType getValueType() { return valueType == null ? ValueType.NUMBER : valueType; }
+    public String getCurrency() { return currency; }
+    public java.util.List<KpiFormat.StatusOption> getStatusOptions() { return KpiFormat.options(statusOptions); }
+
+    void setValueSpec(ValueType valueType, String currency, String statusOptionsJson) {
+        this.valueType = valueType == null ? ValueType.NUMBER : valueType;
+        this.currency = currency;
+        this.statusOptions = statusOptionsJson;
+    }
 }

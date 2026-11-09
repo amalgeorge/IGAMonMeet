@@ -81,13 +81,12 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
           <div style={{ position: 'absolute', left: '4.5%', right: '4.5%', top: '26.7%', height: '45.3%', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: pt(21.6) }}>
             {d.kpis.map((k, i) => {
               const st = STATUS[k.status];
-              const unit = k.unit === '%' ? '%' : ` ${k.unit}`;
               return (
                 <motion.div key={k.key} {...reveal(i)} style={{ background: soft, borderRadius: pt(6), padding: pt(18), display: 'flex', flexDirection: 'column' }}>
                   <div style={{ fontSize: pt(14), color: muted, minHeight: pt(40) }}>{k.name}</div>
-                  <div style={{ fontSize: pt(44), fontWeight: 700, marginTop: pt(6) }}>{k.value != null ? `${k.value}${unit}` : '—'}</div>
-                  <div style={{ fontSize: pt(13), color: muted, marginTop: pt(6) }}>Target {k.direction === 'HIGHER' ? '≥' : '≤'} {k.target}{unit}</div>
-                  {k.value != null && k.previousValue != null && <div style={{ fontSize: pt(13), color: muted }}>{k.value - k.previousValue >= 0 ? '+' : '−'}{Math.abs(+(k.value - k.previousValue).toFixed(2))}{unit} vs last month</div>}
+                  <div style={{ fontSize: pt((k.display || '').length > 9 ? 30 : 44), fontWeight: 700, marginTop: pt(6) }}>{k.display}</div>
+                  {k.targetLine && <div style={{ fontSize: pt(13), color: muted, marginTop: pt(6) }}>{k.targetLine}</div>}
+                  {k.deltaLine && <div style={{ fontSize: pt(13), color: muted }}>{k.deltaLine}</div>}
                   {st && <div style={{ marginTop: 'auto', alignSelf: 'flex-start', fontSize: pt(11), fontWeight: 700, padding: `${pt(5)} ${pt(14)}`, borderRadius: pt(99), background: st[1], color: st[2] }}>{st[0]}</div>}
                   {k.override && <div style={{ fontSize: pt(10), color: muted, marginTop: pt(4) }}>{k.reason}</div>}
                 </motion.div>

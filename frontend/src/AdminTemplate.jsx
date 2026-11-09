@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { api } from './api.js';
 
 const KINDS = { SUMMARY: 'IAM_SUMMARY', KPI: 'IAM_KPI', CHART: 'IAM_CHART', TABLE: 'IAM_TABLE', TWO_COLUMN: 'IAM_TWO_COLUMN', ACTION_ITEMS: 'IAM_TABLE' };
@@ -6,7 +6,7 @@ const KIND_LABEL = { SUMMARY: 'Summary', KPI: 'KPIs', CHART: 'KPI trend chart', 
 const TEAMS = { ENGINEERING: 'Engineering', OPERATIONS: 'Operations', SHARED: 'Shared' };
 const OVERFLOW = { CONTINUE: 'Continue on new slides', SHRINK_TO_FIT: 'Shrink, then continue', APPENDIX: 'First rows + appendix' };
 const fmt = new Intl.DateTimeFormat('en-SG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Singapore' });
-const pick = (d) => (d ? { name: d.name, unit: d.unit, target: d.target, direction: d.direction, amberThreshold: d.amberThreshold } : {});
+const pick = (d) => (d ? { name: d.name, unit: d.unit || '', target: d.target, direction: d.direction, amberThreshold: d.amberThreshold } : {});
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'section';
 
 export default function AdminTemplate() {
@@ -142,6 +142,28 @@ function GroupsEditor({ groups, onChange, onRemove }) {
   );
 }
 
+const VALUE_TYPES = { NUMBER: 'Number', PERCENT: 'Percentage', COUNT: 'Count', DURATION: 'Duration', CURRENCY: 'Currency', TEXT_STATUS: 'Text status' };
+const KPI_STATUS = { ON_TARGET: 'On target', BELOW_TARGET: 'Below target', OFF_TARGET: 'Off target' };
+const DEFAULT_OPTIONS = [{ label: 'Green', status: 'ON_TARGET' }, { label: 'Amber', status: 'BELOW_TARGET' }, { label: 'Red', status: 'OFF_TARGET' }];
+
+/** The labels a Text status KPI offers, each mapped to a KPI status. */
+function StatusOptions({ options, onChange }) {
+  const set = (i, patch) => onChange(options.map((o, j) => (j === i ? { ...o, ...patch } : o)));
+  return (
+    <div className="options-row"><span className="hint">Options:</span>
+      {options.map((o, i) => (
+        <span key={i} className="option">
+          <input aria-label="Option label" size={8} maxLength={40} value={o.label} onChange={(e) => set(i, { label: e.target.value })} />
+          <select aria-label={`Status for ${o.label}`} value={o.status} onChange={(e) => set(i, { status: e.target.value })}>
+            {Object.entries(KPI_STATUS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+          <button className="btn" aria-label={`Remove ${o.label}`} onClick={() => onChange(options.filter((_, j) => j !== i))}>×</button>
+        </span>
+      ))}
+      <button className="btn" onClick={() => onChange([...options, { label: 'New', status: 'BELOW_TARGET' }])}>Add option</button>
+    </div>
+  );
+}
+
 function KpiLibrary({ library, onChange, onRemove }) {
   const set = (i, patch) => onChange(library.map((k, j) => (j === i ? { ...k, ...patch } : k)));
   const add = () => {
@@ -154,18 +176,24 @@ function KpiLibrary({ library, onChange, onRemove }) {
       <div className="row"><strong>KPI library</strong><button className="btn" onClick={add}>Add KPI</button></div>
       <p className="hint">Define each KPI once. KPI Sections pick from this list, and a KPI keeps one trend history wherever it is placed.</p>
       <div className="table-wrap"><table>
-        <thead><tr><th>KPI</th><th>Key</th><th>Unit</th><th>Better when</th><th>Target</th><th>Amber from</th><th><span className="sr">Remove</span></th></tr></thead>
-        <tbody>{library.map((k, i) => (
-          <tr key={i}>
+        <thead><tr><th>KPI</th><th>Key</th><th>Type</th><th>Unit</th><th>Better when</th><th>Target</th><th>Amber from</th><th><span className="sr">Remove</span></th></tr></thead>
+        <tbody>{library.map((k, i) => { const type = k.valueType || 'NUMBER'; const text = type === 'TEXT_STATUS'; return (<Fragment key={i}>
+          <tr>
             <td><input aria-label="KPI name" value={k.name} onChange={(e) => set(i, { name: e.target.value })} /></td>
             <td>{k.isNew ? <input aria-label="KPI key" size={12} value={k.key} onChange={(e) => set(i, { key: slug(e.target.value) })} /> : <code>{k.key}</code>}</td>
-            <td><input aria-label="Unit" size={4} value={k.unit} onChange={(e) => set(i, { unit: e.target.value })} /></td>
+            <td><select aria-label="Value type" value={type} onChange={(e) => set(i, { valueType: e.target.value,
+              ...(e.target.value === 'TEXT_STATUS' && !(k.statusOptions || []).length ? { statusOptions: DEFAULT_OPTIONS, target: 0, amberThreshold: 0 } : {}) })}>
+              {Object.entries(VALUE_TYPES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></td>
+            <td>{type === 'CURRENCY'
+              ? <input aria-label="Currency code" size={4} maxLength={3} value={k.currency || 'SGD'} onChange={(e) => set(i, { currency: e.target.value.toUpperCase() })} />
+              : <input aria-label="Unit" size={4} disabled={type !== 'NUMBER'} value={type === 'PERCENT' ? '%' : type === 'DURATION' ? 'h m' : k.unit} onChange={(e) => set(i, { unit: e.target.value })} />}</td>
             <td><select aria-label="Better when" value={k.direction} onChange={(e) => set(i, { direction: e.target.value })}><option value="HIGHER">Higher</option><option value="LOWER">Lower</option></select></td>
-            <td><input aria-label="Target" type="number" step="any" value={k.target} onChange={(e) => set(i, { target: e.target.value })} /></td>
-            <td><input aria-label="Amber threshold" type="number" step="any" value={k.amberThreshold} onChange={(e) => set(i, { amberThreshold: e.target.value })} /></td>
+            <td><input aria-label="Target" type="number" step="any" disabled={text} value={k.target} onChange={(e) => set(i, { target: e.target.value })} /></td>
+            <td><input aria-label="Amber threshold" type="number" step="any" disabled={text} value={k.amberThreshold} onChange={(e) => set(i, { amberThreshold: e.target.value })} /></td>
             <td><button className="btn" onClick={() => { onRemove(k.key); onChange(library.filter((_, j) => j !== i)); }}>Remove</button></td>
           </tr>
-        ))}</tbody>
+          {text && <tr><td colSpan={8}><StatusOptions options={k.statusOptions || []} onChange={(statusOptions) => set(i, { statusOptions })} /></td></tr>}
+        </Fragment>); })}</tbody>
       </table></div>
     </div>
   );

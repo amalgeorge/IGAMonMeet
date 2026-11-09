@@ -40,6 +40,12 @@ public class TemplateKpi {
     private int sortOrder;
 
     @Enumerated(EnumType.STRING)
+    private ValueType valueType = ValueType.NUMBER;
+
+    private String currency;
+    private String statusOptions;
+
+    @Enumerated(EnumType.STRING)
     private Visibility visibility = Visibility.SHOWN;
 
     protected TemplateKpi() {
@@ -68,4 +74,14 @@ public class TemplateKpi {
     public Visibility getVisibility() { return visibility; }
 
     void setVisibility(Visibility visibility) { this.visibility = visibility; }
+
+    public ValueType getValueType() { return valueType == null ? ValueType.NUMBER : valueType; }
+    public String getCurrency() { return currency; }
+    public java.util.List<KpiFormat.StatusOption> getStatusOptions() { return KpiFormat.options(statusOptions); }
+
+    void setValueSpec(ValueType valueType, String currency, String statusOptionsJson) {
+        this.valueType = valueType == null ? ValueType.NUMBER : valueType;
+        this.currency = currency;
+        this.statusOptions = statusOptionsJson;
+    }
 }

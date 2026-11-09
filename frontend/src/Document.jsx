@@ -212,12 +212,13 @@ function KpiEditor({ kpis, values, onChange }) {
       <thead><tr><th>KPI</th><th>Target</th><th>This month</th><th>Status</th><th>Override</th><th>Reason (shown on slide)</th></tr></thead>
       <tbody>{kpis.map((k) => {
         const v = values[k.key] || {};
-        const computed = statusOf(k, num(v.value));
+        const text = k.valueType === 'TEXT_STATUS';
+        const computed = text ? (k.options || []).find((o) => o.label === v.value)?.status : statusOf(k, num(v.value));
         return (
           <tr key={k.key}>
-            <td>{k.name}{k.required && <span className="hint"> · required</span>}<div className="hint">{delta(k, num(v.value))}</div></td>
-            <td className="tnum">{fmtTarget(k)}</td>
-            <td><input aria-label={`${k.name} value`} type="number" step="any" value={v.value ?? ''} onChange={(e) => set(k.key, { value: num(e.target.value) })} /></td>
+            <td>{k.name}{k.required && <span className="hint"> · required</span>}{!text && <div className="hint">{delta(k, num(v.value))}</div>}</td>
+            <td className="tnum">{text ? '—' : k.targetLine}</td>
+            <td><ValueInput k={k} value={v.value} onChange={(value) => set(k.key, { value })} /></td>
             <td>{computed ? <span className={`chip st-${computed}`}>{STATUS[computed]}</span> : <span className="hint">—</span>}</td>
             <td><select aria-label={`${k.name} status override`} value={v.override || ''} onChange={(e) => set(k.key, { override: e.target.value || null })}>
               <option value="">Automatic</option>{Object.entries(STATUS).map(([s, l]) => <option key={s} value={s}>{l}</option>)}</select></td>
@@ -229,6 +230,36 @@ function KpiEditor({ kpis, values, onChange }) {
   );
 }
 
+/** Minutes from "2h 30m", "90m", "1.5h" or a plain number of minutes; null when empty or unreadable. */
+export function parseDuration(s) {
+  const t = String(s || '').trim().toLowerCase();
+  if (!t) return null;
+  if (/^\d+(\.\d+)?$/.test(t)) return Math.round(Number(t));
+  const m = t.match(/^(?:(\d+(?:\.\d+)?)\s*h)?\s*(?:(\d+)\s*m)?$/);
+  if (!m || (!m[1] && !m[2])) return null;
+  return Math.round(Number(m[1] || 0) * 60 + Number(m[2] || 0));
+}
+
+export function fmtDuration(min) {
+  if (min == null) return '';
+  const h = Math.floor(min / 60); const r = min % 60;
+  return h === 0 ? `${r}m` : r === 0 ? `${h}h` : `${h}h ${r}m`;
+}
+
+/** The value field for a KPI, by value type (spec-v2 §2.2). */
+function ValueInput({ k, value, onChange }) {
+  const label = `${k.name} value`;
+  const [draft, setDraft] = useState(k.valueType === 'DURATION' ? fmtDuration(value) : null);
+  if (k.valueType === 'TEXT_STATUS') {
+    return <select aria-label={label} value={value || ''} onChange={(e) => onChange(e.target.value || null)}>
+      <option value="">—</option>{(k.options || []).map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}</select>;
+  }
+  if (k.valueType === 'DURATION') {
+    return <input aria-label={label} placeholder="2h 30m" value={draft} onChange={(e) => { setDraft(e.target.value); const m = parseDuration(e.target.value); if (m != null || !e.target.value) onChange(m); }} />;
+  }
+  return <input aria-label={label} type="number" step={k.valueType === 'COUNT' ? 1 : 'any'} value={value ?? ''} onChange={(e) => onChange(num(e.target.value))} />;
+}
+
 function KpiTiles({ kpis, commentary }) {
   return (
     <div>
@@ -236,9 +267,9 @@ function KpiTiles({ kpis, commentary }) {
         {kpis.map((k, i) => (
           <motion.div key={k.key} className="kpi-tile" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.1 }}>
             <div className="hint">{k.name}</div>
-            <div className="kpi-value tnum">{k.value != null ? `${k.value}${k.unit === '%' ? '%' : ` ${k.unit}`}` : '—'}</div>
-            <div className="hint tnum">Target {fmtTarget(k)}</div>
-            <div className="hint tnum">{delta(k, k.value)}</div>
+            <div className="kpi-value tnum">{k.display}</div>
+            {k.targetLine && <div className="hint tnum">{k.targetLine}</div>}
+            {k.deltaLine && <div className="hint tnum">{k.deltaLine}</div>}
             {k.status && <span className={`chip st-${k.status}`}>{STATUS[k.status]}{k.override ? ' (set by editor)' : ''}</span>}
             {k.override && <div className="hint">{k.reason}</div>}
           </motion.div>

@@ -243,13 +243,12 @@ public class PptxWriter {
             KpiView k = kpis.get(i);
             double x = 0.045 * w + i * (tw + gap);
             tile(slide, x, y, tw, th);
-            String unit = "%".equals(k.unit()) ? "%" : " " + k.unit();
             box(slide, k.name(), x + 18, y + 18, tw - 36, 40, 14, false, MUTED);
-            box(slide, k.value() == null ? "—" : plain(k.value()) + unit, x + 18, y + 64, tw - 36, 50, 40, true, INK);
-            String target = "Target " + (k.direction().name().equals("HIGHER") ? "≥ " : "≤ ") + plain(k.target()) + unit;
-            if (k.value() != null && k.previousValue() != null) {
-                BigDecimal diff = k.value().subtract(k.previousValue());
-                target += "\n" + (diff.signum() >= 0 ? "+" : "−") + plain(diff.abs()) + unit + " vs last month";
+            // Formatted by value type on the server (KpiFormat), the same text as the in-app slide.
+            box(slide, k.display(), x + 18, y + 64, tw - 36, 50, k.display().length() > 9 ? 28 : 40, true, INK);
+            String target = k.targetLine() == null ? "" : k.targetLine();
+            if (k.deltaLine() != null) {
+                target += (target.isEmpty() ? "" : "\n") + k.deltaLine();
             }
             box(slide, target, x + 18, y + 120, tw - 36, 40, 12, false, MUTED);
             if (k.status() != null) {

@@ -89,7 +89,7 @@ public class SectionEditor {
                     s.getVersion(), s.getContentJson(), s.getUpdatedBy(), s.getUpdatedAt()));
         }
         int columns = s.getColumnsSpec() == null ? 0 : s.getColumnsSpec().split("\\|").length;
-        SectionContent.validate(s.getKind(), columns, kpiKeys(m, s.getSectionKey()), content);
+        SectionContent.validate(s.getKind(), columns, kpiDefs(m, s.getSectionKey()), content);
         String newJson = content.toString();
         if (newJson.length() > SectionContent.MAX_CHARS) {
             throw new AccountException(HttpStatus.BAD_REQUEST, "TOO_LARGE", "This section is too large to save.");
@@ -127,6 +127,15 @@ public class SectionEditor {
     }
 
     /** KPI keys the Meeting's own Template version defines for this Section. */
+    /** KPI definitions this Section shows in this Meeting, by key. */
+    java.util.Map<String, com.igamonmeet.template.TemplateKpi> kpiDefs(Meeting m, String sectionKey) {
+        java.util.Map<String, com.igamonmeet.template.TemplateKpi> defs = new java.util.LinkedHashMap<>();
+        SectionDefs.Lookup lookup = sectionDefs.lookup();
+        m.getSections().stream().filter(s -> s.getSectionKey().equals(sectionKey))
+                .forEach(s -> lookup.kpis(m, s).forEach(k -> defs.put(k.getKpiKey(), k)));
+        return defs;
+    }
+
     Set<String> kpiKeys(Meeting m, String sectionKey) {
         Set<String> keys = new LinkedHashSet<>();
         SectionDefs.Lookup lookup = sectionDefs.lookup();

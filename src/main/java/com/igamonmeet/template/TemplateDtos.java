@@ -69,7 +69,16 @@ public final class TemplateDtos {
             @NotNull @Size(max = 20) String unit,
             @NotNull BigDecimal target,
             @NotNull Direction direction,
-            @NotNull BigDecimal amberThreshold) {
+            @NotNull BigDecimal amberThreshold,
+            ValueType valueType,
+            @Pattern(regexp = "[A-Z]{3}") String currency,
+            List<KpiFormat.StatusOption> statusOptions) {
+
+        public LibraryKpi(String key, String name, String unit, BigDecimal target, Direction direction, BigDecimal amberThreshold) {
+            this(key, name, unit, target, direction, amberThreshold, null, null, null);
+        }
+
+        public ValueType valueTypeOrDefault() { return valueType == null ? ValueType.NUMBER : valueType; }
     }
 
     /** What an Admin publishes: the full edited Template, based on the version they started from. */
@@ -90,7 +99,7 @@ public final class TemplateDtos {
                 v.getSections().stream().map(TemplateDtos::of).collect(Collectors.toList()),
                 v.getGroups().stream().map(g -> new Group(g.getGroupKey(), g.getName(), g.getVisibility(), g.isDivider())).collect(Collectors.toList()),
                 v.getKpiLibrary().stream().map(d -> new LibraryKpi(d.getKpiKey(), d.getName(), d.getUnit(), d.getTarget(), d.getDirection(),
-                        d.getAmberThreshold())).collect(Collectors.toList()));
+                        d.getAmberThreshold(), d.getValueType(), d.getCurrency(), d.getStatusOptions())).collect(Collectors.toList()));
     }
 
     static Section of(TemplateSection s) {

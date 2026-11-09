@@ -32,7 +32,8 @@ public class DashboardService {
     static final int TREND_MONTHS = 6;
     private static final DateTimeFormatter SHORT_MONTH = DateTimeFormatter.ofPattern("MMM yy", Locale.ENGLISH);
 
-    public record Trend(List<String> labels, List<BigDecimal> values) {
+    /** Numeric KPIs: values. Text status KPIs: statuses (a coloured history strip), values all null. */
+    public record Trend(List<String> labels, List<BigDecimal> values, List<String> statuses) {
     }
 
     public record KpiTile(KpiView kpi, String section, String group, Trend trend) {
@@ -77,7 +78,7 @@ public class DashboardService {
         for (SectionView s : d.sections()) {
             if (s.kind() == SectionKind.KPI) {
                 for (KpiView k : s.kpis()) {
-                    tiles.add(new KpiTile(k, s.name(), s.groupName(), trend(history, s.key(), k.key())));
+                    tiles.add(new KpiTile(k, s.name(), s.groupName(), trend(history, s.key(), k)));
                 }
             }
             if (s.kind() == SectionKind.TABLE) {
@@ -109,22 +110,33 @@ public class DashboardService {
                 d.requiredSections(), d.requiredFilled());
     }
 
-    private Trend trend(List<Meeting> history, String sectionKey, String kpiKey) {
+    private Trend trend(List<Meeting> history, String sectionKey, KpiView kpi) {
+        String kpiKey = kpi.key();
+        boolean text = kpi.valueType() == com.igamonmeet.template.ValueType.TEXT_STATUS;
         List<String> labels = new ArrayList<>();
         List<BigDecimal> values = new ArrayList<>();
+        List<String> statuses = new ArrayList<>();
         for (Meeting past : history) {
             // A KPI keeps one history across Sections (spec-v2 §2.1): this Section's value first, else any Section's.
             BigDecimal v = null;
+            String label = null;
             for (MeetingSection s : past.getSections()) {
                 JsonNode n = read(s.getContentJson()).path("values").path(kpiKey).path("value");
                 if (n.isNumber() && (v == null || s.getSectionKey().equals(sectionKey))) {
                     v = n.decimalValue();
                 }
+                if (n.isTextual() && !n.asText().isBlank() && (label == null || s.getSectionKey().equals(sectionKey))) {
+                    label = n.asText();
+                }
+            }
+            if (text) {
+                statuses.add(label == null ? null : java.util.Optional.ofNullable(KpiView.statusOf(kpi.options(), label)).map(Enum::name).orElse(null));
+                v = null;
             }
             labels.add(SHORT_MONTH.format(YearMonth.parse(past.getMonth())));
             values.add(v);
         }
-        return new Trend(labels, values);
+        return new Trend(labels, values, text ? statuses : null);
     }
 
     private static int indexOfIgnoreCase(List<String> list, String v) {

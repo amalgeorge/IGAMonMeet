@@ -190,3 +190,9 @@ tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
 .outline-head { background: none; border: 0; padding: 6px 0; font: inherit; font-weight: 600; cursor: pointer; color: var(--ink); text-align: left; width: 100%; }
 .outline-group .outline-item { padding-left: 16px; }
 .dash-group { font-size: 14px; color: var(--red); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+
+/* Text status history strip (spec-v2 §2.2) */
+.strip { display: flex; gap: 3px; height: 18px; margin-top: auto; }
+.strip span { flex: 1; border-radius: 3px; }
+.options-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.options-row .option { display: inline-flex; gap: 4px; align-items: center; }

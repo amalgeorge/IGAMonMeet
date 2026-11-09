@@ -136,6 +136,15 @@ class SlidePlannerTest {
     }
 
     @Test
+    void speakerNotesGoOnTheFirstSlideOnly() {
+        SectionInput t = table("roadmap", TeamTag.ENGINEERING, OverflowRule.CONTINUE, 40);
+        ((ObjectNode) t.content()).put("notes", "Explain the JML slip.");
+        List<Slide> pages = of(planner.plan(input(List.of(t), List.of())), "roadmap");
+        assertThat(pages.get(0).data().get("notes")).isEqualTo("Explain the JML slip.");
+        assertThat(pages.get(1).data()).doesNotContainKey("notes");
+    }
+
+    @Test
     void emptySectionsAndActionItems() {
         SectionInput optionalEmpty = new SectionInput("releases", "Releases", TeamTag.ENGINEERING, SectionKind.TABLE, "IAM_TABLE",
                 OverflowRule.CONTINUE, false, false, List.of("A"), JSON.createObjectNode(), List.of(), null);

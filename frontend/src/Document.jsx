@@ -9,6 +9,7 @@ const LABEL = { PREPARING: 'Preparing', HELD: 'Held' };
 const dateFmt = new Intl.DateTimeFormat('en-SG', { dateStyle: 'medium', timeZone: 'Asia/Singapore' });
 const timeFmt = new Intl.DateTimeFormat('en-SG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Singapore' });
 const EMPTY = { SUMMARY: { points: [''], stats: [] }, KPI: { values: {}, commentary: '' }, CHART: { commentary: [''] }, TABLE: { rows: [] }, TWO_COLUMN: { leftHead: 'Risks', left: [''], rightHead: 'Decisions needed', right: [''] } };
+const notesOf = (s) => { try { return s.contentJson ? JSON.parse(s.contentJson).notes : ''; } catch { return ''; } };
 const parse = (s) => (s.contentJson ? JSON.parse(s.contentJson) : structuredClone(EMPTY[s.kind] || {}));
 
 export default function MeetingDocument({ id, me, onBack }) {
@@ -72,14 +73,14 @@ export default function MeetingDocument({ id, me, onBack }) {
                   <span className="chip">{TEAM[s.teamTag]}</span>{' '}
                   {perSection[s.key] > 1 && <span className="chip lock" title="Content does not fit one slide">Will use {perSection[s.key]} slides</span>}{' '}
                   {s.lockedBy && s.lockedBy !== me.username && <span className="chip lock">Being edited by {s.lockedBy}</span>}{' '}
-                  {doc.canEdit && s.kind !== 'ACTION_ITEMS' && (editing === s.id
+                  {doc.canEdit && (editing === s.id
                     ? <button className="btn pri" onClick={() => stopEdit(s)}>Done</button>
                     : <button className="btn" disabled={editing !== null || (s.lockedBy && s.lockedBy !== me.username)} onClick={() => startEdit(s)}>Edit</button>)}
                 </span>
               </div>
-              {s.kind === 'ACTION_ITEMS'
-                ? <ActionItems meetingId={id} items={doc.actionItems} canEdit={doc.canEdit} onChange={load} />
-                : editing === s.id ? <SectionEditor meetingId={id} section={s} /> : <SectionView section={s} />}
+              {s.kind === 'ACTION_ITEMS' && <ActionItems meetingId={id} items={doc.actionItems} canEdit={doc.canEdit} onChange={load} />}
+              {editing === s.id ? <SectionEditor meetingId={id} section={s} /> : s.kind !== 'ACTION_ITEMS' && <SectionView section={s} />}
+              {editing !== s.id && notesOf(s) && <p className="notes-view"><strong>Speaker notes:</strong> {notesOf(s)}</p>}
               {s.updatedBy && <p className="hint">Last saved by {s.updatedBy}, {timeFmt.format(new Date(s.updatedAt))}</p>}
               <Comments meetingId={id} sectionKey={s.key} threads={threads} onChange={loadThreads} />
             </article>
@@ -124,6 +125,8 @@ function SectionEditor({ meetingId, section }) {
         </div>
       )}
       <KindEditor section={section} value={content} onChange={setContent} />
+      <label className="field"><span>Speaker notes (Presenter view and PPTX notes; not shown to the audience)</span>
+        <textarea rows={3} maxLength={4000} value={content.notes || ''} onChange={(e) => setContent({ ...content, notes: e.target.value })} /></label>
     </div>
   );
 }

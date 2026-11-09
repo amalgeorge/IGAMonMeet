@@ -234,6 +234,12 @@ tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
 .rich-area p, .rich-view p { margin: 0 0 8px; }
 .rich-area ul, .rich-area ol, .rich-view ul, .rich-view ol { margin: 0 0 8px; padding-left: 24px; }
 
+/* Drag-and-drop ordering (spec-v3 §4.1). */
+.drag-handle { cursor: grab; color: var(--muted, #888); padding: 0 4px; user-select: none; }
+[data-dragging="true"] { opacity: 0.45; }
+[data-over="before"] { box-shadow: inset 0 3px 0 var(--red, #C8102E); }
+[data-over="after"] { box-shadow: inset 0 -3px 0 var(--red, #C8102E); }
+.sr-buttons .btn { padding: 0 6px; min-width: 0; }
 /* Section group not in this Meeting (spec-v3 §4.2): greyed placeholder after the thumbnails. */
 .thumb.off { opacity: 0.55; cursor: default; }
 .off-frame { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; aspect-ratio: 16 / 9;

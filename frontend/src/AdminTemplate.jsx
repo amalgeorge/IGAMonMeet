@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
 import ColumnsEditor from './ColumnsEditor.jsx';
+import { moveItem, useDragSort } from './dragSort.js';
 import TableStyleEditor from './TableStyleEditor.jsx';
 import { api } from './api.js';
 
@@ -28,6 +29,7 @@ export default function AdminTemplate() {
 
   const update = (i, patch) => setSections(sections.map((s, j) => (j === i ? { ...s, ...patch } : s)));
   const move = (i, d) => { const a = [...sections]; [a[i], a[i + d]] = [a[i + d], a[i]]; setSections(a); };
+  const dragSection = useDragSort(sections, setSections);
   const remove = (i) => setSections(sections.filter((_, j) => j !== i));
   const add = (kind) => {
     const name = `New ${KIND_LABEL[kind].toLowerCase()}`;
@@ -57,11 +59,12 @@ export default function AdminTemplate() {
       {msg.ok && <p className="notice" role="status">{msg.ok}</p>}
       <GroupsEditor groups={groups} onChange={setGroups} onRemove={(key) => setSections(sections.map((s) => (s.groupKey === key ? { ...s, groupKey: null } : s)))} />
       <KpiLibrary library={library} onChange={setLibrary} onRemove={(key) => setSections(sections.map((s) => ({ ...s, kpis: (s.kpis || []).filter((k) => k.key !== key) })))} />
+      <p className="hint">Drag a Section by its handle (⠿) to reorder, or use ↑ and ↓.</p>
       <ol className="tpl-list">
         {sections.map((s, i) => (
-          <li key={s.key} className="tpl-card">
+          <li key={s.key} className="tpl-card" {...dragSection(i)}>
             <div className="row">
-              <strong>{i + 1}. {KIND_LABEL[s.kind]}</strong>
+              <strong><span className="drag-handle" aria-hidden="true" title="Drag to reorder">⠿</span> {i + 1}. {KIND_LABEL[s.kind]}</strong>
               <span className="actions">
                 <button className="btn" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`Move ${s.name} up`}>↑</button>{' '}
                 <button className="btn" disabled={i === sections.length - 1} onClick={() => move(i, 1)} aria-label={`Move ${s.name} down`}>↓</button>{' '}
@@ -221,14 +224,17 @@ function KpiLibrary({ library, onChange, onRemove }) {
 /** A KPI Section's placements: which library KPIs it shows, and each one's Required flag and Visibility. */
 function KpiEditor({ kpis, library, onChange }) {
   const set = (i, patch) => onChange(kpis.map((k, j) => (j === i ? { ...k, ...patch } : k)));
+  const dragKpi = useDragSort(kpis, onChange);
   const name = (key) => library.find((l) => l.key === key)?.name || key;
   const unplaced = library.filter((l) => !kpis.some((k) => k.key === l.key));
   return (
     <div className="table-wrap"><table>
       <thead><tr><th>KPI</th><th>Required</th><th>Visibility</th><th><span className="sr">Remove</span></th></tr></thead>
       <tbody>{kpis.map((k, i) => (
-        <tr key={k.key}>
-          <td>{name(k.key)}</td>
+        <tr key={k.key} {...dragKpi(i)}>
+          <td><span className="drag-handle" aria-hidden="true" title="Drag to reorder">⠿</span> {name(k.key)}
+            <span className="sr-buttons"> <button type="button" className="btn" disabled={i === 0} aria-label={`Move ${name(k.key)} up`} onClick={() => onChange(moveItem(kpis, i, i - 1))}>↑</button>
+            <button type="button" className="btn" disabled={i === kpis.length - 1} aria-label={`Move ${name(k.key)} down`} onClick={() => onChange(moveItem(kpis, i, i + 1))}>↓</button></span></td>
           <td><input aria-label="Required" type="checkbox" checked={k.required} onChange={(e) => set(i, { required: e.target.checked })} /></td>
           <td><select aria-label="Visibility" value={k.visibility || 'SHOWN'} onChange={(e) => set(i, { visibility: e.target.value })}>
             {Object.entries(VISIBILITY).map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select></td>

@@ -7,7 +7,7 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 19 | Visibility in the Template | none | Done |
 | 20 | Switch Available items in a Meeting | 19 | Done |
 | 21 | Section groups | 19 | Done |
-| 22 | Divider slides for Section groups | 21 | |
+| 22 | Divider slides for Section groups | 21 | Done |
 | 23 | KPI library | 22 | |
 | 24 | KPI value types | 23 | |
 | 25 | KPI display fields and status labels | 23 | |

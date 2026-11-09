@@ -22,7 +22,7 @@ Builds on [v1](spec.md). Vocabulary follows [CONTEXT.md](../CONTEXT.md). Decisio
    - Document outline: collapsible group headings with progress per group.
    - Dashboard: KPI tiles grouped under group titles.
    - PPTX import recognises divider slides and skips them.
-   - The House template gains a required divider layout; the bundled template is updated.
+   - Divider slides use the existing `IAM_SECTION` layout (title: the group name; body: its Sections), so the House template contract does not change. A grouped Section gets its group's divider instead of the team divider.
 
 ## 2. KPIs
 

@@ -72,7 +72,8 @@ public class MeetingDetails {
                     locks.findById(s.getId()).filter(l -> l.isLiveAt(now)).map(SectionLock::getUsername).orElse(null),
                     SectionContent.filled(s.getKind(), s.getContentJson(), openItems, requiredKpis, json), kpis, s.isOnSlides(),
                     s.isSwitchedOn(), s.getEnabledKpis(),
-                    defs.group(m, s).map(g -> g.getGroupKey()).orElse(null), defs.group(m, s).map(g -> g.getName()).orElse(null));
+                    defs.group(m, s).map(g -> g.getGroupKey()).orElse(null), defs.group(m, s).map(g -> g.getName()).orElse(null),
+                    defs.group(m, s).map(g -> g.isDivider()).orElse(false));
         }).collect(Collectors.toList());
         List<ActionView> items = actionsAndComments.ordered(id).stream()
                 .map(a -> new ActionView(a.getId(), a.getTitle(), a.getOwner(), a.getTeamTag(), a.getDueDate(), a.getStatus(), a.getOriginMeetingId(),

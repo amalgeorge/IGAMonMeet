@@ -50,7 +50,7 @@ public class MeetingController {
                               boolean required, List<String> columns, String chartKpiKey, String contentJson, String updatedBy,
                               Instant updatedAt, long version, String lockedBy, boolean filled, List<KpiView> kpis, boolean onSlides,
                               boolean switchedOn, List<String> switchedOnKpis,
-                              String groupKey, String groupName) {
+                              String groupKey, String groupName, boolean groupDivider) {
     }
 
     public record SaveRequest(long version, @NotNull JsonNode content) {

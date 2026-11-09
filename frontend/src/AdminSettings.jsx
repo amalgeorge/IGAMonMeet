@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from './api.js';
-import { STATUS_LABELS } from './labels.js';
+import { STATUS_LABELS, SITREP_TYPES } from './labels.js';
 
 const TOGGLES = [
   ['SELF_REGISTRATION', 'Self-registration', 'People can create an account from the sign-in screen.'],
@@ -36,6 +36,31 @@ function StatusLabelsForm() {
   );
 }
 
+/** SITREP types suggested in the SITREP Type column (spec-v3 §1.3); editors may still type others. */
+function SitrepTypesForm() {
+  const [text, setText] = useState(null);
+  const [msg, setMsg] = useState({});
+  useEffect(() => { api('/api/sitrep-types').then((t) => setText(t.join('\n'))); }, []);
+  if (text == null) return null;
+  const save = (e) => {
+    e.preventDefault(); setMsg({});
+    const types = text.split('\n').map((t) => t.trim()).filter(Boolean);
+    api('/api/admin/sitrep-types', { method: 'PUT', json: types })
+      .then(() => { SITREP_TYPES.splice(0, SITREP_TYPES.length, ...types); setMsg({ ok: 'Saved.' }); })
+      .catch((err) => setMsg({ error: err.message }));
+  };
+  return (
+    <form className="tpl-card" onSubmit={save}>
+      <strong>SITREP types</strong>
+      <label className="field"><span>One per line, up to 20</span>
+        <textarea rows={6} value={text} onChange={(e) => setText(e.target.value)} /></label>
+      {msg.error && <p className="error" role="alert">{msg.error}</p>}
+      {msg.ok && <p className="notice" role="status">{msg.ok}</p>}
+      <button className="btn pri">Save types</button>
+    </form>
+  );
+}
+
 export default function AdminSettings({ onChange }) {
   const [values, setValues] = useState(null);
   const [pending, setPending] = useState(null);
@@ -50,6 +75,7 @@ export default function AdminSettings({ onChange }) {
     <section>
       <h1>Settings</h1>
       <StatusLabelsForm />
+      <SitrepTypesForm />
       <ul className="toggles">
         {TOGGLES.map(([key, label, help]) => (
           <li key={key}>

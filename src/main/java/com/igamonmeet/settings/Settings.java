@@ -62,6 +62,38 @@ public class Settings {
         }
     }
 
+    /** Types offered in the SITREP Type column (docs/spec-v3.md §1.3); editors may still type others. */
+    public List<String> sitrepTypes() {
+        String v = repository.findById("SITREP_TYPES").map(AppSetting::getValue).orElse("");
+        return v.isBlank() ? List.of() : List.of(v.split("\\|"));
+    }
+
+    @Transactional
+    public void setSitrepTypes(List<String> types, String admin) {
+        List<String> clean = types == null ? List.of() : types.stream().map(String::trim).filter(t -> !t.isEmpty()).distinct().toList();
+        if (clean.size() > 20 || clean.stream().anyMatch(t -> t.length() > 40 || t.contains("|"))) {
+            throw new com.igamonmeet.account.AccountException(org.springframework.http.HttpStatus.BAD_REQUEST, "INVALID_TYPES",
+                    "Give up to 20 SITREP types of up to 40 characters, without '|'.");
+        }
+        AppSetting row = repository.findById("SITREP_TYPES").orElseThrow();
+        String old = row.getValue();
+        String now = String.join("|", clean);
+        if (!old.equals(now)) {
+            row.update(now, admin, clock.instant());
+            audit.recordChange("Setting", "SITREP_TYPES", "types", old, now);
+        }
+    }
+
+    /** One-time upgrade markers, e.g. UPGRADE_SITREP_DONE. */
+    public boolean flag(String key) {
+        return repository.findById(key).map(s -> Boolean.parseBoolean(s.getValue())).orElse(false);
+    }
+
+    @Transactional
+    public void setFlag(String key, String by) {
+        repository.findById(key).ifPresent(s -> s.update("true", by, clock.instant()));
+    }
+
     private static final List<String> STATUSES = List.of("ON_TARGET", "BELOW_TARGET", "OFF_TARGET");
     private static final Map<String, String> DEFAULT_LABELS = Map.of("ON_TARGET", "On target", "BELOW_TARGET", "Below target", "OFF_TARGET", "Off target");
 

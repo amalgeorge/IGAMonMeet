@@ -124,4 +124,5 @@ public class MeetingSection {
     void setHidden(boolean hidden) { this.hidden = hidden; }
     void setEnabledKpis(java.util.List<String> keys) { this.enabledKpis = keys.isEmpty() ? null : String.join("|", keys); }
     void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
+    int getSortOrder() { return sortOrder; }
 }

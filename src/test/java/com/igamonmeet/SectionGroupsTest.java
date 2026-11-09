@@ -86,13 +86,13 @@ class SectionGroupsTest {
         ObjectNode original = currentAsDraft();
         ObjectNode draft = original.deepCopy();
         draft.putArray("groups").add(group("ops-review", "Operations review", "SHOWN")).add(group("old", "Old stuff", "RETIRED"));
-        for (String k : List.of("kpis", "sla-trend", "incidents")) section(draft, k).put("groupKey", "ops-review");
+        for (String k : List.of("kpis", "sla-trend", "sitrep")) section(draft, k).put("groupKey", "ops-review");
         section(draft, "releases").put("groupKey", "old");
         publish(draft);
         try {
             mvc.perform(get("/api/templates/current").with(user("r").roles("END_USER")))
                     .andExpect(jsonPath("$.groups[0].name").value("Operations review"))
-                    .andExpect(jsonPath("$.sections[?(@.key=='incidents')].groupKey").value("ops-review"));
+                    .andExpect(jsonPath("$.sections[?(@.key=='sitrep')].groupKey").value("ops-review"));
             long m = meeting("2046-04", LocalDate.of(2046, 4, 29));
             mvc.perform(get("/api/meetings/" + m).with(user("r").roles("END_USER")))
                     .andExpect(jsonPath("$.sections[?(@.key=='kpis')].groupName").value("Operations review"))
@@ -113,7 +113,7 @@ class SectionGroupsTest {
         ObjectNode draft = currentAsDraft();
         draft.putArray("groups").add(group("g", "G", "SHOWN"));
         section(draft, "summary").put("groupKey", "g");
-        section(draft, "incidents").put("groupKey", "g");
+        section(draft, "sitrep").put("groupKey", "g");
         publishRaw(draft).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("next to each other")));
         ObjectNode bad = currentAsDraft();

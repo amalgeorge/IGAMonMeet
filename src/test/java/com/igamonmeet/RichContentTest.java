@@ -179,24 +179,23 @@ class RichContentTest {
     @Test
     void tableStylesMustFitTheirColumns() throws Exception {
         ObjectNode bad = currentAsDraft();
-        ObjectNode incidents = section(bad, "incidents");
+        ObjectNode incidents = section(bad, "sitrep");
         incidents.putObject("tableStyle").putArray("widths").add(1).add(2);
         mvc.perform(post("/api/admin/templates").with(csrf()).with(user("rc-admin").roles("ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(bad)))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("one column width per column")));
 
         ObjectNode ok = currentAsDraft();
-        ObjectNode style = section(ok, "incidents").putObject("tableStyle");
+        ObjectNode style = section(ok, "sitrep").putObject("tableStyle");
         style.put("statusColumn", 2).put("banded", true);
         ObjectNode original = currentAsDraft();
         publish(ok);
         try {
             mvc.perform(get("/api/templates/current").with(user("r").roles("END_USER")))
-                    .andExpect(jsonPath("$.sections[?(@.key=='incidents')].tableStyle.statusColumn").value(2));
+                    .andExpect(jsonPath("$.sections[?(@.key=='sitrep')].tableStyle.statusColumn").value(2));
         } finally {
             ObjectNode restore = currentAsDraft();
             restore.set("sections", original.get("sections"));
-            ((ObjectNode) section(restore, "incidents")).remove("tableStyle");
             publish(restore);
         }
     }

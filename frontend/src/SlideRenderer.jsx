@@ -135,8 +135,12 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
               const fill = flag.startsWith('status:') ? ROW_FILL[flag.slice(7)] : flag === 'total' ? soft : d.banded && i % 2 === 1 ? '#F7F7F7' : undefined;
               return (
                 <tr key={i} style={{ color: flag === 'closed' ? muted : ink, textDecoration: flag === 'closed' ? 'line-through' : 'none', background: fill }}>
-                  {r.map((cell, j) => <td key={j} style={{ padding: `${pt(5.75)} ${pt(10.8)}`, border: `${pt(1)} solid #E3E3E3`, verticalAlign: 'top', overflowWrap: 'anywhere', textAlign: d.align?.[j] || 'left',
-                    fontWeight: (flag === 'overdue' && j === r.length - 1) || flag === 'total' ? 700 : 400, color: flag === 'overdue' && j === r.length - 1 ? '#9E0B23' : undefined }}>{cell}</td>)}
+                  {r.map((cell, j) => {
+                    const late = flag === 'overdue' && j === r.length - 1;
+                    const alert = d.alertColumn === j && Number(String(cell).replace(/,/g, '')) > 0; // spec-v3 §1.3
+                    return <td key={j} style={{ padding: `${pt(5.75)} ${pt(10.8)}`, border: `${pt(1)} solid #E3E3E3`, verticalAlign: 'top', overflowWrap: 'anywhere', textAlign: d.align?.[j] || 'left',
+                      fontWeight: late || alert || flag === 'total' ? 700 : 400, color: late || alert ? '#9E0B23' : undefined }}>{cell}</td>;
+                  })}
                 </tr>
               );
             })}</tbody>

@@ -14,4 +14,4 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | 41 | Drag-and-drop ordering of Sections and KPIs | 40 | Done |
 | 42 | Agenda slide and slide links | 41 | Done |
 | 43 | Layout model, planner and PPTX positions | 42 | Done |
-| 44 | Layout editor UI | 43 | |
+| 44 | Layout editor UI | 43 | Done |

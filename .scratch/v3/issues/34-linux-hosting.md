@@ -2,4 +2,4 @@
 
 Blocked by: none
 
-Spec §7. tools/linux/install-test-server.sh (Ubuntu/Debian and RHEL family), systemd unit, setenv.sh, fonts (Liberation, Carlito), headless JVM, docs/deploy-linux.md. Check app code for Windows assumptions.
+Spec §7. RHEL 8/9 (Rocky/Alma). tools/linux/install-server.sh: Temurin 17 (dnf), Tomcat 9 systemd unit, setenv.sh, TLS 8443, firewalld, SELinux, fonts (liberation-fonts, google-carlito-fonts), headless JVM; remote SQL Server settings only. docs/deploy-linux.md. Check app code for Windows assumptions. CI smoke test in a UBI 9 container.

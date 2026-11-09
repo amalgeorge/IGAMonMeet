@@ -59,5 +59,6 @@ Added to the default Template as Available in a new group "Programme":
 
 1. The WAR runs unchanged on Tomcat 9 on Linux. Nothing in the app depends on Windows paths, fonts or services.
 2. Slide text measurement uses the fonts installed on the server. The Linux install script installs metric-compatible fonts (Liberation for Arial/Times/Courier, Carlito for Calibri) and runs the JVM headless.
-3. `tools/linux/install-test-server.sh`: Temurin 17, Tomcat 9 as a systemd service, TLS on 8443, setenv.sh with the database settings (readable by the tomcat user only), WAR download from CI, health check. The database may be SQL Server on Linux or a remote SQL Server.
-4. CI already builds and tests on Linux; a Linux deploy smoke test is added.
+3. `tools/linux/install-server.sh` for RHEL 8/9 (and Rocky/Alma): Temurin 17 via dnf, Tomcat 9 as a systemd service, TLS on 8443 (self-signed unless a certificate is given), firewalld port, SELinux contexts, setenv.sh with the database settings (readable by the tomcat user only), WAR from a file or from CI, health check.
+4. The database is an existing remote SQL Server: the script asks for host, port, database, user and password and does not install SQL Server. Windows keeps `Install-TestServer.ps1` for testing.
+5. CI already builds and tests on Linux; a RHEL (UBI 9) container smoke test deploys the WAR on Tomcat 9 and checks the health endpoint.

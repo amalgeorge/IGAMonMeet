@@ -44,7 +44,8 @@ public final class TemplateDtos {
             List<@Valid Kpi> kpis,
             Visibility visibility,
             Boolean onSlides,
-            String groupKey) {
+            String groupKey,
+            @Pattern(regexp = "2|3|4|6|8|TABLE") String kpiLayout) {
 
         public Visibility visibilityOrDefault() { return visibility == null ? Visibility.SHOWN : visibility; }
 
@@ -112,6 +113,6 @@ public final class TemplateDtos {
                 .map(k -> new Kpi(k.getKpiKey(), k.getName(), k.getUnit(), k.getTarget(), k.getDirection(), k.getAmberThreshold(), k.isRequired(), k.getVisibility()))
                 .collect(Collectors.toList());
         return new Section(s.getSectionKey(), s.getName(), s.getTeamTag(), s.getKind(), s.getLayout(), s.getOverflowRule(),
-                s.isRequired(), cols, s.getChartKpiKey(), kpis, s.getVisibility(), s.isOnSlides(), s.getGroupKey());
+                s.isRequired(), cols, s.getChartKpiKey(), kpis, s.getVisibility(), s.isOnSlides(), s.getGroupKey(), s.getKpiLayout());
     }
 }

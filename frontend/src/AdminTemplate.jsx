@@ -88,6 +88,10 @@ export default function AdminTemplate() {
               <label className="field"><span>KPI shown</span><select value={s.chartKpiKey || ''} onChange={(e) => update(i, { chartKpiKey: e.target.value })}>
                 <option value="">Choose a KPI</option>{allKpis.map((k) => <option key={k.key} value={k.key}>{k.name}</option>)}</select></label>
             )}
+            {s.kind === 'KPI' && <label className="field"><span>KPI tiles per slide</span>
+              <select value={s.kpiLayout || '4'} onChange={(e) => update(i, { kpiLayout: e.target.value })}>
+                {['2', '3', '4', '6', '8'].map((n) => <option key={n} value={n}>{n} tiles{n === '4' ? ' (default)' : ''}</option>)}
+                <option value="TABLE">Table (one row per KPI)</option></select></label>}
             {s.kind === 'KPI' && <KpiEditor kpis={s.kpis} library={library} onChange={(kpis) => update(i, { kpis })} />}
           </li>
         ))}

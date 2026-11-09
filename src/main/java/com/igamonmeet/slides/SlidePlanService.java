@@ -82,7 +82,7 @@ public class SlidePlanService {
             Series series = s.kind() == SectionKind.CHART && s.chartKpiKey() != null ? series(m, s.chartKpiKey(), kpiDefs.get(s.chartKpiKey())) : null;
             sections.add(new SectionInput(s.key(), s.name(), s.teamTag(), s.kind(), s.layout(), s.overflowRule(), s.required(),
                     s.filled(), s.columns(), read(s.contentJson()), s.kpis(), series,
-                    s.groupKey() == null ? null : new PlanModel.SectionGroup(s.groupKey(), s.groupName(), s.groupDivider())));
+                    s.groupKey() == null ? null : new PlanModel.SectionGroup(s.groupKey(), s.groupName(), s.groupDivider()), s.kpiLayout()));
         }
         List<ActionRow> actions = new ArrayList<>();
         for (ActionView a : d.actionItems()) {

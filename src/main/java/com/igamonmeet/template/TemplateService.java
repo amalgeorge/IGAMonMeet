@@ -69,6 +69,7 @@ public class TemplateService {
                     s.required(), cols, s.kind() == SectionKind.CHART ? s.chartKpiKey() : null, ++order);
             ts.setVisibility(s.visibilityOrDefault(), s.onSlidesOrDefault());
             ts.setGroupKey(s.groupKey() == null || s.groupKey().isBlank() ? null : s.groupKey());
+            ts.setKpiLayout(s.kind() == SectionKind.KPI && s.kpiLayout() != null && !"4".equals(s.kpiLayout()) ? s.kpiLayout() : null);
             int k = 0;
             if (s.kind() == SectionKind.KPI) {
                 for (Kpi kpi : s.kpis()) {

@@ -151,7 +151,7 @@ public class PptxWriter {
                 list(slide, "right", (List<String>) d.get("right"), size, false);
             }
             case "IAM_KPI" -> {
-                kpis(slide, (List<KpiView>) d.get("kpis"), w, h);
+                kpis(slide, (List<KpiView>) d.get("kpis"), d.get("perSlide") instanceof Integer n ? n : 4, w, h);
                 text(slide, "body", String.valueOf(d.getOrDefault("body", "")));
             }
             case "IAM_CHART" -> {
@@ -234,28 +234,33 @@ public class PptxWriter {
         return b;
     }
 
-    private static void kpis(XSLFSlide slide, List<KpiView> kpis, double w, double h) {
+    /** Tiles in one row (2 to 4 per slide) or two rows (6 or 8), compact in two rows (spec-v2 §2.5). */
+    private static void kpis(XSLFSlide slide, List<KpiView> kpis, int perSlide, double w, double h) {
         double gap = 21.6;
-        double tw = (0.91 * w - 3 * gap) / 4;
-        double y = 0.267 * h;
-        double th = 0.453 * h;
+        int cols = perSlide <= 4 ? perSlide : perSlide / 2;
+        boolean compact = perSlide > 4;
+        double tw = (0.91 * w - (cols - 1) * gap) / cols;
+        double top = 0.267 * h;
+        double th = compact ? (0.48 * h - gap) / 2 : 0.453 * h;
         for (int i = 0; i < kpis.size(); i++) {
             KpiView k = kpis.get(i);
-            double x = 0.045 * w + i * (tw + gap);
+            double x = 0.045 * w + (i % cols) * (tw + gap);
+            double y = top + (i / cols) * (th + gap);
             tile(slide, x, y, tw, th);
-            box(slide, k.name(), x + 18, y + 18, tw - 36, 40, 14, false, MUTED);
+            box(slide, k.name(), x + 14, y + (compact ? 8 : 18), tw - 28, compact ? 30 : 40, compact ? 11 : 14, false, MUTED);
             // Formatted by value type on the server (KpiFormat), the same text as the in-app slide.
-            box(slide, k.display(), x + 18, y + 64, tw - 36, 50, k.display().length() > 9 ? 28 : 40, true, INK);
+            int big = compact ? (k.display().length() > 9 ? 18 : 24) : (k.display().length() > 9 ? 28 : 40);
+            box(slide, k.display(), x + 14, y + (compact ? 36 : 64), tw - 28, compact ? 32 : 50, big, true, INK);
             String target = k.targetLine() == null ? "" : k.targetLine();
-            if (k.deltaLine() != null) {
+            if (k.deltaLine() != null && !compact) {
                 target += (target.isEmpty() ? "" : "\n") + k.deltaLine();
             }
-            box(slide, target, x + 18, y + 120, tw - 36, 40, 12, false, MUTED);
+            box(slide, target, x + 14, y + (compact ? 70 : 120), tw - 28, compact ? 20 : 40, compact ? 10 : 12, false, MUTED);
             if (k.status() != null) {
                 Color[] c = STATUS.get(k.status().name());
                 XSLFAutoShape pill = slide.createAutoShape();
                 pill.setShapeType(ShapeType.ROUND_RECT);
-                pill.setAnchor(new Rectangle2D.Double(x + 18, y + th - 44, 110, 26));
+                pill.setAnchor(new Rectangle2D.Double(x + 14, y + th - (compact ? 30 : 44), compact ? 92 : 110, compact ? 20 : 26));
                 pill.setFillColor(c[0]);
                 pill.setLineColor(c[0]);
                 pill.setVerticalAlignment(VerticalAlignment.MIDDLE);
@@ -263,12 +268,12 @@ public class PptxWriter {
                 p.setTextAlign(TextAlign.CENTER);
                 XSLFTextRun r = p.addNewTextRun();
                 r.setText(k.statusLabel() != null ? k.statusLabel() : STATUS_LABEL.get(k.status().name()));
-                r.setFontSize(11.0);
+                r.setFontSize(compact ? 9.0 : 11.0);
                 r.setBold(true);
                 r.setFontColor(c[1]);
             }
-            if (k.override() != null && k.reason() != null) {
-                box(slide, k.reason(), x + 18, y + th + 6, tw - 36, 30, 10, false, MUTED);
+            if (!compact && k.override() != null && k.reason() != null) {
+                box(slide, k.reason(), x + 14, y + th + 6, tw - 36, 30, 10, false, MUTED);
             }
         }
     }

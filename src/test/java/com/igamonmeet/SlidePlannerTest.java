@@ -155,6 +155,32 @@ class SlidePlannerTest {
         assertThat(of(p, "trend").get(0).data().get("labels")).isEqualTo(List.of("Jun", "Jul", "Aug", "Sep", "Oct", "Nov"));
     }
 
+    private static SectionInput kpiSection(int count, String layout) {
+        List<KpiView> kpis = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            kpis.add(new KpiView("k" + i, "KPI " + i, "%", BigDecimal.TEN, Direction.HIGHER, BigDecimal.ONE, true,
+                    BigDecimal.TEN, null, null, null, null, null));
+        }
+        return new SectionInput("kpis", "Key metrics", TeamTag.OPERATIONS, SectionKind.KPI, "IAM_KPI", OverflowRule.CONTINUE,
+                true, true, List.of(), JSON.createObjectNode(), kpis, null, null, layout);
+    }
+
+    @Test
+    void kpiSectionsChooseTilesPerSlideOrATable() {
+        Plan three = planner.plan(input(List.of(kpiSection(7, "3")), List.of()));
+        assertThat(of(three, "kpis")).extracting(sl -> ((List<?>) sl.data().get("kpis")).size()).containsExactly(3, 3, 1);
+        assertThat(of(three, "kpis").get(0).data().get("perSlide")).isEqualTo(3);
+
+        Plan eight = planner.plan(input(List.of(kpiSection(7, "8")), List.of()));
+        assertThat(of(eight, "kpis")).hasSize(1);
+
+        Plan table = planner.plan(input(List.of(kpiSection(7, "TABLE")), List.of()));
+        assertThat(of(table, "kpis")).extracting(Slide::layout).containsOnly("IAM_TABLE");
+        assertThat(of(table, "kpis").get(0).data().get("head")).isEqualTo(List.of("KPI", "This month", "Target", "Status"));
+        assertThat((List<?>) of(table, "kpis").get(0).data().get("rows")).hasSize(7);
+        assertThat(((List<?>) ((List<?>) of(table, "kpis").get(0).data().get("rows")).get(0)).get(1)).isEqualTo("10%");
+    }
+
     @Test
     void speakerNotesGoOnTheFirstSlideOnly() {
         SectionInput t = table("roadmap", TeamTag.ENGINEERING, OverflowRule.CONTINUE, 40);

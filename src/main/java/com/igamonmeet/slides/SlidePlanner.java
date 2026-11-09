@@ -147,9 +147,9 @@ public class SlidePlanner {
         switch (s.kind()) {
             case SUMMARY -> summary(s, in, team, main, appendix);
             case TWO_COLUMN -> twoColumn(s, in, team, main, appendix);
-            case KPI -> kpis(s, team, main, appendix);
+            case KPI -> kpis(s, in, team, main, appendix);
             case CHART -> chart(s, team, main);
-            case TABLE -> table(s, in, team, s.columns(), rows(s.content()), null, main, appendix);
+            case TABLE -> table(s, in, team, s.columns(), rows(s.content()), null, main, appendix, s.layout());
             case ACTION_ITEMS -> {
                 List<List<String>> rows = new ArrayList<>();
                 List<String> flags = new ArrayList<>();
@@ -157,7 +157,7 @@ public class SlidePlanner {
                     rows.add(List.of(a.title(), a.owner(), a.team(), a.due()));
                     flags.add(a.closed() ? "closed" : a.overdue() ? "overdue" : "");
                 }
-                table(s, in, team, List.of("Action", "Owner", "Team", "Due"), rows, flags, main, appendix);
+                table(s, in, team, List.of("Action", "Owner", "Team", "Due"), rows, flags, main, appendix, s.layout());
             }
             default -> main.add(new Draft(s.layout(), s.key(), data("team", team, "title", s.name()), false));
         }
@@ -250,15 +250,41 @@ public class SlidePlanner {
 
     // ---- KPIs and charts ----
 
-    private void kpis(SectionInput s, String team, List<Draft> main, List<Draft> appendix) {
+    /** Tiles per slide from the Section's KPI layout (spec-v2 §2.5): 2, 3, 4 (default), 6 or 8, or a table. */
+    static int tilesPerSlide(String kpiLayout) {
+        return switch (kpiLayout == null ? "4" : kpiLayout) {
+            case "2" -> 2;
+            case "3" -> 3;
+            case "6" -> 6;
+            case "8" -> 8;
+            default -> KPIS_PER_SLIDE;
+        };
+    }
+
+    private void kpis(SectionInput s, Input in, String team, List<Draft> main, List<Draft> appendix) {
         List<KpiView> all = s.kpis();
         String commentary = s.content().path("commentary").asText("");
-        int pages = Math.max(1, (all.size() + KPIS_PER_SLIDE - 1) / KPIS_PER_SLIDE);
+        if ("TABLE".equals(s.kpiLayout())) {
+            List<List<String>> rows = new ArrayList<>();
+            for (KpiView k : all) {
+                rows.add(List.of(k.name(), k.display() == null ? "—" : k.display(), k.targetLine() == null ? "" : k.targetLine(),
+                        k.statusLabel() == null ? "" : k.statusLabel()));
+            }
+            int first = main.size();
+            table(s, in, team, List.of("KPI", "This month", "Target", "Status"), rows, null, main, appendix, "IAM_TABLE");
+            if (first < main.size()) {
+                main.get(first).data().put("kpis", all); // descriptions reach the speaker notes; table slides ignore the tiles
+                if (!commentary.isBlank()) main.get(first).data().put("note", commentary);
+            }
+            return;
+        }
+        int per = tilesPerSlide(s.kpiLayout());
+        int pages = Math.max(1, (all.size() + per - 1) / per);
         for (int p = 0; p < pages; p++) {
             boolean toAppendix = s.rule() == OverflowRule.APPENDIX && p > 0;
-            List<KpiView> chunk = all.subList(p * KPIS_PER_SLIDE, Math.min(all.size(), (p + 1) * KPIS_PER_SLIDE));
+            List<KpiView> chunk = all.subList(p * per, Math.min(all.size(), (p + 1) * per));
             Map<String, Object> d = data("team", team, "title", toAppendix ? "Appendix: " + s.name() : s.name(),
-                    "kpis", chunk, "body", p == 0 ? commentary : "");
+                    "kpis", chunk, "body", p == 0 ? commentary : "", "perSlide", per);
             (toAppendix ? appendix : main).add(new Draft(s.layout(), s.key(), d, toAppendix));
         }
     }
@@ -277,7 +303,7 @@ public class SlidePlanner {
     // ---- tables ----
 
     private void table(SectionInput s, Input in, String team, List<String> head, List<List<String>> rows, List<String> flags,
-                       List<Draft> main, List<Draft> appendix) {
+                       List<Draft> main, List<Draft> appendix, String layout) {
         double width = in.slideWidth() * 0.91;
         int n = Math.max(head.size(), 1);
         double[] cols = new double[n];
@@ -326,7 +352,7 @@ public class SlidePlanner {
                 int more = rows.size() - pages.get(0).size();
                 d.put("note", "+" + more + " more in the appendix");
             }
-            (toAppendix ? appendix : main).add(new Draft(s.layout(), s.key(), d, toAppendix));
+            (toAppendix ? appendix : main).add(new Draft(layout, s.key(), d, toAppendix));
         }
     }
 

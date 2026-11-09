@@ -5,7 +5,7 @@ Local tracker: one file per ticket in `issues/`. Work a ticket only when everyth
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
 | 19 | Visibility in the Template | none | Done |
-| 20 | Switch Available items in a Meeting | 19 | |
+| 20 | Switch Available items in a Meeting | 19 | Done |
 | 21 | Section groups | 19 | |
 | 22 | Divider slides for Section groups | 21 | |
 | 23 | KPI library | 22 | |

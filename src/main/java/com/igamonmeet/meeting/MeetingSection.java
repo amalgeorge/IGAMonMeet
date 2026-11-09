@@ -52,6 +52,11 @@ public class MeetingSection {
 
     private boolean onSlides = true;
 
+    private Integer templateVersionNo;
+    private boolean switchedOn;
+    private boolean hidden;
+    private String enabledKpis;
+
     /** Section content as JSON; its shape depends on the kind (ticket 09). */
     @Column(name = "content_json")
     private String contentJson;
@@ -104,4 +109,19 @@ public class MeetingSection {
     public boolean isOnSlides() { return onSlides; }
 
     void setOnSlides(boolean onSlides) { this.onSlides = onSlides; }
+    /** The Template version this Section's definition comes from: its own if it was switched on later, else the Meeting's. */
+    public int templateVersionNo(int meetingVersion) { return templateVersionNo == null ? meetingVersion : templateVersionNo; }
+    public boolean isSwitchedOn() { return switchedOn; }
+    public boolean isHidden() { return hidden; }
+
+    /** Available KPIs an editor switched on for this Meeting. */
+    public java.util.List<String> getEnabledKpis() {
+        return enabledKpis == null || enabledKpis.isBlank() ? java.util.List.of() : java.util.List.of(enabledKpis.split("\\|"));
+    }
+
+    void pinTo(int templateVersion) { this.templateVersionNo = templateVersion; }
+    void markSwitchedOn() { this.switchedOn = true; }
+    void setHidden(boolean hidden) { this.hidden = hidden; }
+    void setEnabledKpis(java.util.List<String> keys) { this.enabledKpis = keys.isEmpty() ? null : String.join("|", keys); }
+    void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
 }

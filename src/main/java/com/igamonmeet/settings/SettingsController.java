@@ -35,6 +35,18 @@ public class SettingsController {
         return settings.all();
     }
 
+    /** Any signed-in User: the names shown for KPI statuses. */
+    @GetMapping("/api/status-labels")
+    public Map<String, String> statusLabels() {
+        return settings.statusLabels();
+    }
+
+    @PutMapping("/api/admin/status-labels")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setStatusLabels(@RequestBody Map<String, String> labels, Authentication auth) {
+        settings.setStatusLabels(labels, auth.getName());
+    }
+
     @PutMapping("/api/admin/settings/{toggle}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void set(@PathVariable FeatureToggle toggle, @RequestBody Toggle body, Authentication auth) {

@@ -59,6 +59,7 @@ public class TemplateService {
         for (LibraryKpi lk : library.values()) {
             TemplateKpiDef def = new TemplateKpiDef(v, lk.key(), lk.name().trim(), lk.unit().trim(), lk.target(), lk.direction(), lk.amberThreshold(), ++d);
             def.setValueSpec(lk.valueTypeOrDefault(), lk.currency(), KpiFormat.optionsJson(lk.statusOptions()));
+            def.setDisplay(lk.subtitle(), lk.description(), lk.decimals());
             v.add(def);
         }
         int order = 0;
@@ -76,6 +77,7 @@ public class TemplateService {
                             def.amberThreshold(), kpi.required(), ++k);
                     tk.setVisibility(kpi.visibilityOrDefault());
                     tk.setValueSpec(def.valueTypeOrDefault(), def.currency(), KpiFormat.optionsJson(def.statusOptions()));
+                    tk.setDisplay(def.subtitle(), def.description(), def.decimals());
                     ts.add(tk);
                 }
             }

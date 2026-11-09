@@ -196,3 +196,5 @@ tr.closed td:first-child, tr.closed td:last-child { text-decoration: none; }
 .strip span { flex: 1; border-radius: 3px; }
 .options-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .options-row .option { display: inline-flex; gap: 4px; align-items: center; }
+.sub-row td { background: var(--surface); }
+.options-row .field.grow { flex: 1 1 260px; }

@@ -48,6 +48,23 @@ public class SlidePlanner {
     private record Draft(String layout, String sectionKey, Map<String, Object> data, boolean appendix) {
     }
 
+    /** KPI descriptions go into the speaker notes of the slide that shows the KPI (docs/spec-v2.md §2.3). */
+    private static void kpiDescriptions(Map<String, Object> data) {
+        if (!(data.get("kpis") instanceof List<?> kpis)) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Object o : kpis) {
+            if (o instanceof com.igamonmeet.meeting.KpiView k && k.description() != null) {
+                sb.append(sb.length() == 0 ? "" : "\n").append(k.name()).append(": ").append(k.description());
+            }
+        }
+        if (sb.length() > 0) {
+            Object existing = data.get("notes");
+            data.put("notes", existing == null || existing.toString().isBlank() ? sb.toString() : existing + "\n\n" + sb);
+        }
+    }
+
     public Plan plan(Input in) {
         List<Draft> main = new ArrayList<>();
         List<Draft> appendix = new ArrayList<>();
@@ -115,6 +132,7 @@ public class SlidePlanner {
                     d.data().put("title", d.data().get("title") + " (" + part + ")");
                 }
             }
+            kpiDescriptions(d.data());
             slides.add(new Slide(i + 1, d.layout(), d.sectionKey(), part, continuation, d.appendix(), d.data()));
         }
         return new Plan(slides, perSection, measure.family());

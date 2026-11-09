@@ -83,11 +83,11 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity }) 
               const st = STATUS[k.status];
               return (
                 <motion.div key={k.key} {...reveal(i)} style={{ background: soft, borderRadius: pt(6), padding: pt(18), display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ fontSize: pt(14), color: muted, minHeight: pt(40) }}>{k.name}</div>
+                  <div style={{ fontSize: pt(14), color: muted, minHeight: pt(40) }}>{k.name}{k.subtitle && <div style={{ fontSize: pt(11) }}>{k.subtitle}</div>}</div>
                   <div style={{ fontSize: pt((k.display || '').length > 9 ? 30 : 44), fontWeight: 700, marginTop: pt(6) }}>{k.display}</div>
                   {k.targetLine && <div style={{ fontSize: pt(13), color: muted, marginTop: pt(6) }}>{k.targetLine}</div>}
                   {k.deltaLine && <div style={{ fontSize: pt(13), color: muted }}>{k.deltaLine}</div>}
-                  {st && <div style={{ marginTop: 'auto', alignSelf: 'flex-start', fontSize: pt(11), fontWeight: 700, padding: `${pt(5)} ${pt(14)}`, borderRadius: pt(99), background: st[1], color: st[2] }}>{st[0]}</div>}
+                  {st && <div style={{ marginTop: 'auto', alignSelf: 'flex-start', fontSize: pt(11), fontWeight: 700, padding: `${pt(5)} ${pt(14)}`, borderRadius: pt(99), background: st[1], color: st[2] }}>{k.statusLabel || st[0]}</div>}
                   {k.override && <div style={{ fontSize: pt(10), color: muted, marginTop: pt(4) }}>{k.reason}</div>}
                 </motion.div>
               );

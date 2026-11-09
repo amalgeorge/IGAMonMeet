@@ -58,6 +58,8 @@ public class TemplateSection {
 
     private boolean onSlides = true;
 
+    private String groupKey;
+
     @OneToMany(mappedBy = "section", cascade = CascadeType.PERSIST)
     @OrderBy("sortOrder")
     private List<TemplateKpi> kpis = new ArrayList<>();
@@ -96,6 +98,9 @@ public class TemplateSection {
     public List<TemplateKpi> getKpis() { return kpis; }
     public Visibility getVisibility() { return visibility; }
     public boolean isOnSlides() { return onSlides; }
+    public String getGroupKey() { return groupKey; }
+
+    void setGroupKey(String groupKey) { this.groupKey = groupKey; }
 
     void setVisibility(Visibility visibility, boolean onSlides) {
         this.visibility = visibility;

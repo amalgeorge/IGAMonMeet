@@ -39,6 +39,16 @@ function Spark({ trend, target }) {
   return <div ref={ref} className="spark" role="img" aria-label={`Trend: ${trend.labels.map((l, i) => `${l} ${trend.values[i] ?? 'no value'}`).join(', ')}`} />;
 }
 
+/** KPI tiles under their Section group's title, in Template order (spec-v2 §1.5). */
+function groupTiles(tiles) {
+  const out = [];
+  tiles.forEach((t) => {
+    const last = out[out.length - 1];
+    if (last && last.group === (t.group || null)) last.tiles.push(t); else out.push({ group: t.group || null, tiles: [t] });
+  });
+  return out;
+}
+
 const rise = (i) => ({ initial: reduced ? { opacity: 0 } : { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { delay: reduced ? 0 : i * 0.04, duration: 0.3 } });
 
 export default function DashboardPanel({ meetingId }) {
@@ -62,8 +72,10 @@ export default function DashboardPanel({ meetingId }) {
 
       <h2>KPIs</h2>
       {d.kpis.length === 0 ? <p className="hint">No KPIs in this Meeting's Template.</p> : (
+        groupTiles(d.kpis).map(({ group, tiles }) => (<div key={group || '_'}>
+        {group && <h3 className="dash-group">{group}</h3>}
         <div className="dash-kpis">
-          {d.kpis.map(({ kpi, section, trend }, i) => (
+          {tiles.map(({ kpi, section, trend }, i) => (
             <motion.div key={kpi.key} className="kpi-tile dash-kpi" {...rise(i + 3)}>
               <span className="dash-label">{kpi.name} <span className="hint">· {section}</span></span>
               <span className="kpi-value">{kpi.value == null ? '—' : `${kpi.value}${kpi.unit ?? ''}`}</span>
@@ -72,7 +84,7 @@ export default function DashboardPanel({ meetingId }) {
               <Spark trend={trend} target={kpi.target} />
             </motion.div>
           ))}
-        </div>
+        </div></div>))
       )}
 
       {d.health.length > 0 && <>

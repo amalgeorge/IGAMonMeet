@@ -31,6 +31,13 @@ public class SectionDefs {
 
     public final class Lookup {
         private final Map<Integer, Map<String, TemplateSection>> byVersion = new HashMap<>();
+        private final Map<Integer, com.igamonmeet.template.TemplateVersion> versions = new HashMap<>();
+
+        /** The Section group this Section sits in, from the same Template version as its definition. */
+        public Optional<com.igamonmeet.template.TemplateGroup> group(Meeting m, MeetingSection s) {
+            int v = s.templateVersionNo(m.getTemplateVersionNo());
+            return def(m, s).flatMap(d -> versions.computeIfAbsent(v, templates::version).group(d.getGroupKey()));
+        }
 
         public Optional<TemplateSection> def(Meeting m, MeetingSection s) {
             int v = s.templateVersionNo(m.getTemplateVersionNo());

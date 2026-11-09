@@ -53,11 +53,14 @@ public class TemplateService {
             String cols = s.kind() == SectionKind.TABLE ? String.join("|", s.columns()) : null;
             TemplateSection ts = new TemplateSection(v, s.key(), s.name().trim(), s.teamTag(), s.kind(), s.layout(), s.overflowRule(),
                     s.required(), cols, s.kind() == SectionKind.CHART ? s.chartKpiKey() : null, ++order);
+            ts.setVisibility(s.visibilityOrDefault(), s.onSlidesOrDefault());
             int k = 0;
             if (s.kind() == SectionKind.KPI) {
                 for (Kpi kpi : s.kpis()) {
-                    ts.add(new TemplateKpi(ts, kpi.key(), kpi.name().trim(), kpi.unit().trim(), kpi.target(), kpi.direction(),
-                            kpi.amberThreshold(), kpi.required(), ++k));
+                    TemplateKpi tk = new TemplateKpi(ts, kpi.key(), kpi.name().trim(), kpi.unit().trim(), kpi.target(), kpi.direction(),
+                            kpi.amberThreshold(), kpi.required(), ++k);
+                    tk.setVisibility(kpi.visibilityOrDefault());
+                    ts.add(tk);
                 }
             }
             v.add(ts);
@@ -70,6 +73,9 @@ public class TemplateService {
     private static void validate(List<Section> sections) {
         Set<String> sectionKeys = new HashSet<>();
         Set<String> kpiKeys = new HashSet<>();
+        Set<String> liveKpiKeys = new HashSet<>();
+        check(sections.stream().anyMatch(s -> s.visibilityOrDefault() == Visibility.SHOWN),
+                "At least one Section must be Shown.");
         for (Section s : sections) {
             check(sectionKeys.add(s.key()), "Section key '" + s.key() + "' is used twice.");
             check(s.kind().allows(s.layout()), "Layout " + s.layout() + " cannot show a " + s.kind() + " section ('" + s.name() + "').");
@@ -79,8 +85,13 @@ public class TemplateService {
             }
             if (s.kind() == SectionKind.KPI) {
                 check(s.kpis() != null && !s.kpis().isEmpty(), "KPI section '" + s.name() + "' needs at least one KPI.");
+                check(s.visibilityOrDefault() != Visibility.SHOWN || s.kpis().stream().anyMatch(k -> k.visibilityOrDefault() == Visibility.SHOWN),
+                        "Shown KPI section '" + s.name() + "' needs at least one Shown KPI.");
                 for (Kpi k : s.kpis()) {
                     check(kpiKeys.add(k.key()), "KPI key '" + k.key() + "' is used twice.");
+                    if (k.visibilityOrDefault() != Visibility.RETIRED) {
+                        liveKpiKeys.add(k.key());
+                    }
                     boolean amberOk = k.direction() == Direction.HIGHER
                             ? k.amberThreshold().compareTo(k.target()) <= 0
                             : k.amberThreshold().compareTo(k.target()) >= 0;
@@ -93,6 +104,8 @@ public class TemplateService {
             if (s.kind() == SectionKind.CHART) {
                 check(s.chartKpiKey() != null && kpiKeys.contains(s.chartKpiKey()),
                         "Chart section '" + s.name() + "' must show one of the template's KPIs.");
+                check(s.visibilityOrDefault() == Visibility.RETIRED || liveKpiKeys.contains(s.chartKpiKey()),
+                        "Chart section '" + s.name() + "' shows a Retired KPI. Pick another KPI or retire the chart too.");
             }
         }
     }

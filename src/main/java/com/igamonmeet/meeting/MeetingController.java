@@ -48,7 +48,7 @@ public class MeetingController {
 
     public record SectionView(long id, String key, String name, TeamTag teamTag, SectionKind kind, String layout, OverflowRule overflowRule,
                               boolean required, List<String> columns, String chartKpiKey, String contentJson, String updatedBy,
-                              Instant updatedAt, long version, String lockedBy, boolean filled, List<KpiView> kpis) {
+                              Instant updatedAt, long version, String lockedBy, boolean filled, List<KpiView> kpis, boolean onSlides) {
     }
 
     public record SaveRequest(long version, @NotNull JsonNode content) {

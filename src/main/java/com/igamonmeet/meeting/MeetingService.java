@@ -5,6 +5,7 @@ import com.igamonmeet.audit.AuditLog;
 import com.igamonmeet.template.TemplateSection;
 import com.igamonmeet.template.TemplateService;
 import com.igamonmeet.template.TemplateVersion;
+import com.igamonmeet.template.Visibility;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -50,8 +51,13 @@ public class MeetingService {
         Meeting m = new Meeting(key, meetingDate, name, template.getVersionNo(), admin, now);
         int order = 0;
         for (TemplateSection s : template.getSections()) {
-            m.add(new MeetingSection(m, s.getSectionKey(), s.getName(), s.getTeamTag(), s.getKind(), s.getLayout(),
-                    s.getOverflowRule(), s.isRequired(), s.getColumnsSpec(), s.getChartKpiKey(), ++order));
+            if (s.getVisibility() != Visibility.SHOWN) {
+                continue; // Available ones are switched on per Meeting (ticket 20); Retired ones never appear.
+            }
+            MeetingSection ms = new MeetingSection(m, s.getSectionKey(), s.getName(), s.getTeamTag(), s.getKind(), s.getLayout(),
+                    s.getOverflowRule(), s.isRequired(), s.getColumnsSpec(), s.getChartKpiKey(), ++order);
+            ms.setOnSlides(s.isOnSlides());
+            m.add(ms);
         }
         meetings.save(m);
 

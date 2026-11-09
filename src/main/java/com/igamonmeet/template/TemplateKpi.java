@@ -39,6 +39,9 @@ public class TemplateKpi {
     private boolean required;
     private int sortOrder;
 
+    @Enumerated(EnumType.STRING)
+    private Visibility visibility = Visibility.SHOWN;
+
     protected TemplateKpi() {
     }
 
@@ -62,4 +65,7 @@ public class TemplateKpi {
     public Direction getDirection() { return direction; }
     public BigDecimal getAmberThreshold() { return amberThreshold; }
     public boolean isRequired() { return required; }
+    public Visibility getVisibility() { return visibility; }
+
+    void setVisibility(Visibility visibility) { this.visibility = visibility; }
 }

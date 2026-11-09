@@ -53,6 +53,11 @@ public class TemplateSection {
     private String chartKpiKey;
     private int sortOrder;
 
+    @Enumerated(EnumType.STRING)
+    private Visibility visibility = Visibility.SHOWN;
+
+    private boolean onSlides = true;
+
     @OneToMany(mappedBy = "section", cascade = CascadeType.PERSIST)
     @OrderBy("sortOrder")
     private List<TemplateKpi> kpis = new ArrayList<>();
@@ -89,4 +94,16 @@ public class TemplateSection {
     public String getColumnsSpec() { return columnsSpec; }
     public String getChartKpiKey() { return chartKpiKey; }
     public List<TemplateKpi> getKpis() { return kpis; }
+    public Visibility getVisibility() { return visibility; }
+    public boolean isOnSlides() { return onSlides; }
+
+    void setVisibility(Visibility visibility, boolean onSlides) {
+        this.visibility = visibility;
+        this.onSlides = onSlides;
+    }
+
+    /** KPIs that appear in new Meetings. */
+    public List<TemplateKpi> getShownKpis() {
+        return kpis.stream().filter(k -> k.getVisibility() == Visibility.SHOWN).collect(java.util.stream.Collectors.toList());
+    }
 }

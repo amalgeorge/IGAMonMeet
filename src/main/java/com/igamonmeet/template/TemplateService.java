@@ -47,6 +47,10 @@ public class TemplateService {
             throw new AccountException(HttpStatus.CONFLICT, "TEMPLATE_CHANGED",
                     "Someone published version " + current + " while you were editing. Reload and apply your changes again.");
         }
+        if (draft.groups() == null) {
+            // Groups left out means "keep the current ones" ([] removes them all).
+            draft = new Draft(draft.basedOnVersion(), draft.note(), draft.sections(), TemplateDtos.of(current()).groups(), draft.kpiLibrary());
+        }
         java.util.Map<String, LibraryKpi> library = library(draft);
         validate(draft.sections(), draft.groupsOrEmpty(), library);
 

@@ -39,6 +39,7 @@ class SectionGroupsTest {
         draft.put("basedOnVersion", cur.get("versionNo").asInt());
         draft.put("note", "groups test");
         draft.set("sections", cur.get("sections").deepCopy());
+        draft.set("groups", cur.has("groups") ? cur.get("groups").deepCopy() : json.createArrayNode());
         return draft;
     }
 
@@ -85,13 +86,13 @@ class SectionGroupsTest {
     void groupsGatherSectionsAndARetiredGroupRetiresItsSections() throws Exception {
         ObjectNode original = currentAsDraft();
         ObjectNode draft = original.deepCopy();
-        draft.putArray("groups").add(group("ops-review", "Operations review", "SHOWN")).add(group("old", "Old stuff", "RETIRED"));
+        draft.withArray("groups").add(group("ops-review", "Operations review", "SHOWN")).add(group("old", "Old stuff", "RETIRED"));
         for (String k : List.of("kpis", "sla-trend")) section(draft, k).put("groupKey", "ops-review");
         section(draft, "releases").put("groupKey", "old");
         publish(draft);
         try {
             mvc.perform(get("/api/templates/current").with(user("r").roles("END_USER")))
-                    .andExpect(jsonPath("$.groups[0].name").value("Operations review"))
+                    .andExpect(jsonPath("$.groups[?(@.key=='ops-review')].name").value("Operations review"))
                     .andExpect(jsonPath("$.sections[?(@.key=='sla-trend')].groupKey").value("ops-review"));
             long m = meeting("2046-04", LocalDate.of(2046, 4, 29));
             mvc.perform(get("/api/meetings/" + m).with(user("r").roles("END_USER")))
@@ -103,7 +104,7 @@ class SectionGroupsTest {
         } finally {
             ObjectNode restore = currentAsDraft();
             restore.set("sections", original.get("sections"));
-            restore.putArray("groups");
+            restore.set("groups", original.has("groups") ? original.get("groups") : json.createArrayNode());
             publish(restore);
         }
     }
@@ -111,7 +112,7 @@ class SectionGroupsTest {
     @Test
     void groupSectionsMustBeAdjacentAndGroupsMustExist() throws Exception {
         ObjectNode draft = currentAsDraft();
-        draft.putArray("groups").add(group("g", "G", "SHOWN"));
+        draft.withArray("groups").add(group("g", "G", "SHOWN"));
         section(draft, "summary").put("groupKey", "g");
         section(draft, "sla-trend").put("groupKey", "g");
         publishRaw(draft).andExpect(status().isBadRequest())

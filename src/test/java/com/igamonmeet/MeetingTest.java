@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.igamonmeet.meeting.ActionItem;
 import com.igamonmeet.meeting.ActionItemRepository;
@@ -47,7 +48,15 @@ class MeetingTest {
 
     private int currentTemplateSections() throws Exception {
         String body = mvc.perform(get("/api/templates/current").with(user("u").roles("END_USER"))).andReturn().getResponse().getContentAsString();
-        return json.readTree(body).get("sections").size();
+        // New Meetings copy the Shown Sections; Available ones (and those in Available groups) wait to be switched on.
+        JsonNode cur = json.readTree(body);
+        java.util.Set<String> hiddenGroups = new java.util.HashSet<>();
+        cur.path("groups").forEach(g -> { if (!"SHOWN".equals(g.path("visibility").asText("SHOWN"))) hiddenGroups.add(g.get("key").asText()); });
+        int n = 0;
+        for (JsonNode s : cur.get("sections")) {
+            if ("SHOWN".equals(s.path("visibility").asText("SHOWN")) && !hiddenGroups.contains(s.path("groupKey").asText(""))) n++;
+        }
+        return n;
     }
 
     @Test

@@ -55,17 +55,33 @@ public class SlidePlanner {
 
         List<SectionInput> shown = in.sections().stream().filter(s -> s.filled() || s.required()).toList();
         TeamTag lastTeam = null;
+        String lastGroup = null;
         for (int i = 0; i < shown.size(); i++) {
             SectionInput s = shown.get(i);
-            if (s.team() != TeamTag.SHARED && s.team() != lastTeam) {
+            String groupKey = s.group() == null ? null : s.group().key();
+            if (groupKey != null) {
+                // Grouped Sections get their group's divider instead of a team divider (spec-v2 §1.5).
+                if (!groupKey.equals(lastGroup) && s.group().divider()) {
+                    List<String> names = new ArrayList<>();
+                    for (int j = i; j < shown.size() && shown.get(j).group() != null && groupKey.equals(shown.get(j).group().key()); j++) {
+                        names.add(shown.get(j).name());
+                    }
+                    main.add(new Draft("IAM_SECTION", null, data("title", s.group().name(), "body", String.join(", ", names)), false));
+                }
+                lastGroup = groupKey;
+                lastTeam = null;
+            } else if (s.team() != TeamTag.SHARED && s.team() != lastTeam) {
                 List<String> names = new ArrayList<>();
-                for (int j = i; j < shown.size() && shown.get(j).team() == s.team(); j++) {
+                for (int j = i; j < shown.size() && shown.get(j).team() == s.team() && shown.get(j).group() == null; j++) {
                     names.add(shown.get(j).name());
                 }
                 main.add(new Draft("IAM_SECTION", null, data("title", teamName(s.team()), "body", String.join(", ", names)), false));
             }
-            if (s.team() != TeamTag.SHARED) {
-                lastTeam = s.team();
+            if (groupKey == null) {
+                lastGroup = null;
+                if (s.team() != TeamTag.SHARED) {
+                    lastTeam = s.team();
+                }
             }
             int first = main.size();
             section(s, in, main, appendix);

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.igamonmeet.meeting.KpiView;
+import com.igamonmeet.slides.PlanModel;
 import com.igamonmeet.slides.PlanModel.ActionRow;
 import com.igamonmeet.slides.PlanModel.Input;
 import com.igamonmeet.slides.PlanModel.Plan;
@@ -68,6 +69,25 @@ class SlidePlannerTest {
         assertThat(p.slides()).extracting(Slide::layout)
                 .containsExactly("IAM_TITLE", "IAM_SUMMARY", "IAM_SECTION", "IAM_TABLE", "IAM_SECTION", "IAM_TABLE", "IAM_CLOSING");
         assertThat(p.slides().get(2).data().get("title")).isEqualTo("IAM Operations");
+    }
+
+    private static SectionInput grouped(SectionInput s, String key, String name, boolean divider) {
+        return new SectionInput(s.key(), s.name(), s.team(), s.kind(), s.layout(), s.rule(), s.required(), s.filled(), s.columns(),
+                s.content(), s.kpis(), s.chart(), new PlanModel.SectionGroup(key, name, divider));
+    }
+
+    @Test
+    void groupedSectionsGetTheirGroupDividerInsteadOfTeamDividers() {
+        Plan p = planner.plan(input(List.of(summary(OverflowRule.SHRINK_TO_FIT, 3, "Short point"),
+                grouped(table("ops-a", TeamTag.OPERATIONS, OverflowRule.CONTINUE, 2), "ops", "Operations review", true),
+                grouped(table("ops-b", TeamTag.ENGINEERING, OverflowRule.CONTINUE, 2), "ops", "Operations review", true),
+                grouped(table("quiet", TeamTag.ENGINEERING, OverflowRule.CONTINUE, 2), "quiet", "No divider", false),
+                table("eng-table", TeamTag.ENGINEERING, OverflowRule.CONTINUE, 2)), List.of()));
+        assertThat(p.slides()).extracting(Slide::layout)
+                .containsExactly("IAM_TITLE", "IAM_SUMMARY", "IAM_SECTION", "IAM_TABLE", "IAM_TABLE", "IAM_TABLE", "IAM_SECTION", "IAM_TABLE", "IAM_CLOSING");
+        assertThat(p.slides().get(2).data().get("title")).isEqualTo("Operations review");
+        assertThat(p.slides().get(2).data().get("body")).isEqualTo("Roadmap, Roadmap");
+        assertThat(p.slides().get(6).data().get("title")).isEqualTo("IAM Engineering");
     }
 
     @Test

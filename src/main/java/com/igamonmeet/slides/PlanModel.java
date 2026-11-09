@@ -20,7 +20,16 @@ public final class PlanModel {
 
     public record SectionInput(String key, String name, TeamTag team, SectionKind kind, String layout, OverflowRule rule,
                                boolean required, boolean filled, List<String> columns, JsonNode content, List<KpiView> kpis,
-                               Series chart) {
+                               Series chart, SectionGroup group) {
+
+        public SectionInput(String key, String name, TeamTag team, SectionKind kind, String layout, OverflowRule rule,
+                            boolean required, boolean filled, List<String> columns, JsonNode content, List<KpiView> kpis, Series chart) {
+            this(key, name, team, kind, layout, rule, required, filled, columns, content, kpis, chart, null);
+        }
+    }
+
+    /** The Section group a Section sits in (spec-v2 §1.5); null when it has none. */
+    public record SectionGroup(String key, String name, boolean divider) {
     }
 
     public record ActionRow(String title, String owner, String team, String due, boolean overdue, boolean closed) {

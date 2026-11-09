@@ -103,12 +103,13 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity, on
     );
   }
 
-  const content = { position: 'absolute', left: '4.5%', right: '4.5%', top: '26.7%', bottom: '12%' };
+  const F = d.frame || {}; // Admin's slide layout (spec-v3 §6): boxes in % of the slide
+  const content = F.content ? box(F.content) : { position: 'absolute', left: '4.5%', right: '4.5%', top: '26.7%', bottom: '12%' };
   return (
     <div style={frame} role="img" aria-label={`Slide ${slide.n}: ${d.title}`}>
       {logo}
       <div style={{ ...box(ph('team', { x: 4.5, y: 6, w: 60, h: 4.7 })), color: accent, fontWeight: 700, fontSize: pt(12), letterSpacing: pt(1.5) }}>{d.team}</div>
-      <div style={{ ...box(ph('title', { x: 4.5, y: 11.3, w: 91, h: 11.3 })), ...head, fontWeight: 700, fontSize: pt(32) }}>{d.title}</div>
+      <div style={{ ...box(F.title || ph('title', { x: 4.5, y: 11.3, w: 91, h: 11.3 })), ...head, fontWeight: 700, fontSize: pt(32) }}>{d.title}</div>
       <div style={{ position: 'absolute', left: '4.5%', top: '92.7%', fontSize: pt(10), color: muted }}>IAM Monthly Meeting  |  Internal</div>
       <div style={{ position: 'absolute', right: '4.5%', top: '92.7%', fontSize: pt(10), color: muted }}>{slide.n}{total ? ` / ${total}` : ''}</div>
 
@@ -125,7 +126,7 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity, on
       {d.empty && <div style={{ ...content, fontSize: pt(18), color: muted }}>{d.empty}</div>}
 
       {!d.empty && slide.layout === 'IAM_SUMMARY' && d.blocks && (
-        <div style={{ ...box(ph('body', { x: 4.5, y: 26.7, w: 54.75, h: 61.3 })), left: '4.5%', width: '91%', fontSize: pt(d.fontSize || 18), display: 'flex', flexDirection: 'column', gap: pt(12) }}>
+        <div style={{ ...box(ph('body', { x: 4.5, y: 26.7, w: 54.75, h: 61.3 })), left: '4.5%', width: '91%', ...(F.content ? box(F.content) : {}), fontSize: pt(d.fontSize || 18), display: 'flex', flexDirection: 'column', gap: pt(12) }}>
           {d.blocks.map((b, i) => (b.type === 'li' || b.type === 'oli'
             ? <motion.div key={i} {...reveal(i)} style={{ display: 'flex', gap: pt(12), paddingLeft: pt(8 + 24 * (b.level || 0)) }}>
                 <span aria-hidden="true">{b.type === 'oli' ? (b.level ? String.fromCharCode(96 + Number(b.num)) + '.' : `${b.num}.`) : (b.level ? '–' : '•')}</span>
@@ -136,7 +137,7 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity, on
 
       {!d.empty && slide.layout === 'IAM_SUMMARY' && !d.blocks && (
         <>
-          <ol style={{ ...box(ph('body', { x: 4.5, y: 26.7, w: 54.75, h: 61.3 })), margin: 0, paddingLeft: pt(24), fontSize: pt(d.fontSize || 18), display: 'flex', flexDirection: 'column', gap: pt(14) }}>
+          <ol style={{ ...box(F.content || ph('body', { x: 4.5, y: 26.7, w: 54.75, h: 61.3 })), margin: 0, paddingLeft: pt(24), fontSize: pt(d.fontSize || 18), display: 'flex', flexDirection: 'column', gap: pt(14) }}>
             {d.points.map((p, i) => <motion.li key={i} {...reveal(i)}>{p}</motion.li>)}
           </ol>
           <div style={{ position: 'absolute', left: '63%', top: '26.7%', width: '32.5%', display: 'flex', flexDirection: 'column', gap: pt(14) }}>
@@ -151,12 +152,12 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity, on
 
       {!d.empty && slide.layout === 'IAM_KPI' && (
         <>
-          {(() => { const per = d.perSlide || 4; const cols = per <= 4 ? per : per / 2; const compact = per > 4; return (
-          <div style={{ position: 'absolute', left: '4.5%', right: '4.5%', top: '26.7%', height: compact ? '48%' : '45.3%', display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridAutoRows: '1fr', gap: pt(21.6) }}>
+          {(() => { const per = d.perSlide || 4; const cols = per <= 4 ? per : per / 2; const compact = F.tiles ? F.tiles.some((t) => t.h < 30) : per > 4; return (
+          <div style={F.tiles ? { position: 'absolute', inset: 0 } : { position: 'absolute', left: '4.5%', right: '4.5%', top: '26.7%', height: compact ? '48%' : '45.3%', display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridAutoRows: '1fr', gap: pt(21.6) }}>
             {d.kpis.map((k, i) => {
               const st = STATUS[k.status] && statusColor(k.status) ? [STATUS[k.status][0], `${statusColor(k.status)}22`, statusColor(k.status)] : STATUS[k.status];
               return (
-                <motion.div key={k.key} {...reveal(i)} style={{ background: soft, borderRadius: pt(6), padding: pt(compact ? 10 : 18), display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <motion.div key={k.key} {...reveal(i)} style={{ ...(F.tiles?.[i] ? { ...box(F.tiles[i]), boxSizing: 'border-box', overflow: 'hidden' } : {}), background: soft, borderRadius: pt(6), padding: pt(compact ? 10 : 18), display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                   <div style={{ fontSize: pt(compact ? 11 : 14), color: muted, minHeight: compact ? 0 : pt(40) }}>{k.name}{k.subtitle && !compact && <div style={{ fontSize: pt(11) }}>{k.subtitle}</div>}</div>
                   <div style={{ fontSize: pt(compact ? ((k.display || '').length > 9 ? 18 : 24) : ((k.display || '').length > 9 ? 30 : 44)), fontWeight: 700, marginTop: pt(compact ? 2 : 6) }}>{k.display}</div>
                   {k.targetLine && <div style={{ fontSize: pt(compact ? 10 : 13), color: muted, marginTop: pt(compact ? 2 : 6) }}>{k.targetLine}</div>}
@@ -171,7 +172,7 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity, on
         </>
       )}
 
-      {!d.empty && slide.layout === 'IAM_CHART' && <Chart d={d} accent={accent} ink={ink} muted={muted} box={box(ph('chart', { x: 4.5, y: 26.7, w: 60, h: 61.3 }))} bodyBox={box(ph('body', { x: 68.3, y: 26.7, w: 27.2, h: 61.3 }))} />}
+      {!d.empty && slide.layout === 'IAM_CHART' && <Chart d={d} accent={accent} ink={ink} muted={muted} box={box(F.chart || ph('chart', { x: 4.5, y: 26.7, w: 60, h: 61.3 }))} bodyBox={box(F.content || ph('body', { x: 68.3, y: 26.7, w: 27.2, h: 61.3 }))} />}
 
       {!d.empty && slide.layout === 'IAM_TABLE' && (
         <div style={content}>
@@ -198,7 +199,7 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity, on
       )}
 
       {!d.empty && slide.layout === 'IAM_TWO_COLUMN' && ['left', 'right'].map((side, i) => (
-        <div key={side} style={{ position: 'absolute', top: '26.7%', height: '61.3%', left: i === 0 ? '4.5%' : '50.85%', width: '44.6%', background: i === 0 ? '#FDECEE' : soft, borderRadius: pt(6), padding: pt(21.6), boxSizing: 'border-box' }}>
+        <div key={side} style={{ position: 'absolute', top: '26.7%', height: '61.3%', left: i === 0 ? '4.5%' : '50.85%', width: '44.6%', ...(F[side] ? box(F[side]) : {}), background: i === 0 ? '#FDECEE' : soft, borderRadius: pt(6), padding: pt(21.6), boxSizing: 'border-box' }}>
           <div style={{ fontSize: pt(20), fontWeight: 700, marginBottom: pt(14) }}>{d[`${side}Head`]}</div>
           <ul style={{ margin: 0, paddingLeft: pt(20), fontSize: pt(d.fontSize || 16), display: 'flex', flexDirection: 'column', gap: pt(10) }}>{(d[side] || []).map((t, k) => <li key={k}>{t}</li>)}</ul>
           {i === 0 && d.note && <div style={{ position: 'absolute', bottom: pt(10), fontSize: pt(11), color: muted }}>{d.note}</div>}

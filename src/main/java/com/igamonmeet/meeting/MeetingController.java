@@ -51,7 +51,7 @@ public class MeetingController {
                               Instant updatedAt, long version, String lockedBy, boolean filled, List<KpiView> kpis, boolean onSlides,
                               boolean switchedOn, List<String> switchedOnKpis,
                               String groupKey, String groupName, boolean groupDivider, String kpiLayout,
-                              String tableStyle) {
+                              String tableStyle, String slideLayout) {
     }
 
     public record SaveRequest(long version, @NotNull JsonNode content) {

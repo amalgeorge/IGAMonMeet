@@ -76,7 +76,8 @@ public class MeetingDetails {
                     defs.group(m, s).map(g -> g.getGroupKey()).orElse(null), defs.group(m, s).map(g -> g.getName()).orElse(null),
                     defs.group(m, s).map(g -> g.isDivider()).orElse(false),
                     defs.def(m, s).map(d -> d.getKpiLayout()).orElse(null),
-                    defs.def(m, s).map(d -> d.getTableStyle()).orElse(null));
+                    defs.def(m, s).map(d -> d.getTableStyle()).orElse(null),
+                    defs.def(m, s).map(d -> d.getSlideLayout()).orElse(null));
         }).collect(Collectors.toList());
         List<ActionView> items = actionsAndComments.ordered(id).stream()
                 .map(a -> new ActionView(a.getId(), a.getTitle(), a.getOwner(), a.getTeamTag(), a.getDueDate(), a.getStatus(), a.getOriginMeetingId(),

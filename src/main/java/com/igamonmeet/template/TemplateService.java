@@ -73,6 +73,7 @@ public class TemplateService {
                     s.required(), cols, s.kind() == SectionKind.CHART ? s.chartKpiKey() : null, ++order);
             ts.setVisibility(s.visibilityOrDefault(), s.onSlidesOrDefault());
             ts.setGroupKey(s.groupKey() == null || s.groupKey().isBlank() ? null : s.groupKey());
+            ts.setSlideLayout(s.slideLayout() == null || s.slideLayout().isNull() ? null : s.slideLayout().toString());
             ts.setTableStyle(s.kind() == SectionKind.TABLE && s.tableStyle() != null && !s.tableStyle().isNull() ? s.tableStyle().toString() : null);
             ts.setKpiLayout(s.kind() == SectionKind.KPI && s.kpiLayout() != null && !"4".equals(s.kpiLayout()) ? s.kpiLayout() : null);
             int k = 0;
@@ -152,6 +153,8 @@ public class TemplateService {
         check(sections.stream().anyMatch(s -> s.visibilityOrDefault() == Visibility.SHOWN),
                 "At least one Section must be Shown.");
         for (Section s : sections) {
+            String layoutProblem = com.igamonmeet.slides.SlideLayout.problem(s.slideLayout(), s.kind());
+            check(layoutProblem == null, "Section '" + s.name() + "': " + layoutProblem);
             check(sectionKeys.add(s.key()), "Section key '" + s.key() + "' is used twice.");
             check(s.kind().allows(s.layout()), "Layout " + s.layout() + " cannot show a " + s.kind() + " section ('" + s.name() + "').");
             if (s.kind() == SectionKind.TABLE) {

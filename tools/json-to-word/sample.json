@@ -3,52 +3,342 @@
   "exportedAt": "2026-11-09T03:00:00Z",
   "exportedBy": "amal",
   "meeting": {
-    "id": 12, "title": "IAM Monthly Meeting — November 2026", "month": "2026-11", "monthText": "November 2026",
-    "date": "2026-11-19", "dateText": "Thursday 19 November 2026", "label": "Preparing", "templateVersion": 4,
-    "requiredSections": 6, "requiredFilled": 5,
-    "theme": { "name": "IAM Red", "version": 1, "colors": { "primary": "C8102E", "accent": "ED1B2E", "text": "1A1A1A",
-      "background": "FFFFFF", "onTarget": "1E7D43", "belowTarget": "A35D00", "offTarget": "C8102E" },
-      "fonts": { "heading": "Arial", "body": "Arial" } }
+    "id": 12,
+    "title": "IAM Monthly Meeting — November 2026",
+    "month": "2026-11",
+    "monthText": "November 2026",
+    "date": "2026-11-19",
+    "dateText": "Thursday 19 November 2026",
+    "label": "Preparing",
+    "templateVersion": 4,
+    "requiredSections": 6,
+    "requiredFilled": 5,
+    "theme": {
+      "name": "IAM Red",
+      "version": 1,
+      "colors": {
+        "primary": "C8102E",
+        "accent": "ED1B2E",
+        "text": "1A1A1A",
+        "background": "FFFFFF",
+        "onTarget": "1E7D43",
+        "belowTarget": "A35D00",
+        "offTarget": "C8102E"
+      },
+      "fonts": {
+        "heading": "Arial",
+        "body": "Arial"
+      }
+    }
   },
   "sections": [
-    { "key": "summary", "name": "Executive summary", "team": "Shared", "kind": "SUMMARY", "group": null, "required": true,
-      "filled": true, "onSlides": true, "updatedBy": "amal", "updatedAt": "2026-11-08T09:12:00Z",
+    {
+      "key": "summary",
+      "name": "Executive summary",
+      "team": "Shared",
+      "kind": "SUMMARY",
+      "group": null,
+      "required": true,
+      "filled": true,
+      "onSlides": true,
+      "updatedBy": "amal",
+      "updatedAt": "2026-11-08T09:12:00Z",
       "blocks": [
-        { "type": "stats", "items": [ { "value": "12", "label": "Apps onboarded" } ] },
-        { "type": "bullets", "items": [ "Leaver removal above 99%", "SSO wave 3 on track" ] } ],
-      "notes": "Start with the good news." },
-    { "key": "kpis", "name": "Key metrics", "team": "Operations", "kind": "KPI", "group": { "key": "ops", "name": "Operations" },
-      "required": true, "filled": true, "onSlides": true, "updatedBy": "ops", "updatedAt": null,
+        {
+          "type": "stats",
+          "items": [
+            {
+              "value": "12",
+              "label": "Apps onboarded"
+            }
+          ]
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "Leaver removal above 99%",
+            "SSO wave 3 on track"
+          ]
+        }
+      ],
+      "notes": "Start with the good news."
+    },
+    {
+      "key": "kpis",
+      "name": "Key metrics",
+      "team": "Operations",
+      "kind": "KPI",
+      "group": {
+        "key": "ops",
+        "name": "Operations"
+      },
+      "required": true,
+      "filled": true,
+      "onSlides": true,
+      "updatedBy": "ops",
+      "updatedAt": null,
       "blocks": [
-        { "type": "kpis", "items": [
-          { "key": "sla", "name": "Access requests within SLA", "subtitle": null, "description": null, "valueType": "PERCENT",
-            "value": 96.4, "unit": "%", "display": "96.4%", "target": 95, "targetLine": "Target ≥ 95%", "deltaLine": "▲ 1.2 pts",
-            "status": "ON_TARGET", "statusLabel": "On target", "overridden": false, "overrideReason": null, "required": true },
-          { "key": "provisioning", "name": "Mean provisioning time", "valueType": "NUMBER", "value": 5.1, "unit": "h",
-            "display": "5.1 h", "target": 4, "targetLine": "Target ≤ 4 h", "deltaLine": null, "status": "BELOW_TARGET",
-            "statusLabel": "Below target", "overridden": true, "overrideReason": "Holiday backlog", "required": true } ] },
-        { "type": "paragraph", "text": "Steady month." } ],
-      "comments": [ { "author": "chair", "body": "Name the BUs.", "resolved": false, "createdAt": null,
-        "replies": [ { "author": "ops", "body": "Will do.", "createdAt": null } ] } ] },
-    { "key": "trend", "name": "SLA trend", "team": "Operations", "kind": "CHART", "group": { "key": "ops", "name": "Operations" },
-      "required": false, "filled": true, "onSlides": true, "updatedBy": null, "updatedAt": null,
-      "blocks": [ { "type": "chart", "kpiKey": "sla", "title": "Access requests within SLA", "unit": "%", "target": 95,
-        "labels": [ "Sep", "Oct", "Nov" ], "values": [ 94.1, 95.2, 96.4 ] },
-        { "type": "bullets", "items": [ "Third month of improvement" ] } ] },
-    { "key": "roadmap", "name": "Roadmap", "team": "Engineering", "kind": "TABLE", "group": null, "required": true, "filled": true,
-      "onSlides": true, "updatedBy": null, "updatedAt": null,
-      "blocks": [ { "type": "table", "columns": [ "Initiative", "Owner", "Status", "Due" ],
-        "rows": [ [ "SSO wave 3", "IAM Engineering", "On track", "Dec" ], [ "PAM vault", "Platform", "At risk", "Jan" ] ],
-        "style": { "widths": null, "align": [ "left", "left", "center", "right" ], "statusColumn": 2, "total": false, "banded": true } } ] },
-    { "key": "risks", "name": "Risks and asks", "team": "Shared", "kind": "TWO_COLUMN", "group": null, "required": false,
-      "filled": true, "onSlides": true, "updatedBy": null, "updatedAt": null,
-      "blocks": [ { "type": "columns", "left": { "heading": "Risks", "items": [ "Vendor delay" ] },
-        "right": { "heading": "Asks", "items": [ "Budget for Q1 pilot" ] } } ] },
-    { "key": "actions", "name": "Action items", "team": "Shared", "kind": "ACTION_ITEMS", "group": null, "required": true,
-      "filled": true, "onSlides": true, "updatedBy": null, "updatedAt": null,
-      "blocks": [ { "type": "actionItems", "items": [ { "title": "Publish SLA dashboard", "owner": "ops", "team": "Operations",
-        "due": "2026-11-30", "status": "OPEN", "overdue": false, "carriedForward": true } ] } ] }
+        {
+          "type": "kpis",
+          "items": [
+            {
+              "key": "sla",
+              "name": "Access requests within SLA",
+              "subtitle": null,
+              "description": null,
+              "valueType": "PERCENT",
+              "value": 96.4,
+              "unit": "%",
+              "display": "96.4%",
+              "target": 95,
+              "targetLine": "Target ≥ 95%",
+              "deltaLine": "▲ 1.2 pts",
+              "status": "ON_TARGET",
+              "statusLabel": "On target",
+              "overridden": false,
+              "overrideReason": null,
+              "required": true
+            },
+            {
+              "key": "provisioning",
+              "name": "Mean provisioning time",
+              "valueType": "NUMBER",
+              "value": 5.1,
+              "unit": "h",
+              "display": "5.1 h",
+              "target": 4,
+              "targetLine": "Target ≤ 4 h",
+              "deltaLine": null,
+              "status": "BELOW_TARGET",
+              "statusLabel": "Below target",
+              "overridden": true,
+              "overrideReason": "Holiday backlog",
+              "required": true
+            }
+          ]
+        },
+        {
+          "type": "richText",
+          "blocks": [
+            {
+              "type": "p",
+              "runs": [
+                {
+                  "text": "Steady month. "
+                },
+                {
+                  "text": "SLA up",
+                  "b": true
+                },
+                {
+                  "text": " for the third month; see "
+                },
+                {
+                  "text": "dashboard",
+                  "href": "https://example.com/sla"
+                },
+                {
+                  "text": "."
+                }
+              ]
+            },
+            {
+              "type": "ul",
+              "items": [
+                {
+                  "runs": [
+                    {
+                      "text": "Holiday backlog cleared",
+                      "i": true
+                    }
+                  ],
+                  "items": [
+                    {
+                      "runs": [
+                        {
+                          "text": "Provisioning back under 5 h"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "comments": [
+        {
+          "author": "chair",
+          "body": "Name the BUs.",
+          "resolved": false,
+          "createdAt": null,
+          "replies": [
+            {
+              "author": "ops",
+              "body": "Will do.",
+              "createdAt": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "trend",
+      "name": "SLA trend",
+      "team": "Operations",
+      "kind": "CHART",
+      "group": {
+        "key": "ops",
+        "name": "Operations"
+      },
+      "required": false,
+      "filled": true,
+      "onSlides": true,
+      "updatedBy": null,
+      "updatedAt": null,
+      "blocks": [
+        {
+          "type": "chart",
+          "kpiKey": "sla",
+          "title": "Access requests within SLA",
+          "unit": "%",
+          "target": 95,
+          "labels": [
+            "Sep",
+            "Oct",
+            "Nov"
+          ],
+          "values": [
+            94.1,
+            95.2,
+            96.4
+          ]
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "Third month of improvement"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "roadmap",
+      "name": "Roadmap",
+      "team": "Engineering",
+      "kind": "TABLE",
+      "group": null,
+      "required": true,
+      "filled": true,
+      "onSlides": true,
+      "updatedBy": null,
+      "updatedAt": null,
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Initiative",
+            "Owner",
+            "Status",
+            "Due"
+          ],
+          "rows": [
+            [
+              "SSO wave 3",
+              "IAM Engineering",
+              "On track",
+              "Dec"
+            ],
+            [
+              "PAM vault",
+              "Platform",
+              "At risk",
+              "Jan"
+            ]
+          ],
+          "style": {
+            "widths": null,
+            "align": [
+              "left",
+              "left",
+              "center",
+              "right"
+            ],
+            "statusColumn": 2,
+            "total": false,
+            "banded": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "risks",
+      "name": "Risks and asks",
+      "team": "Shared",
+      "kind": "TWO_COLUMN",
+      "group": null,
+      "required": false,
+      "filled": true,
+      "onSlides": true,
+      "updatedBy": null,
+      "updatedAt": null,
+      "blocks": [
+        {
+          "type": "columns",
+          "left": {
+            "heading": "Risks",
+            "items": [
+              "Vendor delay"
+            ]
+          },
+          "right": {
+            "heading": "Asks",
+            "items": [
+              "Budget for Q1 pilot"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "key": "actions",
+      "name": "Action items",
+      "team": "Shared",
+      "kind": "ACTION_ITEMS",
+      "group": null,
+      "required": true,
+      "filled": true,
+      "onSlides": true,
+      "updatedBy": null,
+      "updatedAt": null,
+      "blocks": [
+        {
+          "type": "actionItems",
+          "items": [
+            {
+              "title": "Publish SLA dashboard",
+              "owner": "ops",
+              "team": "Operations",
+              "due": "2026-11-30",
+              "status": "OPEN",
+              "overdue": false,
+              "carriedForward": true
+            }
+          ]
+        }
+      ]
+    }
   ],
-  "actionItems": [ { "title": "Publish SLA dashboard", "owner": "ops", "team": "Operations", "due": "2026-11-30",
-    "status": "OPEN", "overdue": false, "carriedForward": true } ]
+  "actionItems": [
+    {
+      "title": "Publish SLA dashboard",
+      "owner": "ops",
+      "team": "Operations",
+      "due": "2026-11-30",
+      "status": "OPEN",
+      "overdue": false,
+      "carriedForward": true
+    }
+  ]
 }

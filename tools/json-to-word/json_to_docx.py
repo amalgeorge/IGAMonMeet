@@ -135,6 +135,30 @@ def kpis(doc, items, colors):
     doc.add_paragraph()
 
 
+def add_runs(p, runs):
+    for r in runs or []:
+        run = p.add_run(r.get("text", ""))
+        run.bold = bool(r.get("b"))
+        run.italic = bool(r.get("i"))
+        if r.get("href"):
+            run.underline = True
+            run.font.color.rgb = RGBColor(0x05, 0x63, 0xC1)
+            run.add_text(f" ({r['href']})")
+
+
+def rich_text(doc, rblocks):
+    """Formatted text: paragraphs, bulleted and numbered lists with one sub-level, bold, italic, links."""
+    for b in rblocks:
+        if b.get("type") == "p":
+            add_runs(doc.add_paragraph(), b.get("runs"))
+            continue
+        top, sub = ("List Number", "List Number 2") if b.get("type") == "ol" else ("List Bullet", "List Bullet 2")
+        for item in b.get("items", []):
+            add_runs(doc.add_paragraph(style=top), item.get("runs"))
+            for s in item.get("items", []):
+                add_runs(doc.add_paragraph(style=sub), s.get("runs"))
+
+
 def blocks(doc, items, colors):
     for b in items:
         kind = b.get("type")
@@ -169,6 +193,8 @@ def blocks(doc, items, colors):
                 for item in col.get("items", []):
                     cell.add_paragraph("• " + item)
             doc.add_paragraph()
+        elif kind == "richText":
+            rich_text(doc, b.get("blocks", []))
         elif kind == "actionItems":
             rows = [[a.get("title", ""), a.get("owner") or "", a.get("team", ""), a.get("due") or "—",
                      a.get("status", "") + (" · overdue" if a.get("overdue") else "")] for a in b.get("items", [])]

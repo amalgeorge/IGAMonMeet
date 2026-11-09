@@ -28,6 +28,8 @@ final class SectionContent {
         check(c != null && c.isObject(), "Content must be an object.");
         check(!c.has("notes") || c.get("notes").isNull() || (c.get("notes").isTextual() && c.get("notes").asText().length() <= MAX_NOTES),
                 "Speaker notes must be text of up to " + MAX_NOTES + " characters.");
+        String richProblem = com.igamonmeet.slides.RichText.problem(c.get("rich")); // every kind (spec-v3 §2)
+        check(richProblem == null, richProblem);
         switch (kind) {
             case SUMMARY -> {
                 textArray(c, "points");
@@ -53,9 +55,9 @@ final class SectionContent {
                 });
             }
             case TEXT -> {
-                check(c.path("blocks").isArray(), "'blocks' must be a list.");
-                check(c.get("blocks").size() <= 200, "A Text Section can hold up to 200 blocks.");
-                c.get("blocks").forEach(b -> {
+                check(c.path("blocks").isArray() || (!c.has("blocks") && c.has("rich")), "'blocks' must be a list.");
+                check(c.path("blocks").size() <= 200, "A Text Section can hold up to 200 blocks.");
+                c.path("blocks").forEach(b -> {
                     String type = b.path("type").asText();
                     switch (type) {
                         case "paragraph" -> check(b.path("text").isTextual() && b.get("text").asText().length() <= 5000,
@@ -111,7 +113,7 @@ final class SectionContent {
         try {
             JsonNode c = mapper.readTree(json);
             return switch (kind) {
-                case SUMMARY -> hasText(c.path("points"));
+                case SUMMARY -> hasText(c.path("points")) || hasRich(c);
                 case KPI -> {
                     boolean any = false;
                     for (JsonNode v : c.path("values")) {
@@ -121,7 +123,7 @@ final class SectionContent {
                     yield any && allRequired;
                 }
                 case TABLE -> c.path("rows").size() > 0;
-                case TWO_COLUMN -> hasText(c.path("left")) || hasText(c.path("right"));
+                case TWO_COLUMN -> hasText(c.path("left")) || hasText(c.path("right")) || hasRich(c);
                 case TEXT -> !com.igamonmeet.slides.SlidePlanner.textLines(c).isEmpty()
                         || java.util.stream.StreamSupport.stream(c.path("blocks").spliterator(), false)
                                 .anyMatch(b -> "table".equals(b.path("type").asText()) && b.path("rows").size() > 0);
@@ -155,6 +157,10 @@ final class SectionContent {
 
     private static boolean hasValue(JsonNode v) {
         return v.isNumber() || (v.isTextual() && !v.asText().isBlank());
+    }
+
+    private static boolean hasRich(JsonNode c) {
+        return !com.igamonmeet.slides.RichText.isEmpty(c.path("rich"));
     }
 
     private static boolean hasText(JsonNode arr) {

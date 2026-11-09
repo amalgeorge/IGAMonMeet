@@ -117,7 +117,13 @@ public class DocumentExport {
             o.put("updatedBy", s.updatedBy());
             o.put("updatedAt", s.updatedAt() == null ? null : s.updatedAt().toString());
             JsonNode c = read(s.contentJson());
-            o.set("blocks", blocks(m, s, c, d.actionItems()));
+            ArrayNode blocks = blocks(m, s, c, d.actionItems());
+            if (!com.igamonmeet.slides.RichText.isEmpty(c.path("rich"))) {
+                // Formatted text (spec-v3 §2), kept as its own structure so converters keep bold, italic, lists and links.
+                ObjectNode rt = blocks.addObject().put("type", "richText");
+                rt.set("blocks", c.get("rich").path("blocks").deepCopy());
+            }
+            o.set("blocks", blocks);
             if (withNotes && c.path("notes").isTextual() && !c.get("notes").asText().isBlank()) {
                 o.put("notes", c.get("notes").asText());
             }
@@ -152,7 +158,7 @@ public class DocumentExport {
                 ObjectNode b = out.addObject().put("type", "kpis");
                 ArrayNode items = b.putArray("items");
                 s.kpis().forEach(k -> items.add(kpi(k)));
-                paragraph(out, c.path("commentary").asText(""));
+                if (com.igamonmeet.slides.RichText.isEmpty(c.path("rich"))) paragraph(out, c.path("commentary").asText(""));
             }
             case CHART -> {
                 ObjectNode b = out.addObject().put("type", "chart");
@@ -169,7 +175,7 @@ public class DocumentExport {
                     ArrayNode values = b.putArray("values");
                     series.values().forEach(values::add);
                 }
-                bullets(out, c.path("commentary"));
+                if (com.igamonmeet.slides.RichText.isEmpty(c.path("rich"))) bullets(out, c.path("commentary"));
             }
             case TABLE -> table(out, s.columns(), c.path("rows"), s.tableStyle() == null ? null : read(s.tableStyle()));
             case TWO_COLUMN -> {

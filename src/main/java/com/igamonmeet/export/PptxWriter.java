@@ -301,7 +301,10 @@ public class PptxWriter {
         }
     }
 
-/** A Text Section's blocks in the body placeholder, widened to the full content width: paragraphs and bullet items. */
+/**
+     * A Text Section's blocks (and formatted text, spec-v3 §2) in the body placeholder, widened to the full content
+     * width: paragraphs, bullet and numbered items with one sub-level, bold, italic and hyperlinks.
+     */
     private static void blocks(XSLFSlide slide, List<Map<String, Object>> blocks, double size, double w) {
         XSLFTextShape t = placeholder(slide, "body");
         if (t == null) {
@@ -312,16 +315,73 @@ public class PptxWriter {
         t.clearText();
         for (Map<String, Object> b : blocks) {
             XSLFTextParagraph p = t.addNewTextParagraph();
-            boolean li = "li".equals(b.get("type"));
-            p.setBullet(li);
-            if (!li) {
+            String type = String.valueOf(b.get("type"));
+            boolean item = "li".equals(type) || "oli".equals(type);
+            int level = b.get("level") instanceof Number n ? n.intValue() : 0;
+            p.setBullet(item);
+            if (item) {
+                p.setIndentLevel(level);
+                p.setLeftMargin(18.0 + 18.0 * level);
+                p.setIndent(-18.0);
+                if ("oli".equals(type)) {
+                    p.setBulletAutoNumber(level == 0 ? org.apache.poi.sl.usermodel.AutoNumberingScheme.arabicPeriod
+                            : org.apache.poi.sl.usermodel.AutoNumberingScheme.alphaLcPeriod,
+                            b.get("num") == null ? 1 : Integer.parseInt(String.valueOf(b.get("num"))));
+                }
+            } else {
                 p.setIndentLevel(0);
                 p.setIndent(0.0);
                 p.setLeftMargin(0.0);
             }
-            p.setSpaceAfter(li ? 6.0 : 12.0);
+            p.setSpaceAfter(item ? 6.0 : 12.0);
+            runs(slide, p, String.valueOf(b.get("text")), size);
+        }
+    }
+
+    /** Text with RichText's inline marks as runs: bold and italic toggles, links as hyperlinks. */
+    private static void runs(XSLFSlide slide, XSLFTextParagraph p, String text, double size) {
+        boolean bold = false;
+        boolean italic = false;
+        String href = null;
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        boolean any = false;
+        while (i <= text.length()) {
+            char c = i < text.length() ? text.charAt(i) : 0;
+            boolean mark = i == text.length() || c == com.igamonmeet.slides.RichText.BOLD || c == com.igamonmeet.slides.RichText.ITALIC
+                    || c == com.igamonmeet.slides.RichText.LINK || c == com.igamonmeet.slides.RichText.LINK_END;
+            if (mark) {
+                if (sb.length() > 0) {
+                    XSLFTextRun r = p.addNewTextRun();
+                    r.setText(sb.toString());
+                    r.setFontSize(size);
+                    r.setBold(bold);
+                    r.setItalic(italic);
+                    if (href != null) {
+                        r.createHyperlink().setAddress(href);
+                        r.setUnderlined(true);
+                    }
+                    sb.setLength(0);
+                    any = true;
+                }
+                if (i == text.length()) break;
+                if (c == com.igamonmeet.slides.RichText.BOLD) bold = !bold;
+                else if (c == com.igamonmeet.slides.RichText.ITALIC) italic = !italic;
+                else if (c == com.igamonmeet.slides.RichText.LINK_END) href = null;
+                else {
+                    int end = text.indexOf(com.igamonmeet.slides.RichText.LINK_TEXT, i);
+                    href = end > i ? text.substring(i + 1, end) : null;
+                    i = end > i ? end : i;
+                }
+                i++;
+                continue;
+            }
+            sb.append(c);
+            i++;
+        }
+        if (!any) {
             XSLFTextRun r = p.addNewTextRun();
-            r.setText(String.valueOf(b.get("text")));
+            r.setText("");
             r.setFontSize(size);
         }
     }

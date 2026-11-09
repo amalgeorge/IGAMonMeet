@@ -208,6 +208,7 @@ ok "Deployed $TOMCAT/webapps/igamonmeet.war"
 
 # ---------------------------------------------------------------------------
 step "systemd, firewall, SELinux"
+mkdir -p /etc/systemd/system
 cat > /etc/systemd/system/igamonmeet.service <<EOF
 [Unit]
 Description=IAM Monthly Meeting (Tomcat 9)

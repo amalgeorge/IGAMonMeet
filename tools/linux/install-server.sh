@@ -25,6 +25,7 @@ HOSTNAME_FQDN="$(hostname -f 2>/dev/null || cat /etc/hostname 2>/dev/null || ech
 KEYSTORE=""
 KEYSTORE_PASSWORD_FILE=""
 START=1
+TOMCAT_VERSION=""
 TIMEZONE=Asia/Singapore
 
 usage() {
@@ -45,6 +46,7 @@ Options:
   --keystore-password-file F  password of that keystore
   --prefix DIR                default /opt/igamonmeet
   --no-start                  install and deploy, but do not start the service
+  --tomcat-version 9.0.x      install this Tomcat 9 release (default: the current one)
 EOF
 }
 
@@ -64,6 +66,7 @@ while [[ $# -gt 0 ]]; do
     --keystore-password-file) KEYSTORE_PASSWORD_FILE="$2"; shift 2 ;;
     --prefix) PREFIX="$2"; shift 2 ;;
     --no-start) START=0; shift ;;
+    --tomcat-version) TOMCAT_VERSION="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -108,13 +111,38 @@ if systemctl is-active --quiet igamonmeet 2>/dev/null; then
   ok "Stopped running service"
 fi
 if [[ ! -x "$TOMCAT/bin/catalina.sh" ]]; then
-  version="$(curl -fsSL https://dlcdn.apache.org/tomcat/tomcat-9/ | grep -oE 'v9\.0\.[0-9]+/' | tr -d 'v/' | sort -V | tail -1)"
-  [[ -n "$version" ]] || die "could not find the current Tomcat 9 version on dlcdn.apache.org."
+  version="$TOMCAT_VERSION"
+  if [[ -z "$version" ]]; then
+    version="$(curl -fsSL https://dlcdn.apache.org/tomcat/tomcat-9/ | grep -oE 'v9\.0\.[0-9]+/' | tr -d 'v/' | sort -V | tail -1)"
+    [[ -n "$version" ]] || die "could not find the current Tomcat 9 version; give one with --tomcat-version 9.0.x."
+    echo "    Using the current Tomcat 9 release $version (pin it with --tomcat-version $version to repeat this install)."
+  fi
+  [[ "$version" =~ ^9\.0\.[0-9]+$ ]] || die "--tomcat-version must look like 9.0.123."
   tmp="$(mktemp -d)"
-  url="https://dlcdn.apache.org/tomcat/tomcat-9/v$version/bin/apache-tomcat-$version.tar.gz"
-  curl -fsSL -o "$tmp/tomcat.tar.gz" "$url"
-  curl -fsSL -o "$tmp/tomcat.tar.gz.sha512" "$url.sha512"
+  file="apache-tomcat-$version.tar.gz"
+  # The archive comes from the CDN, or from the archive site for older pinned versions. The checksum and signature
+  # always come from apache.org's own servers, a different host, so a tampered mirror cannot vouch for itself.
+  curl -fsSL -o "$tmp/tomcat.tar.gz" "https://dlcdn.apache.org/tomcat/tomcat-9/v$version/bin/$file" \
+    || curl -fsSL -o "$tmp/tomcat.tar.gz" "https://archive.apache.org/dist/tomcat/tomcat-9/v$version/bin/$file" \
+    || die "could not download Tomcat $version."
+  sig="https://downloads.apache.org/tomcat/tomcat-9/v$version/bin/$file"
+  curl -fsSL -o "$tmp/tomcat.tar.gz.sha512" "$sig.sha512" \
+    || curl -fsSL -o "$tmp/tomcat.tar.gz.sha512" "https://archive.apache.org/dist/tomcat/tomcat-9/v$version/bin/$file.sha512" \
+    || die "could not download the Tomcat checksum."
   (cd "$tmp" && echo "$(cut -d' ' -f1 tomcat.tar.gz.sha512)  tomcat.tar.gz" | sha512sum -c --quiet) || die "Tomcat download checksum mismatch."
+  if command -v gpg >/dev/null; then
+    curl -fsSL -o "$tmp/KEYS" https://downloads.apache.org/tomcat/tomcat-9/KEYS || die "could not download the Tomcat signing keys."
+    curl -fsSL -o "$tmp/tomcat.tar.gz.asc" "$sig.asc" \
+      || curl -fsSL -o "$tmp/tomcat.tar.gz.asc" "https://archive.apache.org/dist/tomcat/tomcat-9/v$version/bin/$file.asc" \
+      || die "could not download the Tomcat signature."
+    GNUPGHOME="$tmp/gnupg"; export GNUPGHOME; mkdir -m 700 "$GNUPGHOME"
+    gpg --batch --quiet --import "$tmp/KEYS" 2>/dev/null
+    gpg --batch --quiet --verify "$tmp/tomcat.tar.gz.asc" "$tmp/tomcat.tar.gz" 2>/dev/null || die "Tomcat signature check failed."
+    unset GNUPGHOME
+    ok "Checksum and release signature verified"
+  else
+    echo "    gpg not found: checksum verified, release signature not checked."
+  fi
   mkdir -p "$PREFIX"
   tar -xzf "$tmp/tomcat.tar.gz" -C "$PREFIX"
   mv "$PREFIX/apache-tomcat-$version" "$TOMCAT"

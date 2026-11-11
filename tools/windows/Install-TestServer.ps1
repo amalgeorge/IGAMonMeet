@@ -125,13 +125,22 @@ Ok "Connected with $($script:Sqlcmd)"
 
 # ---------------------------------------------------------------------------
 Step 'Database igamonmeet and SQL login'
-$DbPassword = New-Secret
+# Reuse the password the app already has (setenv.bat) so a run that stops half-way can never leave SQL Server
+# and the app with different passwords; a new one is made only when there is none yet. ALTER LOGIN below sets
+# the login to this value on every run, which also repairs a mismatch left by an earlier interrupted run.
+$DbPassword = $null
+$existingSetenv = Join-Path (Join-Path $InstallRoot 'tomcat') 'bin\setenv.bat'
+if (Test-Path $existingSetenv) {
+  $m = Select-String -Path $existingSetenv -Pattern '^set "DB_PASSWORD=([A-Za-z0-9]+)"' | Select-Object -First 1
+  if ($m) { $DbPassword = $m.Matches[0].Groups[1].Value }
+}
+if ($DbPassword) { Ok 'Keeping the existing database password' } else { $DbPassword = New-Secret }
 Sql "IF DB_ID('igamonmeet') IS NULL CREATE DATABASE igamonmeet;" | Out-Null
 Sql @"
 IF SUSER_ID('igamonmeet') IS NULL
   CREATE LOGIN igamonmeet WITH PASSWORD = N'$DbPassword', DEFAULT_DATABASE = igamonmeet, CHECK_POLICY = ON;
 ELSE
-  ALTER LOGIN igamonmeet WITH PASSWORD = N'$DbPassword';
+  ALTER LOGIN igamonmeet WITH PASSWORD = N'$DbPassword' UNLOCK;
 "@ | Out-Null
 Sql @"
 IF USER_ID('igamonmeet') IS NULL CREATE USER igamonmeet FOR LOGIN igamonmeet;

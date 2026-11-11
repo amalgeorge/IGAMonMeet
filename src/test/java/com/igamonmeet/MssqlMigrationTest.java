@@ -32,6 +32,11 @@ class MssqlMigrationTest {
                 .load()
                 .migrate();
         assertThat(result.success).isTrue();
+        if ("true".equals(System.getenv("MSSQL_FROM_SCRIPT"))) {
+            // The database came from db/mssql/igamonmeet-schema.sql: Flyway validated its history (versions,
+            // checksums) and found nothing left to run.
+            assertThat(result.migrationsExecuted).isZero();
+        }
 
         try (Connection c = connect()) {
             // First Admin: procedure creates the user and a token whose hash Java can reproduce.

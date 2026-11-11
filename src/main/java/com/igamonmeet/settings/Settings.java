@@ -89,6 +89,15 @@ public class Settings {
         return repository.findById(key).map(s -> Boolean.parseBoolean(s.getValue())).orElse(false);
     }
 
+    /**
+     * Holds the flag's row until the caller's transaction ends, so two servers starting together run a one-time
+     * upgrade one after the other; the second then finds the first one's work and adds nothing.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void lockFlag(String key) {
+        repository.lockByKey(key);
+    }
+
     @Transactional
     public void setFlag(String key, String by) {
         repository.findById(key).ifPresent(s -> s.update("true", by, clock.instant()));

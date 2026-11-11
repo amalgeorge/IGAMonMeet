@@ -69,6 +69,7 @@ public class SitrepUpgrade implements ApplicationRunner {
     }
 
     private void doUpgrade() {
+        settings.lockFlag(FLAG); // one server at a time
         TemplateVersion current = templates.current();
         boolean hasSitrep = current.getSections().stream().anyMatch(s -> s.getSectionKey().equals(KEY));
         Optional<TemplateSection> incidents = current.getSections().stream().filter(s -> s.getSectionKey().equals("incidents")).findFirst();

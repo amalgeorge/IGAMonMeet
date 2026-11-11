@@ -14,3 +14,5 @@ spring:
       # H2 has no NVARCHAR(MAX); production uses NVARCHAR(MAX).
       longText: CLOB
       longBinary: BLOB
+    # ResetDatabaseListener rebuilds the schema before every test class.
+    clean-disabled: false

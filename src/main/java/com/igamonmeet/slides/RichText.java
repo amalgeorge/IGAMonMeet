@@ -132,6 +132,36 @@ public final class RichText {
         return sb.toString();
     }
 
+    /**
+     * Plain text made safe to travel as a slide line: control characters removed (tab and line break kept), so text
+     * typed or pasted by an editor can never be read as a list prefix, a bold/italic mark or a link.
+     */
+    public static String clean(String text) {
+        if (text == null) return "";
+        StringBuilder sb = null;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            boolean bad = c < 0x20 && c != '\n' && c != '\t';
+            if (bad && sb == null) sb = new StringBuilder(text.length()).append(text, 0, i);
+            else if (!bad && sb != null) sb.append(c);
+        }
+        return sb == null ? text : sb.toString();
+    }
+
+    /** True when text holds a control character other than tab, line feed or carriage return. */
+    public static boolean hasControlCharacters(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c < 0x20 && c != '\n' && c != '\t' && c != '\r') return true;
+        }
+        return false;
+    }
+
+    /** The link address if it is one the app allows (http, https, mailto), else null. Renderers check again. */
+    public static String safeHref(String href) {
+        return href != null && HREF.matcher(href).matches() ? href : null;
+    }
+
     /** The visible text of a line: prefixes, marks and link targets removed (for measuring). */
     public static String strip(String line) {
         return line == null ? "" : MARKUP.matcher(line).replaceAll("");

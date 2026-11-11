@@ -289,15 +289,15 @@ public class SlidePlanner {
     public static List<String> textLines(JsonNode content) {
         List<String> lines = new ArrayList<>();
         if (content.path("text").isTextual() && !content.has("blocks")) {
-            lines.add(content.get("text").asText()); // plain text from before rich content: one paragraph
+            lines.add(RichText.clean(content.get("text").asText())); // plain text from before rich content: one paragraph
         }
         for (JsonNode b : content.path("blocks")) {
             switch (b.path("type").asText()) {
                 case "paragraph" -> {
-                    if (!b.path("text").asText("").isBlank()) lines.add(b.path("text").asText());
+                    if (!b.path("text").asText("").isBlank()) lines.add(RichText.clean(b.path("text").asText()));
                 }
                 case "bullets" -> b.path("items").forEach(i -> {
-                    if (!i.asText("").isBlank()) lines.add(BULLET + i.asText());
+                    if (!i.asText("").isBlank()) lines.add(BULLET + RichText.clean(i.asText()));
                 });
                 default -> { }
             }
@@ -446,9 +446,11 @@ public class SlidePlanner {
             i = 1;
         } else if (!l.isEmpty() && l.charAt(0) == RichText.NUMBER) {
             int end = l.indexOf(RichText.NUMBER_END);
-            type = "oli";
-            num = l.substring(1, end);
-            i = end + 1;
+            if (end > 1 && l.substring(1, end).chars().allMatch(Character::isDigit)) {
+                type = "oli";
+                num = l.substring(1, end);
+                i = end + 1;
+            } // else: not a well-formed number prefix; show the line as a paragraph rather than fail the whole deck
         }
         int level = 0;
         if (i < l.length() && l.charAt(i) == RichText.SUB) {

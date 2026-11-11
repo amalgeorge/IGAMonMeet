@@ -130,6 +130,7 @@ public class ThemeService {
         check(file.length <= MAX_IMAGE_BYTES, "Images can be up to 5 MB.");
         String type = sniff(file);
         check(type != null, "Upload a PNG or JPG image.");
+        checkDimensions(file);
         BufferedImage img;
         try {
             img = ImageIO.read(new ByteArrayInputStream(file));
@@ -282,6 +283,33 @@ public class ThemeService {
         } catch (Throwable e) {
             return Set.of();
         }
+    }
+
+    static final int MAX_IMAGE_SIDE = 8000;
+    static final long MAX_IMAGE_PIXELS = 40_000_000L;
+
+    /** Reads only the header for the size, so a small file that unpacks to a huge picture is refused before decoding. */
+    private static void checkDimensions(byte[] file) {
+        int w = -1;
+        int h = -1;
+        try (javax.imageio.stream.ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(file))) {
+            var readers = ImageIO.getImageReaders(in);
+            if (readers.hasNext()) {
+                javax.imageio.ImageReader r = readers.next();
+                try {
+                    r.setInput(in, true, true);
+                    w = r.getWidth(0);
+                    h = r.getHeight(0);
+                } finally {
+                    r.dispose();
+                }
+            }
+        } catch (Exception e) {
+            // falls through to the check below
+        }
+        check(w > 0 && h > 0, "That image could not be read.");
+        check(w <= MAX_IMAGE_SIDE && h <= MAX_IMAGE_SIDE && (long) w * h <= MAX_IMAGE_PIXELS,
+                "Images can be up to " + MAX_IMAGE_SIDE + " pixels on a side and 40 megapixels.");
     }
 
     private static String sniff(byte[] f) {

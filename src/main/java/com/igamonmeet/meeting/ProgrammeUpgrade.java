@@ -65,6 +65,7 @@ public class ProgrammeUpgrade implements ApplicationRunner {
     /** Public so tests can re-apply it after other tests replace the Template. */
     public void upgrade() {
         tx.executeWithoutResult(status -> {
+            settings.lockFlag(FLAG); // one server at a time
             TemplateVersion current = templates.current();
             Draft base = TemplateDtos.draftOf(current, "Programme Sections (v3 upgrade)");
             Set<String> keys = base.sections().stream().map(Section::key).collect(Collectors.toSet());

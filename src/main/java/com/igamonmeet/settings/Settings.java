@@ -95,7 +95,7 @@ public class Settings {
      */
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
     public void lockFlag(String key) {
-        repository.lockByKey(key);
+        repository.findOneByKey(key);
     }
 
     @Transactional

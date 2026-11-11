@@ -42,6 +42,20 @@ jobs:
           MSSQL_USER: sa
           MSSQL_PASSWORD: Ci_Passw0rd!2026
         run: mvn -B -Dskip.frontend=true -Dtest=MssqlMigrationTest -Dsurefire.failIfNoSpecifiedTests=false test
+      - name: DBA script is up to date
+        run: python3 tools/db/build_mssql_script.py --check
+      - name: Run the DBA script on an empty database
+        run: |
+          docker cp db/mssql/igamonmeet-schema.sql ${{ job.services.mssql.id }}:/tmp/igamonmeet-schema.sql
+          docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Ci_Passw0rd!2026' -Q "CREATE DATABASE igamonmeet_script"
+          docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Ci_Passw0rd!2026' -d igamonmeet_script -b -i /tmp/igamonmeet-schema.sql
+      - name: Flyway accepts the scripted database
+        env:
+          MSSQL_URL: jdbc:sqlserver://localhost:1433;databaseName=igamonmeet_script;encrypt=true;trustServerCertificate=true
+          MSSQL_USER: sa
+          MSSQL_PASSWORD: Ci_Passw0rd!2026
+          MSSQL_FROM_SCRIPT: 'true'
+        run: mvn -B -Dskip.frontend=true -Dtest=MssqlMigrationTest -Dsurefire.failIfNoSpecifiedTests=false test
 
   rhel-smoke:
     # Installs the WAR with tools/linux/install-server.sh on Rocky Linux 9 (RHEL-compatible)

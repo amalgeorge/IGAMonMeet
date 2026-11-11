@@ -11,6 +11,14 @@
 -- =====================================================================================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
+-- sqlcmd starts with QUOTED_IDENTIFIER OFF; filtered indexes and the procedure need the settings the JDBC driver uses.
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET NUMERIC_ROUNDABORT OFF;
 GO
 IF OBJECT_ID(N'dbo.flyway_schema_history', N'U') IS NOT NULL
     THROW 50001, 'This database already has a Flyway history: use the upgrade path in db/mssql/README.md instead.', 1;

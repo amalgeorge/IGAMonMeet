@@ -31,7 +31,7 @@ The script:
 |---|---|
 | OpenJDK 17 (`java-17-openjdk-headless`) | RHEL AppStream |
 | Fonts: Liberation (Arial, Times New Roman, Courier New metrics), Carlito (Calibri metrics) | needed for slide text measurement |
-| Tomcat 9, checksum-verified | `/opt/igamonmeet/tomcat` |
+| Tomcat 9 (current release, or `--tomcat-version 9.0.x`), checksum and release signature verified against apache.org | `/opt/igamonmeet/tomcat` |
 | HTTPS on 8443, TLS 1.2 and 1.3 only; HTTP connector and shutdown port off | `conf/server.xml` |
 | Database settings, headless JVM, UTC | `bin/setenv.sh`, mode 640 root:tomcat |
 | systemd service running as user `tomcat` | `igamonmeet.service` |

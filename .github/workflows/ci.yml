@@ -46,7 +46,7 @@ jobs:
           MSSQL_USER: sa
           MSSQL_PASSWORD: Ci_Passw0rd!2026
         run: mvn -B -Dskip.frontend=true -Dtest=MssqlMigrationTest -Dsurefire.failIfNoSpecifiedTests=false test
-      - name: DBA script is up to date
+      - name: DBA scripts are up to date
         run: python3 tools/db/build_mssql_script.py --check
       - name: Run the DBA script on an empty database
         run: |
@@ -56,6 +56,31 @@ jobs:
       - name: Flyway accepts the scripted database
         env:
           MSSQL_URL: jdbc:sqlserver://localhost:1433;databaseName=igamonmeet_script;encrypt=true;trustServerCertificate=true
+          MSSQL_USER: sa
+          MSSQL_PASSWORD: Ci_Passw0rd!2026
+          MSSQL_FROM_SCRIPT: 'true'
+        run: mvn -B -Dskip.frontend=true -Dtest=MssqlMigrationTest -Dsurefire.failIfNoSpecifiedTests=false test
+      - name: Upgrade script brings a version 20 database to the current version
+        run: |
+          SQLCMD="docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P Ci_Passw0rd!2026"
+          python3 tools/db/build_mssql_script.py --upto 20 /tmp/igamonmeet-v20.sql
+          docker cp /tmp/igamonmeet-v20.sql ${{ job.services.mssql.id }}:/tmp/igamonmeet-v20.sql
+          docker cp db/mssql/igamonmeet-upgrade.sql ${{ job.services.mssql.id }}:/tmp/igamonmeet-upgrade.sql
+          $SQLCMD -Q "CREATE DATABASE igamonmeet_upgrade"
+          $SQLCMD -d igamonmeet_upgrade -b -i /tmp/igamonmeet-v20.sql
+          $SQLCMD -d igamonmeet_upgrade -b -i /tmp/igamonmeet-upgrade.sql | tee /tmp/upgrade-1.log
+          grep -q "Applied V21" /tmp/upgrade-1.log
+          if grep -q "Applied V20" /tmp/upgrade-1.log; then echo "V20 was applied again"; exit 1; fi
+          # Second run and a run on the fully scripted database: nothing left to apply.
+          $SQLCMD -d igamonmeet_upgrade -b -i /tmp/igamonmeet-upgrade.sql | tee /tmp/upgrade-2.log
+          $SQLCMD -d igamonmeet_script -b -i /tmp/igamonmeet-upgrade.sql | tee /tmp/upgrade-3.log
+          if grep -q "Applied V" /tmp/upgrade-2.log /tmp/upgrade-3.log; then echo "The upgrade script is not repeatable"; exit 1; fi
+          # A database without a Flyway history is refused.
+          $SQLCMD -Q "CREATE DATABASE igamonmeet_empty"
+          if $SQLCMD -d igamonmeet_empty -b -i /tmp/igamonmeet-upgrade.sql; then echo "The upgrade script ran on an empty database"; exit 1; fi
+      - name: Flyway accepts the upgraded database
+        env:
+          MSSQL_URL: jdbc:sqlserver://localhost:1433;databaseName=igamonmeet_upgrade;encrypt=true;trustServerCertificate=true
           MSSQL_USER: sa
           MSSQL_PASSWORD: Ci_Passw0rd!2026
           MSSQL_FROM_SCRIPT: 'true'

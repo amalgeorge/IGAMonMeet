@@ -1,3 +1,4 @@
+import { Component } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 
 /**
@@ -26,7 +27,12 @@ export function markedText(text) {
   for (let i = 0; i < (text || '').length; i++) {
     const c = text[i];
     if (c === '\u0010') { flush(); bold = !bold; } else if (c === '\u0011') { flush(); italic = !italic; } else if (c === '\u0014') { flush(); href = null; } else if (c === '\u0012') {
-      flush(); const end = text.indexOf('\u0013', i); href = text.slice(i + 1, end); i = end;
+      flush();
+      const end = text.indexOf('\u0013', i);
+      if (end < 0) continue; // broken link mark: drop it (never loop back)
+      const url = text.slice(i + 1, end);
+      href = /^(https?:\/\/|mailto:)/i.test(url) ? url : null;
+      i = end;
     } else buf += c;
   }
   flush();
@@ -58,7 +64,27 @@ export function buildSteps(slide) {
 }
 
 /** onGo(n): jump to slide n when an agenda entry, divider link or "↩ Agenda" is clicked (spec-v3 §5); omitted in thumbnails. */
-export default function SlideRenderer({ slide, theme, total, step = Infinity, onGo }) {
+/**
+ * One slide that cannot be drawn must not blank the whole app: the boundary shows a small notice on that slide only.
+ */
+class SlideBoundary extends Component {
+  constructor(props) { super(props); this.state = { failed: false }; }
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidUpdate(prev) { if (prev.slide !== this.props.slide && this.state.failed) this.setState({ failed: false }); }
+  render() {
+    if (this.state.failed) {
+      return <div role="alert" style={{ position: 'relative', aspectRatio: '16 / 9', width: '100%', display: 'grid', placeItems: 'center', background: '#fff', color: '#9E0B23', fontFamily: 'Arial, sans-serif' }}>
+        This slide could not be drawn. Open its Section in the Document view and save it again.</div>;
+    }
+    return this.props.children;
+  }
+}
+
+export default function SlideRenderer(props) {
+  return <SlideBoundary slide={props.slide}><SlideBody {...props} /></SlideBoundary>;
+}
+
+function SlideBody({ slide, theme, total, step = Infinity, onGo }) {
   const reduce = useReducedMotion();
   const c = theme?.colors || {};
   const accent = `#${c.accent1 || 'C8102E'}`;
@@ -135,10 +161,10 @@ export default function SlideRenderer({ slide, theme, total, step = Infinity, on
         </div>
       )}
 
-      {!d.empty && slide.layout === 'IAM_SUMMARY' && !d.blocks && (
+      {!d.empty && slide.layout === 'IAM_SUMMARY' && !d.blocks && !d.agenda && (
         <>
           <ol style={{ ...box(F.content || ph('body', { x: 4.5, y: 26.7, w: 54.75, h: 61.3 })), margin: 0, paddingLeft: pt(24), fontSize: pt(d.fontSize || 18), display: 'flex', flexDirection: 'column', gap: pt(14) }}>
-            {d.points.map((p, i) => <motion.li key={i} {...reveal(i)}>{p}</motion.li>)}
+            {(d.points || []).map((p, i) => <motion.li key={i} {...reveal(i)}>{p}</motion.li>)}
           </ol>
           <div style={{ position: 'absolute', left: '63%', top: '26.7%', width: '32.5%', display: 'flex', flexDirection: 'column', gap: pt(14) }}>
             {(d.stats || []).map((s, i) => (

@@ -497,7 +497,7 @@ public class PptxWriter {
                 else if (c == com.igamonmeet.slides.RichText.LINK_END) href = null;
                 else {
                     int end = text.indexOf(com.igamonmeet.slides.RichText.LINK_TEXT, i);
-                    href = end > i ? text.substring(i + 1, end) : null;
+                    href = end > i ? com.igamonmeet.slides.RichText.safeHref(text.substring(i + 1, end)) : null; // http(s)/mailto only
                     i = end > i ? end : i;
                 }
                 i++;

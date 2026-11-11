@@ -28,6 +28,7 @@ final class SectionContent {
         check(c != null && c.isObject(), "Content must be an object.");
         check(!c.has("notes") || c.get("notes").isNull() || (c.get("notes").isTextual() && c.get("notes").asText().length() <= MAX_NOTES),
                 "Speaker notes must be text of up to " + MAX_NOTES + " characters.");
+        check(!hasControlCharacters(c), "Text contains control characters. Remove them (they usually come from a paste) and save again.");
         String richProblem = com.igamonmeet.slides.RichText.problem(c.get("rich")); // every kind (spec-v3 §2)
         check(richProblem == null, richProblem);
         switch (kind) {
@@ -157,6 +158,23 @@ final class SectionContent {
 
     private static boolean hasValue(JsonNode v) {
         return v.isNumber() || (v.isTextual() && !v.asText().isBlank());
+    }
+
+    /** Any text anywhere in the content with a control character: these could pose as formatting marks on slides. */
+    private static boolean hasControlCharacters(JsonNode n) {
+        if (n.isTextual()) return com.igamonmeet.slides.RichText.hasControlCharacters(n.asText());
+        if (n.isContainerNode()) {
+            for (JsonNode child : n) {
+                if (hasControlCharacters(child)) return true;
+            }
+            if (n.isObject()) {
+                var names = n.fieldNames();
+                while (names.hasNext()) {
+                    if (com.igamonmeet.slides.RichText.hasControlCharacters(names.next())) return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean hasRich(JsonNode c) {

@@ -23,6 +23,9 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 @Configuration
 public class SecurityConfig {
 
+    static final String CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+            + "font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
@@ -44,6 +47,11 @@ public class SecurityConfig {
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll())
             .csrf(c -> c.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+            // Only the app's own scripts run; no plugins, no framing. Inline styles stay allowed: the slide renderer
+            // positions everything with style attributes.
+            .headers(h -> h
+                .contentSecurityPolicy(csp -> csp.policyDirectives(CSP))
+                .referrerPolicy(r -> r.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN)))
             .formLogin(f -> f
                 .loginProcessingUrl("/api/auth/login")
                 .successHandler((req, res, a) -> json(res, HttpStatus.OK, "{\"status\":\"OK\"}"))

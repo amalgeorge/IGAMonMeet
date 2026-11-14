@@ -101,7 +101,7 @@ jobs:
           --health-interval 10s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with: { name: igamonmeet-war, path: war }
       - name: Create database
         run: |
